@@ -979,6 +979,16 @@
               <span class="asset-name">버거</span>
               <span class="asset-sub">burger.spz</span>
             </div>
+            <div class="asset-card" data-model="3d-model/Dragon.fbx" data-type="fbx">
+              <span class="asset-emoji">🐉</span>
+              <span class="asset-name">드래곤 FBX</span>
+              <span class="asset-sub">Dragon.fbx</span>
+            </div>
+            <div class="asset-card" data-model="3d-model/Dragon.ply" data-type="ply">
+              <span class="asset-emoji">🐲</span>
+              <span class="asset-name">드래곤 PLY</span>
+              <span class="asset-sub">Dragon.ply</span>
+            </div>
           </div>
         </div>
 
@@ -1247,6 +1257,7 @@
     import * as THREE from "three";
     import { OrbitControls } from "three/addons/controls/OrbitControls.js";
     import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
+    import { PLYLoader } from "three/addons/loaders/PLYLoader.js";
     import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
     import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
     import { SparkRenderer, SplatMesh, constructGrid, constructSpherePoints } from "@sparkjsdev/spark";
@@ -1729,9 +1740,79 @@
       card.addEventListener("click", () => {
         document.querySelectorAll(".asset-card").forEach(c => c.classList.remove("active"));
         card.classList.add("active");
-        loadSplatModel(card.dataset.model);
+        const model = card.dataset.model;
+        const type = card.dataset.type;
+        if (type === "fbx" || type === "ply" || model.endsWith(".fbx") || model.endsWith(".ply") || model.endsWith(".glb")) {
+          load3DModelUrl(model);
+        } else {
+          loadSplatModel(model);
+        }
       });
     });
+
+    async function load3DModelUrl(url) {
+      currentMode = "viewport";
+      loadingOverlay.style.display = "flex";
+      loadingOverlay.style.opacity = "1";
+      loadingText.textContent = `${url} 3D 모델 다운로드 및 렌더링 중...`;
+
+      removeCurrentSplat();
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const arrayBuffer = await response.arrayBuffer();
+        
+        const ext = url.split('.').pop().toLowerCase();
+        if (ext === "fbx") {
+          const loader = new FBXLoader();
+          const fbx = loader.parse(arrayBuffer, "");
+          const bbox = new THREE.Box3().setFromObject(fbx);
+          const size = bbox.getSize(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z);
+          if (maxDim > 0) fbx.scale.setScalar(2.2 / maxDim);
+          const center = bbox.getCenter(new THREE.Vector3());
+          fbx.position.sub(center.multiplyScalar(fbx.scale.x));
+          fbx.position.y += 0.2;
+          scene.add(fbx);
+          currentCustomMesh = fbx;
+          statSplats.textContent = "FBX 3D 모델 (드래곤)";
+        } else if (ext === "ply") {
+          const headerSnippet = new TextDecoder().decode(arrayBuffer.slice(0, 800));
+          if (headerSnippet.includes("f_dc_0") || headerSnippet.includes("scale_0")) {
+            const splatMesh = new SplatMesh({ fileBytes: new Uint8Array(arrayBuffer), fileType: "ply", lod: true });
+            splatMesh.quaternion.set(1, 0, 0, 0);
+            splatMesh.position.set(0, 0, 0);
+            scene.add(splatMesh);
+            currentSplatMesh = splatMesh;
+            await splatMesh.initialized;
+            statSplats.textContent = `${splatMesh.numSplats.toLocaleString()} 개 (3DGS PLY)`;
+          } else {
+            const loader = new PLYLoader();
+            const geometry = loader.parse(arrayBuffer);
+            geometry.computeVertexNormals();
+            const material = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.3, metalness: 0.6 });
+            const mesh = new THREE.Mesh(geometry, material);
+            const bbox = new THREE.Box3().setFromObject(mesh);
+            const size = bbox.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            if (maxDim > 0) mesh.scale.setScalar(2.2 / maxDim);
+            const center = bbox.getCenter(new THREE.Vector3());
+            mesh.position.sub(center.multiplyScalar(mesh.scale.x));
+            mesh.position.y += 0.2;
+            scene.add(mesh);
+            currentCustomMesh = mesh;
+            statSplats.textContent = "폴리곤 PLY 모델 (드래곤)";
+          }
+        }
+        loadingOverlay.style.opacity = "0";
+        setTimeout(() => { loadingOverlay.style.display = "none"; }, 250);
+      } catch (err) {
+        console.error("3D 모델 로드 실패:", err);
+        loadingText.textContent = `로드 실패: ${err.message}`;
+        setTimeout(() => { loadingOverlay.style.display = "none"; }, 3000);
+      }
+    }
 
     const dropZone = document.getElementById("drop-zone");
     const fileInput = document.getElementById("file-input");
@@ -1758,7 +1839,7 @@
       try {
         const arrayBuffer = await file.arrayBuffer();
 
-        if (["spz", "ply", "splat", "ksplat", "rad"].includes(ext)) {
+        if (["spz", "splat", "ksplat", "rad"].includes(ext)) {
           removeCurrentSplat();
 
           let fileType = ext;
@@ -1784,6 +1865,48 @@
           await splatMesh.initialized;
           const count = splatMesh.numSplats || (splatMesh.packedSplats ? splatMesh.packedSplats.numSplats : 0);
           statSplats.textContent = `${count.toLocaleString()} 개 (로컬 3DGS)`;
+        }
+        else if (ext === "ply") {
+          removeCurrentSplat();
+          const headerSnippet = new TextDecoder().decode(arrayBuffer.slice(0, 800));
+          const is3DGS = headerSnippet.includes("f_dc_0") || headerSnippet.includes("scale_0") || headerSnippet.includes("opacity") || headerSnippet.includes("rot_0");
+          
+          if (is3DGS) {
+            const splatMesh = new SplatMesh({
+              fileBytes: new Uint8Array(arrayBuffer),
+              fileType: "ply",
+              lod: true,
+              onProgress: (ev) => {
+                if (ev.lengthComputable) {
+                  const pct = Math.round((ev.loaded / ev.total) * 100);
+                  loadingText.textContent = `${name} 로딩 중: ${pct}%`;
+                }
+              }
+            });
+            splatMesh.quaternion.set(1, 0, 0, 0);
+            splatMesh.position.set(0, 0, 0);
+            scene.add(splatMesh);
+            currentSplatMesh = splatMesh;
+            await splatMesh.initialized;
+            const count = splatMesh.numSplats || (splatMesh.packedSplats ? splatMesh.packedSplats.numSplats : 0);
+            statSplats.textContent = `${count.toLocaleString()} 개 (3DGS PLY)`;
+          } else {
+            const loader = new PLYLoader();
+            const geometry = loader.parse(arrayBuffer);
+            geometry.computeVertexNormals();
+            const material = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.3, metalness: 0.6 });
+            const mesh = new THREE.Mesh(geometry, material);
+            const bbox = new THREE.Box3().setFromObject(mesh);
+            const size = bbox.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            if (maxDim > 0) mesh.scale.setScalar(2.2 / maxDim);
+            const center = bbox.getCenter(new THREE.Vector3());
+            mesh.position.sub(center.multiplyScalar(mesh.scale.x));
+            mesh.position.y += 0.2;
+            scene.add(mesh);
+            currentCustomMesh = mesh;
+            statSplats.textContent = "폴리곤 PLY 3D 모델";
+          }
         }
         else if (ext === "fbx") {
           removeCurrentSplat();
@@ -1849,6 +1972,9 @@
           scene.add(obj);
           currentCustomMesh = obj;
           statSplats.textContent = "OBJ 3D 모델";
+        }
+        else if (["rar", "zip", "7z", "tar"].includes(ext)) {
+          throw new Error(`압축 파일(.${ext})은 압축을 해제한 후 내부 3D 파일(.fbx, .ply 등)을 끌어다 놓아주세요! ('3d model' 폴더 안에 압축 해제된 파일이 준비되어 있습니다)`);
         }
         else {
           throw new Error(`지원하지 않는 파일 형식: .${ext} (.spz, .ply, .splat, .rad, .fbx, .glb, .obj 지원)`);
