@@ -998,19 +998,35 @@
         <!-- Drag & Drop Zone -->
         <div>
           <div class="section-header">
-            <span>로컬 3DGS & 3D 모델 드롭존</span>
+            <span>로컬 3DGS & 2D/영상 드롭존</span>
           </div>
           <div class="drop-zone" id="drop-zone">
-            <input type="file" id="file-input" accept=".spz,.ply,.splat,.ksplat,.rad,.fbx,.glb,.gltf,.obj" style="display:none;">
+            <input type="file" id="file-input" accept=".spz,.ply,.splat,.ksplat,.rad,.fbx,.glb,.gltf,.obj,.jpg,.jpeg,.png,.webp,.mp4,.webm,.mov" style="display:none;">
             <div style="font-size:1.5rem; color:var(--accent-cyan);">📥</div>
-            <div style="font-size:0.78rem; font-weight:600; margin-top:4px;">파일 끌어다 놓기</div>
-            <div class="drop-text">.spz, .ply, .splat, .rad, .fbx, .glb 지원</div>
+            <div style="font-size:0.78rem; font-weight:600; margin-top:4px;">파일 / 사진 / 영상 끌어다 놓기</div>
+            <div class="drop-text">.spz, .ply, .fbx, 사진(.jpg,.png), 영상(.mp4) 지원</div>
           </div>
         </div>
       </div>
 
       <!-- Digital Twin Left View (4-Stage Closed-Loop Pipeline) -->
       <div id="dt-left-content" style="display:none;">
+        <!-- Digital Twin Hierarchy with Eye Toggle -->
+        <div style="margin-bottom:14px;">
+          <div class="section-header">
+            <span>오브젝트 계층 구조 (Hierarchy)</span>
+            <span style="color:var(--accent-cyan); font-size:0.68rem;">LIVE</span>
+          </div>
+          <div class="scene-tree-item active" style="margin-bottom:4px;">
+            <span>🎯 가운데 대상 오브젝트 (3DGS/모델)</span>
+            <button class="btn-eye visible" id="dt-eye-target" title="가운데 대상 오브젝트 숨김/표시">👁️</button>
+          </div>
+          <div class="scene-tree-item">
+            <span>⚙️ 산업 도메인 설비 (모터/항만)</span>
+            <button class="btn-eye visible" id="dt-eye-equipment" title="산업 설비 3D 메시 숨김/표시">👁️</button>
+          </div>
+        </div>
+
         <div class="section-header">
           <span>산업 도메인 시나리오</span>
           <span style="color:var(--accent-cyan); font-size:0.68rem;">SIM'S REALITY AI</span>
@@ -2187,13 +2203,19 @@
       video.load();
     }
 
-    // Hierarchy Eye Toggles
+    // Hierarchy Eye Toggles (Studio Mode)
     const eyeSplat = document.getElementById("eye-splat");
     eyeSplat.addEventListener("click", () => {
+      let isVis = true;
       if (currentSplatMesh) {
         currentSplatMesh.visible = !currentSplatMesh.visible;
-        eyeSplat.classList.toggle("visible", currentSplatMesh.visible);
+        isVis = currentSplatMesh.visible;
       }
+      if (currentCustomMesh) {
+        currentCustomMesh.visible = !currentCustomMesh.visible;
+        isVis = currentCustomMesh.visible;
+      }
+      eyeSplat.classList.toggle("visible", isVis);
     });
 
     const eyeTorus = document.getElementById("eye-torus");
@@ -2213,6 +2235,36 @@
       dirLight.visible = !dirLight.visible;
       eyeLight.classList.toggle("visible", dirLight.visible);
     });
+
+    // Digital Twin Hierarchy Eye Toggles
+    const dtEyeTarget = document.getElementById("dt-eye-target");
+    if (dtEyeTarget) {
+      dtEyeTarget.addEventListener("click", () => {
+        let isVis = true;
+        if (currentSplatMesh) {
+          currentSplatMesh.visible = !currentSplatMesh.visible;
+          isVis = currentSplatMesh.visible;
+        }
+        if (currentCustomMesh) {
+          currentCustomMesh.visible = !currentCustomMesh.visible;
+          isVis = currentCustomMesh.visible;
+        }
+        dtEyeTarget.classList.toggle("visible", isVis);
+      });
+    }
+
+    const dtEyeEquipment = document.getElementById("dt-eye-equipment");
+    if (dtEyeEquipment) {
+      dtEyeEquipment.addEventListener("click", () => {
+        if (currentDtDomain === "ev") {
+          dtEvGroup.visible = !dtEvGroup.visible;
+          dtEyeEquipment.classList.toggle("visible", dtEvGroup.visible);
+        } else {
+          dtPortGroup.visible = !dtPortGroup.visible;
+          dtEyeEquipment.classList.toggle("visible", dtPortGroup.visible);
+        }
+      });
+    }
 
     // 3D Auxiliary Guides Toggle (Hides/Shows Pedestal, Robotic Arm, Measurement Bounding Boxes)
     const btnToggleGuides = document.getElementById("btn-toggle-guides");
