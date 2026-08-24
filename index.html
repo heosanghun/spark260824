@@ -2162,19 +2162,6 @@
       video.load();
     }
 
-        loadingOverlay.style.opacity = "0";
-        setTimeout(() => {
-          loadingOverlay.style.display = "none";
-        }, 250);
-      } catch (err) {
-        console.error("로컬 파일 로드 실패:", err);
-        loadingText.textContent = `로드 실패: ${err.message}`;
-        setTimeout(() => {
-          loadingOverlay.style.display = "none";
-        }, 3000);
-      }
-    }
-
     // Hierarchy Eye Toggles
     const eyeSplat = document.getElementById("eye-splat");
     eyeSplat.addEventListener("click", () => {
