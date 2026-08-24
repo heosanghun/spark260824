@@ -1286,6 +1286,23 @@
     const statFps = document.getElementById("stat-fps");
     const statSplats = document.getElementById("stat-splats");
 
+    function showLoading(msg) {
+      if (!loadingOverlay) return;
+      loadingOverlay.style.display = "flex";
+      loadingOverlay.style.opacity = "1";
+      loadingOverlay.style.pointerEvents = "all";
+      if (loadingText) loadingText.textContent = msg;
+    }
+
+    function hideLoading() {
+      if (!loadingOverlay) return;
+      loadingOverlay.style.opacity = "0";
+      loadingOverlay.style.pointerEvents = "none";
+      setTimeout(() => {
+        if (loadingOverlay) loadingOverlay.style.display = "none";
+      }, 150);
+    }
+
     // Panels View Toggles
     const studioLeft = document.getElementById("studio-left-content");
     const dtLeft = document.getElementById("dt-left-content");
@@ -2042,105 +2059,111 @@
     }
 
     function handleImageTo3D(file) {
-      loadingOverlay.style.display = "flex";
-      loadingOverlay.style.opacity = "1";
-      loadingText.textContent = `2D 이미지 (${file.name}) 3D 가우시안 공간 실시간 생성 중...`;
-
+      showLoading(`2D 이미지 (${file.name}) 3D 가우시안 공간 실시간 생성 중...`);
       removeCurrentSplat();
 
-      const img = new Image();
       const reader = new FileReader();
-
+      reader.onerror = (err) => {
+        console.error("FileReader error:", err);
+        hideLoading();
+      };
       reader.onload = (e) => {
-        img.src = e.target.result;
-        img.onload = () => {
-          const w = 128;
-          const h = Math.round((img.height / img.width) * 128) || 128;
-          const canvas = document.createElement("canvas");
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, w, h);
-          const imgData = ctx.getImageData(0, 0, w, h).data;
-
-          const numPoints = w * h;
-          const positions = new Float32Array(numPoints * 3);
-          const colors = new Float32Array(numPoints * 3);
-
-          let pIdx = 0;
-          for (let y = 0; y < h; y++) {
-            for (let x = 0; x < w; x++) {
-              const i = (y * w + x) * 4;
-              const r = imgData[i] / 255;
-              const g = imgData[i + 1] / 255;
-              const b = imgData[i + 2] / 255;
-
-              const luma = 0.299 * r + 0.587 * g + 0.114 * b;
-              const posX = (x / w - 0.5) * 2.8;
-              const posY = ((h - y) / h - 0.5) * (2.8 * (h / w));
-              const posZ = (luma - 0.5) * 0.9 + Math.sin(posX * 1.5) * 0.12;
-
-              positions[pIdx * 3] = posX;
-              positions[pIdx * 3 + 1] = posY + 0.4;
-              positions[pIdx * 3 + 2] = posZ;
-
-              colors[pIdx * 3] = r;
-              colors[pIdx * 3 + 1] = g;
-              colors[pIdx * 3 + 2] = b;
-
-              pIdx++;
-            }
-          }
-
-          const geometry = new THREE.BufferGeometry();
-          geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-          geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-
-          const canvasParticle = document.createElement("canvas");
-          canvasParticle.width = 32;
-          canvasParticle.height = 32;
-          const pCtx = canvasParticle.getContext("2d");
-          const grad = pCtx.createRadialGradient(16, 16, 0, 16, 16, 16);
-          grad.addColorStop(0, "rgba(255,255,255,1)");
-          grad.addColorStop(0.4, "rgba(255,255,255,0.7)");
-          grad.addColorStop(1, "rgba(255,255,255,0)");
-          pCtx.fillStyle = grad;
-          pCtx.fillRect(0, 0, 32, 32);
-          const texture = new THREE.CanvasTexture(canvasParticle);
-
-          const material = new THREE.PointsMaterial({
-            size: 0.045,
-            vertexColors: true,
-            map: texture,
-            transparent: true,
-            opacity: 0.9,
-            depthWrite: false,
-            blending: THREE.NormalBlending
-          });
-
-          const pointCloud = new THREE.Points(geometry, material);
-          scene.add(pointCloud);
-          currentCustomMesh = pointCloud;
-
-          statSplats.textContent = `${numPoints.toLocaleString()} 개 (2D→3D 공간화)`;
-          appendXaiLog(`[VLM/SI] 2D 사진 '${file.name}' 분석: ${numPoints.toLocaleString()}개 가우시안 볼류메트릭 3D 공간 생성 완료!`);
-
-          loadingOverlay.style.opacity = "0";
-          setTimeout(() => { loadingOverlay.style.display = "none"; }, 250);
+        const img = new Image();
+        img.onerror = (err) => {
+          console.error("Image decode error:", err);
+          hideLoading();
         };
+        img.onload = () => {
+          try {
+            const w = 128;
+            const h = Math.round((img.height / img.width) * 128) || 128;
+            const canvas = document.createElement("canvas");
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, w, h);
+            const imgData = ctx.getImageData(0, 0, w, h).data;
+
+            const numPoints = w * h;
+            const positions = new Float32Array(numPoints * 3);
+            const colors = new Float32Array(numPoints * 3);
+
+            let pIdx = 0;
+            for (let y = 0; y < h; y++) {
+              for (let x = 0; x < w; x++) {
+                const i = (y * w + x) * 4;
+                const r = imgData[i] / 255;
+                const g = imgData[i + 1] / 255;
+                const b = imgData[i + 2] / 255;
+
+                const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+                const posX = (x / w - 0.5) * 2.8;
+                const posY = ((h - y) / h - 0.5) * (2.8 * (h / w));
+                const posZ = (luma - 0.5) * 0.9 + Math.sin(posX * 1.5) * 0.12;
+
+                positions[pIdx * 3] = posX;
+                positions[pIdx * 3 + 1] = posY + 0.4;
+                positions[pIdx * 3 + 2] = posZ;
+
+                colors[pIdx * 3] = r;
+                colors[pIdx * 3 + 1] = g;
+                colors[pIdx * 3 + 2] = b;
+
+                pIdx++;
+              }
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+
+            const canvasParticle = document.createElement("canvas");
+            canvasParticle.width = 32;
+            canvasParticle.height = 32;
+            const pCtx = canvasParticle.getContext("2d");
+            const grad = pCtx.createRadialGradient(16, 16, 0, 16, 16, 16);
+            grad.addColorStop(0, "rgba(255,255,255,1)");
+            grad.addColorStop(0.4, "rgba(255,255,255,0.7)");
+            grad.addColorStop(1, "rgba(255,255,255,0)");
+            pCtx.fillStyle = grad;
+            pCtx.fillRect(0, 0, 32, 32);
+            const texture = new THREE.CanvasTexture(canvasParticle);
+
+            const material = new THREE.PointsMaterial({
+              size: 0.045,
+              vertexColors: true,
+              map: texture,
+              transparent: true,
+              opacity: 0.9,
+              depthWrite: false,
+              blending: THREE.NormalBlending
+            });
+
+            const pointCloud = new THREE.Points(geometry, material);
+            scene.add(pointCloud);
+            currentCustomMesh = pointCloud;
+
+            statSplats.textContent = `${numPoints.toLocaleString()} 개 (2D→3D 공간화)`;
+            appendXaiLog(`[VLM/SI] 2D 사진 '${file.name}' 분석: ${numPoints.toLocaleString()}개 가우시안 볼류메트릭 3D 공간 생성 완료!`);
+          } catch (err) {
+            console.error("3D point cloud generation error:", err);
+          } finally {
+            hideLoading();
+          }
+        };
+        img.src = e.target.result;
       };
       reader.readAsDataURL(file);
     }
 
     function handleVideoTo3D(file) {
-      loadingOverlay.style.display = "flex";
-      loadingOverlay.style.opacity = "1";
-      loadingText.textContent = `비디오 (${file.name}) 프레임 3D 공간화 중...`;
+      showLoading(`비디오 (${file.name}) 프레임 3D 공간화 중...`);
 
       const video = document.createElement("video");
       video.src = URL.createObjectURL(file);
       video.muted = true;
       video.playsInline = true;
+      video.onerror = () => hideLoading();
       video.onloadeddata = () => {
         video.currentTime = 0.5;
       };
@@ -2156,6 +2179,8 @@
           if (blob) {
             blob.name = file.name + "_frame.png";
             handleImageTo3D(blob);
+          } else {
+            hideLoading();
           }
         });
       };
