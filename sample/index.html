@@ -3,34 +3,37 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=no">
-  <title>Spark.js 3DGS Studio Pro • Next-Gen Web3D Platform</title>
+  <title>Spark Studio Pro • Next-Gen 3DGS Web Platform</title>
   
   <!-- Font & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   
   <style>
     :root {
-      --bg-base: #080a0f;
-      --bg-surface: rgba(15, 20, 32, 0.75);
-      --bg-surface-elevated: rgba(24, 32, 51, 0.85);
-      --bg-card: rgba(30, 41, 64, 0.5);
-      --border-subtle: rgba(255, 255, 255, 0.08);
-      --border-focus: rgba(255, 92, 114, 0.4);
+      --bg-base: #06080d;
+      --bg-surface: rgba(13, 17, 28, 0.78);
+      --bg-surface-elevated: rgba(20, 27, 45, 0.88);
+      --bg-card: rgba(26, 35, 58, 0.5);
+      --bg-input: #121826;
+      --border-subtle: rgba(255, 255, 255, 0.09);
+      --border-focus: rgba(255, 75, 99, 0.5);
       --primary: #ff4b63;
       --primary-gradient: linear-gradient(135deg, #ff4b63 0%, #ff7843 50%, #ffb830 100%);
       --accent-cyan: #38bdf8;
       --accent-purple: #a855f7;
+      --accent-emerald: #10b981;
       --text-primary: #f8fafc;
       --text-secondary: #94a3b8;
       --text-muted: #64748b;
+      --radius-xs: 6px;
       --radius-sm: 8px;
       --radius-md: 12px;
       --radius-lg: 16px;
       --radius-full: 9999px;
-      --shadow-elevation: 0 16px 40px -10px rgba(0, 0, 0, 0.6), 0 0 1px 1px rgba(255, 255, 255, 0.08);
-      --blur-strength: 18px;
+      --shadow-elevation: 0 20px 50px -12px rgba(0, 0, 0, 0.65), 0 0 1px 1px rgba(255, 255, 255, 0.08);
+      --blur-strength: 20px;
     }
 
     * {
@@ -58,6 +61,18 @@
       z-index: 1;
     }
 
+    /* Vignette Overlay */
+    .viewport-vignette {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 2;
+      background: radial-gradient(circle at center, transparent 40%, rgba(6, 8, 13, 0.75) 100%);
+    }
+
     /* Glass Panels */
     .glass-panel {
       background: var(--bg-surface);
@@ -71,7 +86,7 @@
     }
 
     .glass-panel:hover {
-      border-color: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.16);
     }
 
     /* Top Navigation Bar */
@@ -80,12 +95,12 @@
       top: 16px;
       left: 16px;
       right: 16px;
-      height: 58px;
+      height: 56px;
       z-index: 20;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 20px;
+      padding: 0 18px;
     }
 
     .brand-section {
@@ -132,7 +147,7 @@
     /* Mode Switcher Tabs */
     .mode-tabs {
       display: flex;
-      background: rgba(0, 0, 0, 0.4);
+      background: rgba(0, 0, 0, 0.45);
       padding: 4px;
       border-radius: var(--radius-md);
       border: 1px solid var(--border-subtle);
@@ -165,7 +180,7 @@
       box-shadow: 0 4px 12px rgba(255, 75, 99, 0.35);
     }
 
-    /* Quick Action Buttons */
+    /* Top Actions */
     .top-actions {
       display: flex;
       align-items: center;
@@ -176,7 +191,7 @@
       background: rgba(255, 255, 255, 0.06);
       border: 1px solid var(--border-subtle);
       color: var(--text-secondary);
-      padding: 8px 12px;
+      padding: 7px 12px;
       border-radius: var(--radius-md);
       font-size: 0.8rem;
       font-weight: 600;
@@ -190,15 +205,15 @@
     .btn-icon:hover {
       background: rgba(255, 255, 255, 0.12);
       color: #fff;
-      border-color: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.25);
     }
 
-    /* Main Workspace Layout */
+    /* Main Workspace Overlay */
     .workspace-overlay {
       position: absolute;
-      top: 86px;
+      top: 84px;
       left: 16px;
-      bottom: 60px;
+      bottom: 96px;
       right: 16px;
       z-index: 10;
       pointer-events: none;
@@ -214,9 +229,10 @@
       flex-direction: column;
       padding: 18px;
       overflow-y: auto;
+      gap: 18px;
     }
 
-    /* Right Sidebar: Inspector & Effects */
+    /* Right Sidebar: Inspector */
     #right-panel {
       width: 340px;
       height: 100%;
@@ -224,18 +240,11 @@
       flex-direction: column;
       padding: 18px;
       overflow-y: auto;
-    }
-
-    .panel-section {
-      margin-bottom: 20px;
-    }
-
-    .panel-section:last-child {
-      margin-bottom: 0;
+      gap: 18px;
     }
 
     .section-header {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
@@ -246,7 +255,7 @@
       align-items: center;
     }
 
-    /* Asset Grid Card */
+    /* Preset Assets Grid */
     .asset-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -257,30 +266,30 @@
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-md);
-      padding: 12px 10px;
+      padding: 10px 8px;
       cursor: pointer;
       text-align: center;
       transition: all 0.2s ease;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
     }
 
     .asset-card:hover {
-      background: rgba(255, 75, 99, 0.1);
+      background: rgba(255, 75, 99, 0.12);
       border-color: var(--primary);
       transform: translateY(-2px);
     }
 
     .asset-card.active {
-      background: rgba(255, 75, 99, 0.18);
+      background: rgba(255, 75, 99, 0.2);
       border-color: var(--primary);
-      box-shadow: 0 0 12px rgba(255, 75, 99, 0.25);
+      box-shadow: 0 0 14px rgba(255, 75, 99, 0.3);
     }
 
     .asset-emoji {
-      font-size: 1.5rem;
+      font-size: 1.4rem;
     }
 
     .asset-name {
@@ -290,20 +299,54 @@
     }
 
     .asset-sub {
-      font-size: 0.65rem;
+      font-size: 0.62rem;
       color: var(--text-muted);
       font-family: 'JetBrains Mono', monospace;
     }
 
-    /* Drag and Drop Zone */
+    /* Scene Tree Items */
+    .scene-tree-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      margin-bottom: 6px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .scene-tree-item.active {
+      border-color: var(--accent-cyan);
+      color: var(--text-primary);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    .btn-eye {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: color 0.15s ease;
+    }
+
+    .btn-eye:hover, .btn-eye.visible {
+      color: var(--accent-cyan);
+    }
+
+    /* Drop Zone */
     .drop-zone {
-      border: 2px dashed rgba(255, 255, 255, 0.15);
+      border: 2px dashed rgba(255, 255, 255, 0.14);
       border-radius: var(--radius-md);
-      padding: 16px;
+      padding: 14px;
       text-align: center;
       cursor: pointer;
       transition: all 0.2s ease;
-      background: rgba(0, 0, 0, 0.2);
+      background: rgba(0, 0, 0, 0.25);
     }
 
     .drop-zone:hover, .drop-zone.dragover {
@@ -312,12 +355,12 @@
     }
 
     .drop-text {
-      font-size: 0.76rem;
-      color: var(--text-secondary);
+      font-size: 0.72rem;
+      color: var(--text-muted);
       margin-top: 4px;
     }
 
-    /* Form Controls */
+    /* Input & Slider Row */
     .control-row {
       margin-bottom: 12px;
     }
@@ -325,21 +368,40 @@
     .control-label-row {
       display: flex;
       justify-content: space-between;
-      font-size: 0.78rem;
+      align-items: center;
+      font-size: 0.76rem;
       font-weight: 600;
       color: var(--text-secondary);
       margin-bottom: 6px;
     }
 
-    .control-val {
-      font-family: 'JetBrains Mono', monospace;
+    .number-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .number-input {
+      width: 52px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xs);
       color: var(--accent-cyan);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      padding: 3px 6px;
+      text-align: right;
+      outline: none;
+    }
+
+    .number-input:focus {
+      border-color: var(--accent-cyan);
     }
 
     input[type="range"] {
       -webkit-appearance: none;
       width: 100%;
-      height: 6px;
+      height: 5px;
       border-radius: var(--radius-full);
       background: #1e293b;
       outline: none;
@@ -347,12 +409,12 @@
 
     input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 16px;
-      height: 16px;
+      width: 15px;
+      height: 15px;
       border-radius: 50%;
       background: var(--primary);
       cursor: pointer;
-      box-shadow: 0 0 10px rgba(255, 75, 99, 0.6);
+      box-shadow: 0 0 8px rgba(255, 75, 99, 0.6);
       transition: transform 0.1s ease;
     }
 
@@ -360,19 +422,92 @@
       transform: scale(1.2);
     }
 
+    /* Camera Preset Buttons */
+    .cam-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .cam-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      padding: 6px 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+    }
+
+    .cam-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Color Swatches Palette */
+    .palette-grid {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    .swatch {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .swatch:hover {
+      transform: scale(1.15);
+      border-color: #fff;
+    }
+
+    /* Custom Color Picker input */
+    .color-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    input[type="color"] {
+      -webkit-appearance: none;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      background: transparent;
+    }
+
+    input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+    input[type="color"]::-webkit-color-swatch {
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+    }
+
     /* Toggle Switch */
     .toggle-group {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 6px 0;
+      padding: 4px 0;
     }
 
     .switch {
       position: relative;
       display: inline-block;
-      width: 40px;
-      height: 22px;
+      width: 36px;
+      height: 20px;
     }
 
     .switch input { opacity: 0; width: 0; height: 0; }
@@ -383,14 +518,14 @@
       top: 0; left: 0; right: 0; bottom: 0;
       background-color: #334155;
       transition: .3s;
-      border-radius: 22px;
+      border-radius: 20px;
     }
 
     .slider:before {
       position: absolute;
       content: "";
-      height: 16px;
-      width: 16px;
+      height: 14px;
+      width: 14px;
       left: 3px;
       bottom: 3px;
       background-color: white;
@@ -398,19 +533,14 @@
       border-radius: 50%;
     }
 
-    input:checked + .slider {
-      background: var(--primary);
-    }
+    input:checked + .slider { background: var(--primary); }
+    input:checked + .slider:before { transform: translateX(16px); }
 
-    input:checked + .slider:before {
-      transform: translateX(18px);
-    }
-
-    /* Buttons */
+    /* Action Buttons */
     .btn-block {
       width: 100%;
-      padding: 10px 14px;
-      font-size: 0.82rem;
+      padding: 9px 12px;
+      font-size: 0.8rem;
       font-weight: 600;
       border-radius: var(--radius-md);
       border: 1px solid var(--border-subtle);
@@ -420,7 +550,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 6px;
       transition: all 0.2s ease;
     }
 
@@ -433,37 +563,71 @@
       background: var(--primary-gradient);
       border: none;
       color: #fff;
-      box-shadow: 0 4px 16px rgba(255, 75, 99, 0.35);
-    }
-
-    .btn-block.primary:hover {
-      box-shadow: 0 6px 20px rgba(255, 75, 99, 0.5);
-      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(255, 75, 99, 0.35);
     }
 
     /* Bottom AI Command Bar */
-    #ai-bar {
+    #bottom-container {
       position: absolute;
       bottom: 16px;
       left: 16px;
       right: 16px;
-      height: 48px;
       z-index: 20;
       display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* Quick Prompt Chips */
+    .ai-chips-row {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .ai-chip {
+      background: rgba(18, 24, 38, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-full);
+      padding: 5px 12px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
       align-items: center;
-      padding: 0 16px;
-      gap: 12px;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+
+    .ai-chip:hover {
+      background: rgba(255, 75, 99, 0.15);
+      border-color: var(--primary);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    /* AI Input Bar */
+    #ai-bar {
+      height: 48px;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 10px;
     }
 
     .ai-badge {
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 0.75rem;
+      gap: 5px;
+      font-size: 0.72rem;
       font-weight: 700;
       color: var(--accent-cyan);
       background: rgba(56, 189, 248, 0.12);
-      padding: 4px 10px;
+      padding: 4px 9px;
       border-radius: var(--radius-full);
       border: 1px solid rgba(56, 189, 248, 0.3);
       white-space: nowrap;
@@ -475,36 +639,31 @@
       border: none;
       outline: none;
       color: #fff;
-      font-size: 0.85rem;
+      font-size: 0.83rem;
       font-family: inherit;
     }
 
-    .ai-input::placeholder {
-      color: var(--text-muted);
-    }
+    .ai-input::placeholder { color: var(--text-muted); }
 
     .ai-submit {
       background: var(--primary-gradient);
       border: none;
       color: #fff;
       padding: 6px 14px;
-      font-size: 0.78rem;
-      font-weight: 600;
+      font-size: 0.76rem;
+      font-weight: 700;
       border-radius: var(--radius-sm);
       cursor: pointer;
       transition: transform 0.1s ease;
     }
 
-    .ai-submit:active {
-      transform: scale(0.96);
-    }
+    .ai-submit:active { transform: scale(0.96); }
 
-    /* Stats Indicator */
     .stats-tray {
       display: flex;
       align-items: center;
-      gap: 16px;
-      font-size: 0.75rem;
+      gap: 14px;
+      font-size: 0.73rem;
       color: var(--text-muted);
       font-family: 'JetBrains Mono', monospace;
     }
@@ -516,7 +675,7 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: rgba(8, 10, 15, 0.88);
+      background: rgba(6, 8, 13, 0.88);
       z-index: 100;
       display: flex;
       flex-direction: column;
@@ -526,38 +685,20 @@
     }
 
     .spinner {
-      width: 50px;
-      height: 50px;
+      width: 48px;
+      height: 48px;
       border: 4px solid rgba(255, 75, 99, 0.15);
       border-top-color: var(--primary);
       border-radius: 50%;
       animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    /* Scrollbar */
-    ::-webkit-scrollbar {
-      width: 5px;
-    }
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(255, 255, 255, 0.25);
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     @media (max-width: 900px) {
-      #left-panel, #right-panel {
-        display: none;
-      }
+      #left-panel, #right-panel { display: none; }
+      .viewport-vignette { display: none; }
     }
   </style>
 
@@ -575,6 +716,7 @@
 <body>
   <!-- 3D WebGL Canvas -->
   <div id="canvas-container"></div>
+  <div class="viewport-vignette"></div>
 
   <!-- Top Glass Navigation Bar -->
   <header id="top-nav" class="glass-panel">
@@ -588,14 +730,14 @@
       </div>
     </div>
 
-    <!-- Mode Switcher -->
+    <!-- Mode Switcher Tabs -->
     <div class="mode-tabs">
       <button class="tab-item active" id="mode-viewport">🎨 3DGS 씬</button>
       <button class="tab-item" id="mode-procedural">❄️ 프로시저럴 Lab</button>
       <button class="tab-item" id="mode-lighting">💡 SDF 라이팅</button>
     </div>
 
-    <!-- Quick Actions -->
+    <!-- Quick Action Toolbar -->
     <div class="top-actions">
       <button class="btn-icon" id="btn-snapshot">📸 4K 스냅샷</button>
       <button class="btn-icon" id="btn-reset-cam">🎯 시점 리셋</button>
@@ -607,9 +749,34 @@
 
   <!-- Workspace Floating Panels -->
   <main class="workspace-overlay">
-    <!-- Left Panel: Assets & Scene Graph -->
+    <!-- Left Sidebar: Hierarchy & Assets -->
     <aside id="left-panel" class="glass-panel">
-      <div class="panel-section">
+      <!-- Scene Hierarchy -->
+      <div>
+        <div class="section-header">
+          <span>씬 계층 구조 (Hierarchy)</span>
+          <span style="color:var(--accent-cyan); font-size:0.68rem;">LIVE</span>
+        </div>
+        <div class="scene-tree-item active">
+          <span>✨ SplatMesh (3DGS)</span>
+          <button class="btn-eye visible" id="eye-splat">👁️</button>
+        </div>
+        <div class="scene-tree-item">
+          <span>💍 Torus Knot (Mesh)</span>
+          <button class="btn-eye visible" id="eye-torus">👁️</button>
+        </div>
+        <div class="scene-tree-item">
+          <span>⭕ Studio Pedestal</span>
+          <button class="btn-eye visible" id="eye-pedestal">👁️</button>
+        </div>
+        <div class="scene-tree-item">
+          <span>💡 Studio Directional Light</span>
+          <button class="btn-eye visible" id="eye-light">👁️</button>
+        </div>
+      </div>
+
+      <!-- Asset Presets -->
+      <div>
         <div class="section-header">
           <span>3D Gaussian 에셋 프리셋</span>
           <span style="color:var(--primary); font-size:0.7rem;">6개 모델</span>
@@ -648,47 +815,29 @@
         </div>
       </div>
 
-      <div class="panel-section">
+      <!-- Drag & Drop Zone -->
+      <div>
         <div class="section-header">
           <span>로컬 3DGS 파일 드롭존</span>
         </div>
         <div class="drop-zone" id="drop-zone">
           <input type="file" id="file-input" accept=".spz,.ply,.splat,.ksplat,.rad" style="display:none;">
-          <div style="font-size:1.6rem; color:var(--accent-cyan);">📥</div>
-          <div style="font-size:0.8rem; font-weight:600; margin-top:6px;">파일 끌어다 놓기</div>
+          <div style="font-size:1.5rem; color:var(--accent-cyan);">📥</div>
+          <div style="font-size:0.78rem; font-weight:600; margin-top:4px;">파일 끌어다 놓기</div>
           <div class="drop-text">.spz, .ply, .splat, .rad 지원</div>
-        </div>
-      </div>
-
-      <div class="panel-section">
-        <div class="section-header">
-          <span>Three.js 하이브리드 합성 메시</span>
-        </div>
-        <div class="toggle-group">
-          <span style="font-size:0.8rem; font-weight:600; color:var(--text-secondary);">금속 토러스 매듭</span>
-          <label class="switch">
-            <input type="checkbox" id="toggle-torus" checked>
-            <span class="slider"></span>
-          </label>
-        </div>
-        <div class="toggle-group">
-          <span style="font-size:0.8rem; font-weight:600; color:var(--text-secondary);">바닥 네온 그리드</span>
-          <label class="switch">
-            <input type="checkbox" id="toggle-grid" checked>
-            <span class="slider"></span>
-          </label>
         </div>
       </div>
     </aside>
 
-    <!-- Right Panel: Inspector & Shader Controls -->
+    <!-- Right Sidebar: Inspector & Shading -->
     <aside id="right-panel" class="glass-panel">
-      <div class="panel-section">
+      <!-- Transform & Animation -->
+      <div>
         <div class="section-header">
-          <span>트랜스폼 & 애니메이션</span>
+          <span>트랜스폼 & 턴테이블</span>
         </div>
         <div class="toggle-group">
-          <span style="font-size:0.8rem; font-weight:600; color:var(--text-secondary);">360° 턴테이블 자동 회전</span>
+          <span style="font-size:0.78rem; font-weight:600; color:var(--text-secondary);">360° 턴테이블 자동 회전</span>
           <label class="switch">
             <input type="checkbox" id="toggle-autorotate" checked>
             <span class="slider"></span>
@@ -696,46 +845,77 @@
         </div>
         <div class="control-row" style="margin-top:8px;">
           <div class="control-label-row">
-            <span>스플랫 스케일:</span>
-            <span id="val-scale" class="control-val">1.00x</span>
+            <span>스플랫 스케일</span>
+            <div class="number-input-wrap">
+              <input type="number" id="num-scale" class="number-input" value="1.00" step="0.05" min="0.2" max="3.0">
+            </div>
           </div>
           <input type="range" id="slider-scale" min="0.2" max="3.0" step="0.05" value="1.0">
         </div>
       </div>
 
-      <div class="panel-section">
+      <!-- Camera Presets -->
+      <div>
+        <div class="section-header">
+          <span>카메라 프리셋 뷰</span>
+        </div>
+        <div class="cam-grid">
+          <button class="cam-btn" data-cam="hero">🎬 45° 뷰</button>
+          <button class="cam-btn" data-cam="front">👁️ 정면</button>
+          <button class="cam-btn" data-cam="top">📐 탑뷰</button>
+          <button class="cam-btn" data-cam="close">🔍 줌인</button>
+        </div>
+      </div>
+
+      <!-- Shading & Material Tuning -->
+      <div>
         <div class="section-header">
           <span>셰이딩 & 스플랫 비주얼</span>
         </div>
         <div class="control-row">
           <div class="control-label-row">
-            <span>불투명도 (Opacity):</span>
-            <span id="val-opacity" class="control-val">1.00</span>
+            <span>불투명도 (Opacity)</span>
+            <div class="number-input-wrap">
+              <input type="number" id="num-opacity" class="number-input" value="1.00" step="0.05" min="0.05" max="1.0">
+            </div>
           </div>
           <input type="range" id="slider-opacity" min="0.05" max="1.0" step="0.05" value="1.0">
         </div>
+
         <div class="control-row">
           <div class="control-label-row">
-            <span>Spark LoD 상세도 예산:</span>
-            <span id="val-lod" class="control-val">1.0x</span>
+            <span>Spark LoD 상세도 예산</span>
+            <div class="number-input-wrap">
+              <input type="number" id="num-lod" class="number-input" value="1.0" step="0.25" min="0.5" max="2.5">
+            </div>
           </div>
           <input type="range" id="slider-lod" min="0.5" max="2.5" step="0.25" value="1.0">
         </div>
-        <button class="btn-block primary" id="btn-recolor" style="margin-top:10px;">
-          <span>🎨 틴트 컬러 변경</span>
-        </button>
-      </div>
 
-      <div class="panel-section">
-        <div class="section-header">
-          <span>SDF 실시간 라이팅 & 변위 필드</span>
-        </div>
+        <!-- Color Palette Swatches -->
         <div class="control-row">
           <div class="control-label-row">
-            <span>SDF 변위 강도:</span>
-            <span id="val-displace" class="control-val">0.00</span>
+            <span>컬러 틴트 팔레트</span>
           </div>
-          <input type="range" id="slider-displace" min="0" max="0.5" step="0.02" value="0.0">
+          <div class="palette-grid">
+            <div class="swatch" style="background:#ffffff;" data-color="#ffffff" title="원본 White"></div>
+            <div class="swatch" style="background:#ff4b63;" data-color="#ff4b63" title="루비 레드"></div>
+            <div class="swatch" style="background:#fbbf24;" data-color="#fbbf24" title="황금빛 Gold"></div>
+            <div class="swatch" style="background:#38bdf8;" data-color="#38bdf8" title="네온 사이언"></div>
+            <div class="swatch" style="background:#a855f7;" data-color="#a855f7" title="사이버 바이올렛"></div>
+            <div class="swatch" style="background:#10b981;" data-color="#10b981" title="에메랄드 그린"></div>
+          </div>
+          <div class="color-input-wrap">
+            <input type="color" id="picker-color" value="#ffffff">
+            <span style="font-size:0.75rem; color:var(--text-muted);">직접 색상 선택 (Color Picker)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SDF Modifiers -->
+      <div>
+        <div class="section-header">
+          <span>SDF 실시간 변위 필드</span>
         </div>
         <button class="btn-block" id="btn-sdf-pulse">
           <span>💥 실시간 SDF 펄스 파동 발사</span>
@@ -745,17 +925,30 @@
   </main>
 
   <!-- Bottom AI Command Bar & Status -->
-  <footer id="ai-bar" class="glass-panel">
-    <div class="ai-badge">⚡ AI 3D 어시스턴트 (MCP)</div>
-    <input type="text" class="ai-input" id="ai-input" placeholder="자연어로 3DGS 씬을 조작해보세요 (예: '황금빛 틴트로 변경하고 2배 스케일업해줘', '눈 내리는 파티클 모드로 전환')...">
-    <button class="ai-submit" id="ai-submit">실행</button>
-    <div class="stats-tray">
-      <span>FPS: <b id="stat-fps" style="color:var(--accent-cyan);">60</b></span>
-      <span>스플랫: <b id="stat-splats" style="color:#fff;">로딩 중...</b></span>
+  <div id="bottom-container">
+    <!-- Quick Prompt Chips -->
+    <div class="ai-chips-row">
+      <button class="ai-chip" data-prompt="황금빛 틴트로 변경하고 2배 스케일업해줘">✨ 황금빛 글로우</button>
+      <button class="ai-chip" data-prompt="사이버펑크 네온 블루 틴트 적용해줘">🌈 사이버펑크 네온</button>
+      <button class="ai-chip" data-prompt="프로시저럴 스피어 파티클 모드로 전환해줘">❄️ 프로시저럴 Lab</button>
+      <button class="ai-chip" data-prompt="우블스 펭귄 모델로 전환해줘">🐧 우블스 로드</button>
+      <button class="ai-chip" data-prompt="버거 모델로 전환하고 45도 시네마틱 뷰로 이동해줘">🍔 버거 45° 뷰</button>
+      <button class="ai-chip" data-prompt="스케일을 0.8배로 축소하고 투명도를 0.8로 맞춰줘">📐 미니멀 뷰</button>
     </div>
-  </footer>
 
-  <!-- Loading Screen -->
+    <!-- AI Command Input Bar -->
+    <footer id="ai-bar" class="glass-panel">
+      <div class="ai-badge">⚡ AI 3D Copilot (MCP)</div>
+      <input type="text" class="ai-input" id="ai-input" placeholder="자연어로 3DGS 씬을 조작해보세요 (예: '황금빛 틴트로 변경하고 2배 스케일업해줘')...">
+      <button class="ai-submit" id="ai-submit">실행</button>
+      <div class="stats-tray">
+        <span>FPS: <b id="stat-fps" style="color:var(--accent-cyan);">60</b></span>
+        <span>스플랫: <b id="stat-splats" style="color:#fff;">로딩 중...</b></span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Loading Screen Overlay -->
   <div id="loading-overlay">
     <div class="spinner"></div>
     <div id="loading-text" style="font-weight:600; color:#fff;">3D Gaussian Splats 스트리밍 중...</div>
@@ -765,7 +958,7 @@
   <script type="module">
     import * as THREE from "three";
     import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-    import { SparkRenderer, SplatMesh, constructGrid, constructSpherePoints, SplatEdit, SplatEditSdf, SplatEditSdfType, SplatEditRgbaBlendMode } from "@sparkjsdev/spark";
+    import { SparkRenderer, SplatMesh, constructGrid, constructSpherePoints } from "@sparkjsdev/spark";
 
     // Elements
     const container = document.getElementById("canvas-container");
@@ -776,10 +969,10 @@
 
     // 1. Scene & Camera Setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x080a0f);
+    scene.background = new THREE.Color(0x06080d);
 
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 1.2, 3.2);
+    camera.position.set(0, 1.3, 3.2);
 
     // 2. WebGL Renderer
     const renderer = new THREE.WebGLRenderer({
@@ -790,10 +983,10 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1;
+    renderer.toneMappingExposure = 1.15;
     container.appendChild(renderer.domElement);
 
-    // 3. SparkRenderer Core
+    // 3. SparkRenderer Core (Spark 2.1)
     const spark = new SparkRenderer({
       renderer: renderer,
       sortRadial: true,
@@ -802,26 +995,66 @@
     });
     scene.add(spark);
 
-    // 4. Hybrid Three.js Meshes (Torus Knot & Floor Grid)
-    const gridFloor = new THREE.GridHelper(12, 24, 0xff4b63, 0x1e293b);
-    gridFloor.position.y = -0.85;
-    scene.add(gridFloor);
+    // 4. Studio Hologram Turntable Pedestal (Circular Rings & Shadow Base)
+    const pedestalGroup = new THREE.Group();
+    
+    // Base Disc
+    const baseDiscGeo = new THREE.CircleGeometry(2.2, 64);
+    const baseDiscMat = new THREE.MeshBasicMaterial({
+      color: 0x0f172a,
+      transparent: true,
+      opacity: 0.75,
+      side: THREE.DoubleSide
+    });
+    const baseDisc = new THREE.Mesh(baseDiscGeo, baseDiscMat);
+    baseDisc.rotation.x = -Math.PI / 2;
+    baseDisc.position.y = -0.82;
+    pedestalGroup.add(baseDisc);
 
-    const torusGeo = new THREE.TorusKnotGeometry(0.35, 0.1, 120, 16);
+    // Outer Glowing Ring
+    const outerRingGeo = new THREE.RingGeometry(2.18, 2.22, 64);
+    const outerRingMat = new THREE.MeshBasicMaterial({
+      color: 0xff4b63,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.8
+    });
+    const outerRing = new THREE.Mesh(outerRingGeo, outerRingMat);
+    outerRing.rotation.x = -Math.PI / 2;
+    outerRing.position.y = -0.81;
+    pedestalGroup.add(outerRing);
+
+    // Inner Subtle Ring
+    const innerRingGeo = new THREE.RingGeometry(1.4, 1.42, 64);
+    const innerRingMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.5
+    });
+    const innerRing = new THREE.Mesh(innerRingGeo, innerRingMat);
+    innerRing.rotation.x = -Math.PI / 2;
+    innerRing.position.y = -0.81;
+    pedestalGroup.add(innerRing);
+
+    scene.add(pedestalGroup);
+
+    // Three.js Metal Torus Knot (Z-Buffer Occlusion Test)
+    const torusGeo = new THREE.TorusKnotGeometry(0.32, 0.09, 120, 16);
     const torusMat = new THREE.MeshStandardMaterial({
       color: 0x38bdf8,
       roughness: 0.2,
       metalness: 0.9
     });
     const torusMesh = new THREE.Mesh(torusGeo, torusMat);
-    torusMesh.position.set(1.4, 0.3, -0.4);
+    torusMesh.position.set(1.4, 0.25, -0.4);
     scene.add(torusMesh);
 
-    // Lighting for Three.js geometry
-    const dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
+    // Studio Lighting
+    const dirLight = new THREE.DirectionalLight(0xffffff, 2.8);
     dirLight.position.set(5, 10, 7);
     scene.add(dirLight);
-    const ambLight = new THREE.AmbientLight(0xffffff, 0.9);
+    const ambLight = new THREE.AmbientLight(0xffffff, 0.95);
     scene.add(ambLight);
 
     // 5. Camera Orbit Controls
@@ -877,7 +1110,7 @@
         loadingOverlay.style.opacity = "0";
         setTimeout(() => {
           loadingOverlay.style.display = "none";
-        }, 300);
+        }, 250);
       } catch (err) {
         console.error("SplatMesh 로드 실패:", err);
         loadingText.textContent = `오류 발생: ${err.message}`;
@@ -921,10 +1154,11 @@
       statSplats.textContent = "SDF 라이팅 그리드";
     }
 
-    // Initialize Default Model
+    // Initial Load
     loadSplatModel("butterfly.spz");
 
-    // 7. UI Interactivity
+    // 7. Interactive Controls & UI Bindings
+    // Asset Cards
     document.querySelectorAll(".asset-card").forEach(card => {
       card.addEventListener("click", () => {
         document.querySelectorAll(".asset-card").forEach(c => c.classList.remove("active"));
@@ -933,30 +1167,19 @@
       });
     });
 
-    // Dropzone for User Custom Files
+    // Local Dropzone
     const dropZone = document.getElementById("drop-zone");
     const fileInput = document.getElementById("file-input");
     dropZone.addEventListener("click", () => fileInput.click());
-
-    dropZone.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      dropZone.classList.add("dragover");
-    });
-
+    dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.classList.add("dragover"); });
     dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
-
     dropZone.addEventListener("drop", (e) => {
       e.preventDefault();
       dropZone.classList.remove("dragover");
-      if (e.dataTransfer.files.length > 0) {
-        handleLocalFile(e.dataTransfer.files[0]);
-      }
+      if (e.dataTransfer.files.length > 0) handleLocalFile(e.dataTransfer.files[0]);
     });
-
     fileInput.addEventListener("change", (e) => {
-      if (e.target.files.length > 0) {
-        handleLocalFile(e.target.files[0]);
-      }
+      if (e.target.files.length > 0) handleLocalFile(e.target.files[0]);
     });
 
     function handleLocalFile(file) {
@@ -987,90 +1210,170 @@
       showSdfLightingMode();
     });
 
-    // Toggles
-    const toggleTorus = document.getElementById("toggle-torus");
-    toggleTorus.addEventListener("change", (e) => torusMesh.visible = e.target.checked);
-
-    const toggleGrid = document.getElementById("toggle-grid");
-    toggleGrid.addEventListener("change", (e) => gridFloor.visible = e.target.checked);
-
-    const toggleAutorotate = document.getElementById("toggle-autorotate");
-
-    // Sliders
-    const sliderScale = document.getElementById("slider-scale");
-    const valScale = document.getElementById("val-scale");
-    sliderScale.addEventListener("input", (e) => {
-      const v = parseFloat(e.target.value);
-      valScale.textContent = `${v.toFixed(2)}x`;
-      if (currentSplatMesh) currentSplatMesh.scale.setScalar(v);
-    });
-
-    const sliderOpacity = document.getElementById("slider-opacity");
-    const valOpacity = document.getElementById("val-opacity");
-    sliderOpacity.addEventListener("input", (e) => {
-      const v = parseFloat(e.target.value);
-      valOpacity.textContent = v.toFixed(2);
-      if (currentSplatMesh) currentSplatMesh.opacity = v;
-    });
-
-    const sliderLod = document.getElementById("slider-lod");
-    const valLod = document.getElementById("val-lod");
-    sliderLod.addEventListener("input", (e) => {
-      const v = parseFloat(e.target.value);
-      valLod.textContent = `${v.toFixed(1)}x`;
-      spark.lodSplatScale = v;
-    });
-
-    // Recolor Button
-    const btnRecolor = document.getElementById("btn-recolor");
-    btnRecolor.addEventListener("click", () => {
+    // Hierarchy Eye Toggles
+    const eyeSplat = document.getElementById("eye-splat");
+    eyeSplat.addEventListener("click", () => {
       if (currentSplatMesh) {
-        currentSplatMesh.recolor.setRGB(
-          0.4 + Math.random() * 0.6,
-          0.4 + Math.random() * 0.6,
-          0.4 + Math.random() * 0.6
-        );
+        currentSplatMesh.visible = !currentSplatMesh.visible;
+        eyeSplat.classList.toggle("visible", currentSplatMesh.visible);
       }
     });
 
-    // Reset Camera
+    const eyeTorus = document.getElementById("eye-torus");
+    eyeTorus.addEventListener("click", () => {
+      torusMesh.visible = !torusMesh.visible;
+      eyeTorus.classList.toggle("visible", torusMesh.visible);
+    });
+
+    const eyePedestal = document.getElementById("eye-pedestal");
+    eyePedestal.addEventListener("click", () => {
+      pedestalGroup.visible = !pedestalGroup.visible;
+      eyePedestal.classList.toggle("visible", pedestalGroup.visible);
+    });
+
+    const eyeLight = document.getElementById("eye-light");
+    eyeLight.addEventListener("click", () => {
+      dirLight.visible = !dirLight.visible;
+      eyeLight.classList.toggle("visible", dirLight.visible);
+    });
+
+    // Slider & Number Input 2-way sync
+    function bindSliderAndNumber(sliderId, numberId, onChange) {
+      const slider = document.getElementById(sliderId);
+      const number = document.getElementById(numberId);
+      slider.addEventListener("input", (e) => {
+        const val = parseFloat(e.target.value);
+        number.value = val.toFixed(2);
+        onChange(val);
+      });
+      number.addEventListener("input", (e) => {
+        const val = parseFloat(e.target.value);
+        if (!isNaN(val)) {
+          slider.value = val;
+          onChange(val);
+        }
+      });
+    }
+
+    bindSliderAndNumber("slider-scale", "num-scale", (v) => {
+      if (currentSplatMesh) currentSplatMesh.scale.setScalar(v);
+    });
+
+    bindSliderAndNumber("slider-opacity", "num-opacity", (v) => {
+      if (currentSplatMesh) currentSplatMesh.opacity = v;
+    });
+
+    bindSliderAndNumber("slider-lod", "num-lod", (v) => {
+      spark.lodSplatScale = v;
+    });
+
+    // Color Palette Swatches & Picker
+    function setTint(hexStr) {
+      const color = new THREE.Color(hexStr);
+      if (currentSplatMesh) currentSplatMesh.recolor.copy(color);
+      document.getElementById("picker-color").value = hexStr;
+    }
+
+    document.querySelectorAll(".swatch").forEach(swatch => {
+      swatch.addEventListener("click", () => setTint(swatch.dataset.color));
+    });
+
+    document.getElementById("picker-color").addEventListener("input", (e) => setTint(e.target.value));
+
+    // Camera Presets
+    document.querySelectorAll(".cam-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const type = btn.dataset.cam;
+        if (type === "hero") camera.position.set(2.2, 1.4, 2.2);
+        else if (type === "front") camera.position.set(0, 0.4, 3.2);
+        else if (type === "top") camera.position.set(0, 3.8, 0.1);
+        else if (type === "close") camera.position.set(0, 0.3, 1.5);
+        controls.target.set(0, 0, 0);
+      });
+    });
+
+    // Reset Camera & 4K Snapshot
     document.getElementById("btn-reset-cam").addEventListener("click", () => {
-      camera.position.set(0, 1.2, 3.2);
+      camera.position.set(0, 1.3, 3.2);
       controls.target.set(0, 0, 0);
     });
 
-    // 4K Snapshot Download
     document.getElementById("btn-snapshot").addEventListener("click", () => {
       renderer.render(scene, camera);
       const dataUrl = renderer.domElement.toDataURL("image/png");
       const a = document.createElement("a");
       a.href = dataUrl;
-      a.download = `spark-3dgs-capture-${Date.now()}.png`;
+      a.download = `spark-studio-4k-${Date.now()}.png`;
       a.click();
     });
 
-    // AI Natural Language Dispatcher
+    // SDF Pulse Wave Action
+    document.getElementById("btn-sdf-pulse").addEventListener("click", () => {
+      if (currentSplatMesh) {
+        let startTime = performance.now();
+        const originalRecolor = currentSplatMesh.recolor.clone();
+        function pulse() {
+          const elapsed = (performance.now() - startTime) / 1000;
+          if (elapsed < 1.0) {
+            const glow = Math.sin(elapsed * Math.PI) * 0.8;
+            currentSplatMesh.recolor.setRGB(1.0 + glow, 0.4 + glow, 0.6 + glow);
+            requestAnimationFrame(pulse);
+          } else {
+            currentSplatMesh.recolor.copy(originalRecolor);
+          }
+        }
+        pulse();
+      }
+    });
+
+    // AI Natural Language Dispatcher & Chips
     const aiInput = document.getElementById("ai-input");
     const aiSubmit = document.getElementById("ai-submit");
 
     function executeAiCommand(query) {
       const q = query.toLowerCase();
-      if (q.includes("스케일") || q.includes("크기") || q.includes("scale")) {
-        const factor = q.includes("2배") || q.includes("크게") ? 1.8 : 0.8;
-        sliderScale.value = factor;
-        sliderScale.dispatchEvent(new Event("input"));
+      
+      // Models
+      if (q.includes("우블스") || q.includes("woobles") || q.includes("펭귄")) {
+        loadSplatModel("woobles.spz");
+      } else if (q.includes("버거") || q.includes("burger")) {
+        loadSplatModel("food/burger-from-amboy.spz");
+      } else if (q.includes("고양이") || q.includes("cat")) {
+        loadSplatModel("cat.spz");
+      } else if (q.includes("로봇") || q.includes("robot")) {
+        loadSplatModel("robot-head.spz");
+      } else if (q.includes("나비") || q.includes("butterfly")) {
+        loadSplatModel("butterfly.spz");
       }
+
+      // Color Tints
       if (q.includes("황금") || q.includes("골드") || q.includes("gold") || q.includes("노랑")) {
-        if (currentSplatMesh) currentSplatMesh.recolor.setRGB(1.0, 0.85, 0.3);
-      } else if (q.includes("네온") || q.includes("블루") || q.includes("blue") || q.includes("파랑")) {
-        if (currentSplatMesh) currentSplatMesh.recolor.setRGB(0.2, 0.8, 1.0);
+        setTint("#fbbf24");
+      } else if (q.includes("사이버") || q.includes("네온") || q.includes("블루") || q.includes("blue")) {
+        setTint("#38bdf8");
       } else if (q.includes("레드") || q.includes("빨강") || q.includes("red")) {
-        if (currentSplatMesh) currentSplatMesh.recolor.setRGB(1.0, 0.3, 0.4);
+        setTint("#ff4b63");
+      } else if (q.includes("에메랄드") || q.includes("초록") || q.includes("green")) {
+        setTint("#10b981");
       }
+
+      // Scale
+      if (q.includes("2배") || q.includes("크게") || q.includes("스케일업")) {
+        document.getElementById("slider-scale").value = 1.8;
+        document.getElementById("slider-scale").dispatchEvent(new Event("input"));
+      } else if (q.includes("축소") || q.includes("작게") || q.includes("0.8")) {
+        document.getElementById("slider-scale").value = 0.8;
+        document.getElementById("slider-scale").dispatchEvent(new Event("input"));
+      }
+
+      // Modes
       if (q.includes("프로시저럴") || q.includes("파티클") || q.includes("스피어")) {
         tabProcedural.click();
-      } else if (q.includes("나비") || q.includes("butterfly")) {
-        tabViewport.click();
+      }
+
+      // Camera
+      if (q.includes("45") || q.includes("시네마틱") || q.includes("쿼터")) {
+        document.querySelector("[data-cam='hero']").click();
       }
     }
 
@@ -1085,6 +1388,12 @@
       if (e.key === "Enter") aiSubmit.click();
     });
 
+    document.querySelectorAll(".ai-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        executeAiCommand(chip.dataset.prompt);
+      });
+    });
+
     // 8. Window Resize
     window.addEventListener("resize", () => {
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -1093,6 +1402,7 @@
     });
 
     // 9. Animation Render Loop
+    const toggleAutorotate = document.getElementById("toggle-autorotate");
     let frameCount = 0;
     let lastFpsTime = performance.now();
     let lastTime = performance.now();
@@ -1101,6 +1411,7 @@
       const delta = (time - lastTime) / 1000;
       lastTime = time;
 
+      // FPS Measurement
       frameCount++;
       if (time - lastFpsTime >= 500) {
         const fps = Math.round((frameCount * 1000) / (time - lastFpsTime));
@@ -1109,16 +1420,22 @@
         lastFpsTime = time;
       }
 
+      // Torus Animation
       if (torusMesh.visible) {
         torusMesh.rotation.x += delta * 0.7;
         torusMesh.rotation.y += delta * 0.4;
       }
 
-      if (toggleAutorotate.checked && currentSplatMesh) {
-        currentSplatMesh.rotation.y += delta * 0.4;
-        if (currentMode !== "viewport") {
-          currentSplatMesh.rotation.x += delta * 0.15;
+      // Turntable Rotation
+      if (toggleAutorotate.checked) {
+        if (currentSplatMesh) {
+          currentSplatMesh.rotation.y += delta * 0.35;
+          if (currentMode !== "viewport") {
+            currentSplatMesh.rotation.x += delta * 0.15;
+          }
         }
+        outerRing.rotation.z += delta * 0.15;
+        innerRing.rotation.z -= delta * 0.25;
       }
 
       controls.update();
