@@ -13,8 +13,8 @@
   <style>
     :root {
       --bg-base: #06080d;
-      --bg-surface: rgba(13, 17, 28, 0.82);
-      --bg-surface-elevated: rgba(20, 27, 45, 0.92);
+      --bg-surface: rgba(13, 17, 28, 0.84);
+      --bg-surface-elevated: rgba(20, 27, 45, 0.94);
       --bg-card: rgba(26, 35, 58, 0.55);
       --bg-input: #121826;
       --border-subtle: rgba(255, 255, 255, 0.09);
@@ -72,7 +72,7 @@
       height: 100vh;
       pointer-events: none;
       z-index: 2;
-      background: radial-gradient(circle at center, transparent 40%, rgba(6, 8, 13, 0.8) 100%);
+      background: radial-gradient(circle at center, transparent 45%, rgba(6, 8, 13, 0.8) 100%);
     }
 
     /* Glass Panels */
@@ -227,6 +227,12 @@
       border-color: rgba(255, 255, 255, 0.25);
     }
 
+    .btn-icon.active-toggle {
+      background: rgba(56, 189, 248, 0.18);
+      color: var(--accent-cyan);
+      border-color: var(--accent-cyan);
+    }
+
     /* Main Workspace Overlay */
     .workspace-overlay {
       position: absolute;
@@ -252,13 +258,13 @@
     }
 
     #right-panel {
-      width: 350px;
+      width: 360px;
       height: 100%;
       display: flex;
       flex-direction: column;
       padding: 18px;
       overflow-y: auto;
-      gap: 16px;
+      gap: 14px;
     }
 
     .section-header {
@@ -267,7 +273,7 @@
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: var(--text-muted);
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -398,36 +404,55 @@
       margin-top: 2px;
     }
 
-    /* Causal Reasoning Log Stream */
+    /* Causal Reasoning Log Stream (EXPANDED TO OCCUPY SPACE) */
+    .reasoning-stream-wrap {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 250px;
+    }
+
     .reasoning-stream {
-      background: rgba(6, 9, 15, 0.85);
+      background: rgba(6, 9, 15, 0.9);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-md);
-      padding: 10px;
-      height: 125px;
+      padding: 12px;
+      flex: 1;
+      min-height: 240px;
+      max-height: 380px;
       overflow-y: auto;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      line-height: 1.5;
+      font-size: 0.72rem;
+      line-height: 1.6;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
     }
 
     .log-item {
-      margin-bottom: 6px;
-      padding-bottom: 4px;
-      border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+      animation: fadeInLog 0.25s ease;
+    }
+
+    @keyframes fadeInLog {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .log-tag {
       font-weight: 700;
-      padding: 1px 4px;
-      border-radius: 3px;
-      margin-right: 4px;
+      padding: 2px 5px;
+      border-radius: 4px;
+      margin-right: 5px;
+      font-size: 0.65rem;
     }
 
-    .log-tag.vlm { background: rgba(56, 189, 248, 0.2); color: var(--accent-cyan); }
-    .log-tag.pinn { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); }
-    .log-tag.rl { background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald); }
-    .log-tag.xai { background: rgba(168, 85, 247, 0.2); color: var(--accent-purple); }
+    .log-tag.dt { background: rgba(14, 165, 233, 0.25); color: var(--accent-cyan); }
+    .log-tag.vlm { background: rgba(56, 189, 248, 0.25); color: #7dd3fc; }
+    .log-tag.pinn { background: rgba(245, 158, 11, 0.25); color: var(--accent-amber); }
+    .log-tag.rl { background: rgba(16, 185, 129, 0.25); color: var(--accent-emerald); }
+    .log-tag.xai { background: rgba(168, 85, 247, 0.25); color: var(--accent-purple); }
+    .log-tag.lam { background: rgba(255, 75, 99, 0.25); color: #fda4af; }
 
     /* Scene Tree Items */
     .scene-tree-item {
@@ -875,6 +900,7 @@
 
     <!-- Quick Action Toolbar -->
     <div class="top-actions">
+      <button class="btn-icon" id="btn-toggle-guides" title="3D 보조 오브젝트(패디스탈/기계장치) 숨김/표시">👁️ 3D 가이드 온/오프</button>
       <button class="btn-icon" id="btn-snapshot">📸 4K 스냅샷</button>
       <button class="btn-icon" id="btn-reset-cam">🎯 시점 리셋</button>
       <a href="https://github.com/heosanghun/spark260824" target="_blank" style="text-decoration:none;">
@@ -1021,7 +1047,7 @@
       <!-- Standard Studio Right View -->
       <div id="studio-right-content">
         <!-- Transform & Animation -->
-        <div style="margin-bottom:16px;">
+        <div style="margin-bottom:14px;">
           <div class="section-header">
             <span>트랜스폼 & 턴테이블</span>
           </div>
@@ -1044,7 +1070,7 @@
         </div>
 
         <!-- Camera Presets -->
-        <div style="margin-bottom:16px;">
+        <div style="margin-bottom:14px;">
           <div class="section-header">
             <span>카메라 프리셋 뷰</span>
           </div>
@@ -1057,7 +1083,7 @@
         </div>
 
         <!-- Shading & Material Tuning -->
-        <div style="margin-bottom:16px;">
+        <div style="margin-bottom:14px;">
           <div class="section-header">
             <span>셰이딩 & 스플랫 비주얼</span>
           </div>
@@ -1112,10 +1138,10 @@
         </div>
       </div>
 
-      <!-- Digital Twin Right View (Telemetry, Sim-to-Real Controls & XAI Causal Log) -->
-      <div id="dt-right-content" style="display:none;">
+      <!-- Digital Twin Right View (Telemetry, Sim-to-Real Controls & EXPANDED XAI Causal Log) -->
+      <div id="dt-right-content" style="display:none; height:100%; display:flex; flex-direction:column;">
         <!-- Live Telemetry Box -->
-        <div style="margin-bottom:14px;">
+        <div style="margin-bottom:12px;">
           <div class="section-header">
             <span>실시간 IoT 센서 텔레메트리</span>
             <span style="color:var(--accent-emerald); font-size:0.68rem;">● 정상 동기화</span>
@@ -1141,7 +1167,7 @@
         </div>
 
         <!-- Simulation Injection Actions -->
-        <div style="margin-bottom:14px;">
+        <div style="margin-bottom:12px;">
           <div class="section-header">
             <span>월드 모델 가상 시뮬레이션 인젝터</span>
           </div>
@@ -1155,15 +1181,16 @@
           </div>
         </div>
 
-        <!-- XAI Causal Reasoning Stream -->
-        <div>
+        <!-- EXPANDED XAI Causal Reasoning Stream (Fills remaining height) -->
+        <div class="reasoning-stream-wrap">
           <div class="section-header">
             <span>설명 가능한 AI (XAI) 인과 추론 로그</span>
             <span style="color:var(--accent-purple); font-size:0.68rem;">LIVE LOG</span>
           </div>
           <div class="reasoning-stream" id="reasoning-log-box">
-            <div class="log-item"><span class="log-tag vlm">VLM</span><span style="color:#cbd5e1;">조립 라인 3번 스테이터 코어 3D 위치 및 틈새(0.01mm) 정밀 지각 완료</span></div>
-            <div class="log-item"><span class="log-tag pinn">PINN</span><span style="color:#cbd5e1;">전자기장 및 열역학 미분방정식 연산: 정상 발열 범위(42.8°C) 확인</span></div>
+            <div class="log-item"><span class="log-tag dt">DT</span><span style="color:#cbd5e1;">현장 100+개 IoT 센서 데이터 수집 및 VAE 잠재 공간 3D 실시간 동기화 완료</span></div>
+            <div class="log-item"><span class="log-tag vlm">VLM</span><span style="color:#cbd5e1;">3D 공간 객체 및 틈새(0.01mm) 정밀 기하학적 어포던스 지각 완료</span></div>
+            <div class="log-item"><span class="log-tag pinn">PINN</span><span style="color:#cbd5e1;">전자기장 및 열역학 미분방정식 연산: 정상 발열 범위(42.8°C) 검증</span></div>
             <div class="log-item"><span class="log-tag rl">RL</span><span style="color:#cbd5e1;">다관절 로봇 6축 토크 최적 경로 정책 하달 (Downtime: 0초)</span></div>
           </div>
         </div>
@@ -1175,7 +1202,7 @@
   <div id="bottom-container">
     <!-- Quick Prompt Chips -->
     <div class="ai-chips-row" id="ai-chips-container">
-      <button class="ai-chip" data-prompt="전기차 모터 부품 조립 라인 생성적 디지털트윈을 실행해줘">🏭 전기차 모터 DT</button>
+      <button class="ai-chip" data-prompt="전기차 모터 부품 조립 라인 생성적 디지털트윈을 실행해줘">⚡ 전기차 모터 DT</button>
       <button class="ai-chip" data-prompt="스마트 항만 컨테이너터미널 자율 항만 모드로 전환해줘">🚢 스마트 항만 DT</button>
       <button class="ai-chip" data-prompt="황금빛 틴트로 변경하고 2배 스케일업해줘">✨ 황금빛 글로우</button>
       <button class="ai-chip" data-prompt="사이버펑크 네온 블루 틴트 적용해줘">🌈 사이버펑크 네온</button>
@@ -1299,25 +1326,24 @@
     torusMesh.position.set(1.4, 0.25, -0.4);
     scene.add(torusMesh);
 
-    // 5. Digital Twin Specialized 3D Meshes (EV Motor & Robotic Arm & Bounding Boxes)
-    const dtSceneGroup = new THREE.Group();
-    dtSceneGroup.visible = false;
+    // 5. Digital Twin Specialized 3D Meshes: Domain A (EV Motor) & Domain B (Smart Port)
+    const dtEvGroup = new THREE.Group();
+    dtEvGroup.visible = false;
 
     // EV Motor Stator & Rotor Assembly
     const motorGroup = new THREE.Group();
-    const statorGeo = new THREE.CylinderGeometry(0.7, 0.7, 0.9, 32, 1, true);
+    const statorGeo = new THREE.CylinderGeometry(0.65, 0.65, 0.85, 32, 1, true);
     const statorMat = new THREE.MeshStandardMaterial({
       color: 0x334155,
-      metalness: 0.8,
-      roughness: 0.3,
+      metalness: 0.85,
+      roughness: 0.25,
       side: THREE.DoubleSide
     });
     const statorMesh = new THREE.Mesh(statorGeo, statorMat);
     statorMesh.position.y = 0.2;
     motorGroup.add(statorMesh);
 
-    // Rotor Core Inside
-    const rotorGeo = new THREE.CylinderGeometry(0.45, 0.45, 1.1, 24);
+    const rotorGeo = new THREE.CylinderGeometry(0.42, 0.42, 1.05, 24);
     const rotorMat = new THREE.MeshStandardMaterial({
       color: 0xf59e0b,
       metalness: 0.9,
@@ -1327,50 +1353,84 @@
     rotorMesh.position.y = 0.2;
     motorGroup.add(rotorMesh);
 
-    // Copper Coil Windings (Golden Tubes)
     for (let i = 0; i < 8; i++) {
       const angle = (i / 8) * Math.PI * 2;
-      const coilGeo = new THREE.TorusGeometry(0.18, 0.04, 16, 32);
+      const coilGeo = new THREE.TorusGeometry(0.16, 0.035, 16, 32);
       const coilMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.8, roughness: 0.3 });
       const coilMesh = new THREE.Mesh(coilGeo, coilMat);
-      coilMesh.position.set(Math.cos(angle) * 0.58, 0.2, Math.sin(angle) * 0.58);
+      coilMesh.position.set(Math.cos(angle) * 0.54, 0.2, Math.sin(angle) * 0.54);
       coilMesh.rotation.y = angle;
       motorGroup.add(coilMesh);
     }
 
-    // Spatial Intelligence Hologram Bounding Box
-    const bboxGeo = new THREE.BoxGeometry(1.6, 1.3, 1.6);
+    const bboxGeo = new THREE.BoxGeometry(1.5, 1.2, 1.5);
     const bboxEdges = new THREE.EdgesGeometry(bboxGeo);
     const bboxLine = new THREE.LineSegments(bboxEdges, new THREE.LineBasicMaterial({ color: 0x38bdf8 }));
     bboxLine.position.y = 0.2;
     motorGroup.add(bboxLine);
-
-    dtSceneGroup.add(motorGroup);
+    dtEvGroup.add(motorGroup);
 
     // Multi-joint Robotic Arm Stand
     const robotArmGroup = new THREE.Group();
-    robotArmGroup.position.set(-1.4, -0.6, 0);
+    robotArmGroup.position.set(-1.3, -0.6, 0);
 
-    const armBaseGeo = new THREE.CylinderGeometry(0.3, 0.35, 0.3, 16);
+    const armBaseGeo = new THREE.CylinderGeometry(0.28, 0.32, 0.25, 16);
     const armBaseMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.7, roughness: 0.4 });
     const armBase = new THREE.Mesh(armBaseGeo, armBaseMat);
     robotArmGroup.add(armBase);
 
-    const armJointGeo = new THREE.SphereGeometry(0.12, 16, 16);
+    const armJointGeo = new THREE.SphereGeometry(0.11, 16, 16);
     const armJointMat = new THREE.MeshStandardMaterial({ color: 0xff4b63, metalness: 0.8 });
     const joint1 = new THREE.Mesh(armJointGeo, armJointMat);
-    joint1.position.y = 0.3;
+    joint1.position.y = 0.25;
     robotArmGroup.add(joint1);
 
-    const armLinkGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.8, 16);
+    const armLinkGeo = new THREE.CylinderGeometry(0.055, 0.055, 0.75, 16);
     const armLinkMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8 });
     const link1 = new THREE.Mesh(armLinkGeo, armLinkMat);
-    link1.position.set(0.3, 0.6, 0);
+    link1.position.set(0.28, 0.55, 0);
     link1.rotation.z = -Math.PI / 4;
     robotArmGroup.add(link1);
+    dtEvGroup.add(robotArmGroup);
+    scene.add(dtEvGroup);
 
-    dtSceneGroup.add(robotArmGroup);
-    scene.add(dtSceneGroup);
+    // Domain B: Smart Port 3D Group (Containers & AGV Carrier & STS Crane Gantry)
+    const dtPortGroup = new THREE.Group();
+    dtPortGroup.visible = false;
+
+    // ISO Containers
+    function createContainer(colorHex, x, y, z) {
+      const cGeo = new THREE.BoxGeometry(1.2, 0.5, 0.5);
+      const cMat = new THREE.MeshStandardMaterial({ color: colorHex, metalness: 0.6, roughness: 0.4 });
+      const mesh = new THREE.Mesh(cGeo, cMat);
+      mesh.position.set(x, y, z);
+      
+      const edge = new THREE.LineSegments(new THREE.EdgesGeometry(cGeo), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.4 }));
+      mesh.add(edge);
+      return mesh;
+    }
+
+    const c1 = createContainer(0x0284c7, 0, -0.4, 0);
+    const c2 = createContainer(0xe11d48, 0, 0.15, 0);
+    const c3 = createContainer(0xd97706, 0.2, 0.7, 0);
+    dtPortGroup.add(c1);
+    dtPortGroup.add(c2);
+    dtPortGroup.add(c3);
+
+    // AGV Transport Platform Carrier
+    const agvGeo = new THREE.BoxGeometry(1.6, 0.15, 0.8);
+    const agvMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8 });
+    const agvMesh = new THREE.Mesh(agvGeo, agvMat);
+    agvMesh.position.set(0, -0.72, 0);
+    dtPortGroup.add(agvMesh);
+
+    // STS Gantry Laser Guides
+    const portBboxGeo = new THREE.BoxGeometry(1.8, 1.8, 1.2);
+    const portBboxLine = new THREE.LineSegments(new THREE.EdgesGeometry(portBboxGeo), new THREE.LineBasicMaterial({ color: 0x06b6d4 }));
+    portBboxLine.position.set(0, 0.1, 0);
+    dtPortGroup.add(portBboxLine);
+
+    scene.add(dtPortGroup);
 
     // Studio Lighting
     const dirLight = new THREE.DirectionalLight(0xffffff, 2.8);
@@ -1388,6 +1448,8 @@
     // 7. Splat Mesh Management
     let currentSplatMesh = null;
     let currentMode = "viewport";
+    let currentDtDomain = "ev";
+    let guidesVisible = true;
     const baseAssetUrl = "https://sparkjs.dev/assets/splats/";
 
     function removeCurrentSplat() {
@@ -1478,31 +1540,36 @@
 
     function showDigitalTwinMode(domain = "ev") {
       currentMode = "digitaltwin";
+      currentDtDomain = domain;
       loadingOverlay.style.display = "none";
 
       // Toggle Left and Right views
       studioLeft.style.display = "none";
       dtLeft.style.display = "block";
       studioRight.style.display = "none";
-      dtRight.style.display = "block";
+      dtRight.style.display = "flex";
 
-      // Show specialized digital twin geometries
+      // Hide standard torus
       torusMesh.visible = false;
-      dtSceneGroup.visible = true;
 
       // Adjust camera for industrial layout
-      camera.position.set(2.4, 1.5, 2.8);
-      controls.target.set(0, 0.2, 0);
+      camera.position.set(2.4, 1.4, 2.8);
+      controls.target.set(0, 0.1, 0);
 
-      // Load background 3DGS splat environment
       if (domain === "ev") {
+        dtEvGroup.visible = guidesVisible;
+        dtPortGroup.visible = false;
         loadSplatModel("robot-head.spz");
-        appendReasoningLog("VLM", "전기차 모터 3번 라인 스테이터 및 로터 3D 공간 기하학(0.01mm) 정밀 매핑");
-        appendReasoningLog("PINN", "모터 내부 전자기장 및 발열(42.8°C) 물리 시뮬레이션 안정 상태 검증");
+        appendReasoningLog("DT", "전기차 모터 조립 라인 3D 가상화 및 VAE 잠재 공간 센서 동기화 완료");
+        appendReasoningLog("VLM", "스테이터/로터 틈새(0.01mm) 및 사물의 쓰임새(Affordance) 3D 지각 완료");
+        appendReasoningLog("PINN", "모터 내부 전자기장 및 열역학(42.8°C) 물리 법칙 안정성 검증");
       } else {
-        loadSplatModel("food/burger-from-amboy.spz");
-        appendReasoningLog("VLM", "스마트 항만 컨테이너터미널 6면 외관 및 씰(Seal) 손상 무정차 판독 완료");
-        appendReasoningLog("WM", "야드 크레인 적재 스케줄링 시계열 분석: 리핸들링 0회 최적 궤적 도출");
+        dtEvGroup.visible = false;
+        dtPortGroup.visible = guidesVisible;
+        loadSplatModel("dessert.spz");
+        appendReasoningLog("DT", "스마트 항만 게이트-야드-선석 3DGS 복제 공간 동기화 활성화");
+        appendReasoningLog("VLM", "컨테이너 6면 외관 및 씰(Seal) 손상 무정차 고속 영상 판독 완료");
+        appendReasoningLog("WM", "STS 크레인 풍압 0.1초 사전 예측 및 야드 AGV 최적 라우팅 수립");
       }
     }
 
@@ -1511,7 +1578,8 @@
       dtLeft.style.display = "none";
       studioRight.style.display = "block";
       dtRight.style.display = "none";
-      dtSceneGroup.visible = false;
+      dtEvGroup.visible = false;
+      dtPortGroup.visible = false;
       torusMesh.visible = document.getElementById("eye-torus").classList.contains("visible");
     }
 
@@ -1532,7 +1600,7 @@
       activeTab.classList.add("active");
       if (activeTab === tabDigitalTwin) {
         activeTab.classList.add("dt-active");
-        showDigitalTwinMode();
+        showDigitalTwinMode(currentDtDomain);
       } else {
         hideDigitalTwinMode();
       }
@@ -1583,13 +1651,13 @@
       });
     });
 
-    // Reasoning Log Helper
+    // Reasoning Log Helper (Expanded Height)
     const logBox = document.getElementById("reasoning-log-box");
     function appendReasoningLog(tag, message) {
       const item = document.createElement("div");
       item.className = "log-item";
       const tagSpan = document.createElement("span");
-      tagSpan.className = `log-tag ${tag.toLowerCase()}`;
+      tagSpan.className = `log-tag ${tag.toLowerCase().replace(/[^a-z]/g, '')}`;
       tagSpan.textContent = tag;
       const textSpan = document.createElement("span");
       textSpan.style.color = "#cbd5e1";
@@ -1621,8 +1689,8 @@
       valVib.style.color = "var(--accent-cyan)";
       valLoad.textContent = "0.01 N (최적)";
       rotorMesh.material.color.setHex(0xf59e0b);
-      appendReasoningLog("WM(PINN)", "✨ 물리 정보 신경망(PINN): 냉각 유체 순환 속도 20% 가속 보정");
-      appendReasoningLog("PAI(RL)", "자율 폐쇄 루프: 다관절 로봇 조립 속도 미세 조절 및 자동 복구 완료 (Downtime: 0초)");
+      appendReasoningLog("PINN", "✨ 물리 정보 신경망(PINN): 냉각 유체 순환 속도 20% 가속 보정");
+      appendReasoningLog("PAI", "자율 폐쇄 루프: 다관절 로봇 조립 속도 미세 조절 및 자동 복구 완료 (Downtime: 0초)");
     });
 
     // 9. Standard Studio UI Bindings
@@ -1680,6 +1748,18 @@
       eyeLight.classList.toggle("visible", dirLight.visible);
     });
 
+    // 3D Auxiliary Guides Toggle (Hides/Shows Pedestal, Robotic Arm, Measurement Bounding Boxes)
+    const btnToggleGuides = document.getElementById("btn-toggle-guides");
+    btnToggleGuides.addEventListener("click", () => {
+      guidesVisible = !guidesVisible;
+      btnToggleGuides.classList.toggle("active-toggle", !guidesVisible);
+      pedestalGroup.visible = guidesVisible;
+      if (currentMode === "digitaltwin") {
+        if (currentDtDomain === "ev") dtEvGroup.visible = guidesVisible;
+        else dtPortGroup.visible = guidesVisible;
+      }
+    });
+
     // Slider & Number Input 2-way sync
     function bindSliderAndNumber(sliderId, numberId, onChange) {
       const slider = document.getElementById(sliderId);
@@ -1735,12 +1815,18 @@
       });
     });
 
-    // Reset Camera & 4K Snapshot
+    // Clean Camera Reset (Only resets camera position without modifying objects)
     document.getElementById("btn-reset-cam").addEventListener("click", () => {
-      camera.position.set(0, 1.3, 3.2);
-      controls.target.set(0, 0, 0);
+      if (currentMode === "digitaltwin") {
+        camera.position.set(2.4, 1.4, 2.8);
+        controls.target.set(0, 0.1, 0);
+      } else {
+        camera.position.set(0, 1.3, 3.2);
+        controls.target.set(0, 0, 0);
+      }
     });
 
+    // 4K Snapshot
     document.getElementById("btn-snapshot").addEventListener("click", () => {
       renderer.render(scene, camera);
       const dataUrl = renderer.domElement.toDataURL("image/png");
@@ -1882,15 +1968,15 @@
         torusMesh.rotation.y += delta * 0.4;
       }
 
-      // Digital Twin Motor Rotor Rotation
-      if (dtSceneGroup.visible) {
+      // Digital Twin EV Motor Rotor & Arm Rotation
+      if (dtEvGroup.visible) {
         rotorMesh.rotation.y += delta * 2.5;
         robotArmGroup.rotation.y = Math.sin(time * 0.0015) * 0.4;
       }
 
       // Turntable Rotation
-      if (toggleAutorotate.checked) {
-        if (currentSplatMesh) {
+      if (toggleAutorotate.checked && pedestalGroup.visible) {
+        if (currentSplatMesh && currentMode !== "digitaltwin") {
           currentSplatMesh.rotation.y += delta * 0.35;
           if (currentMode === "procedural" || currentMode === "lighting") {
             currentSplatMesh.rotation.x += delta * 0.15;
