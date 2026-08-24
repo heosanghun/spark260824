@@ -2,22 +2,53 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Spark.js 3D Gaussian Splatting WebGL</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=no">
+  <title>Spark.js 3DGS Studio Pro • Next-Gen Web3D Platform</title>
+  
+  <!-- Font & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
   <style>
+    :root {
+      --bg-base: #080a0f;
+      --bg-surface: rgba(15, 20, 32, 0.75);
+      --bg-surface-elevated: rgba(24, 32, 51, 0.85);
+      --bg-card: rgba(30, 41, 64, 0.5);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(255, 92, 114, 0.4);
+      --primary: #ff4b63;
+      --primary-gradient: linear-gradient(135deg, #ff4b63 0%, #ff7843 50%, #ffb830 100%);
+      --accent-cyan: #38bdf8;
+      --accent-purple: #a855f7;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+      --shadow-elevation: 0 16px 40px -10px rgba(0, 0, 0, 0.6), 0 0 1px 1px rgba(255, 255, 255, 0.08);
+      --blur-strength: 18px;
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-    }
-    body {
-      margin: 0;
-      overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background: #0c0f17;
-      color: #f0f4f8;
       user-select: none;
     }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: var(--bg-base);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text-primary);
+    }
+
     #canvas-container {
       position: absolute;
       top: 0;
@@ -26,190 +57,466 @@
       height: 100vh;
       z-index: 1;
     }
-    /* UI Panels */
-    .ui-panel {
-      position: absolute;
-      z-index: 10;
-      background: rgba(15, 20, 32, 0.88);
-      backdrop-filter: blur(14px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 14px;
-      padding: 16px 20px;
-      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
+
+    /* Glass Panels */
+    .glass-panel {
+      background: var(--bg-surface);
+      backdrop-filter: blur(var(--blur-strength));
+      -webkit-backdrop-filter: blur(var(--blur-strength));
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-elevation);
+      pointer-events: auto;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
-    #header-panel {
+
+    .glass-panel:hover {
+      border-color: rgba(255, 255, 255, 0.14);
+    }
+
+    /* Top Navigation Bar */
+    #top-nav {
+      position: absolute;
       top: 16px;
       left: 16px;
-      max-width: 400px;
+      right: 16px;
+      height: 58px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
     }
-    #header-panel h1 {
-      font-size: 1.25rem;
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      background: var(--primary-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(255, 75, 99, 0.4);
+    }
+
+    .brand-title {
+      font-size: 1.05rem;
       font-weight: 700;
-      background: linear-gradient(135deg, #ff4b63 0%, #ff8b3d 50%, #ffd043 100%);
+      letter-spacing: -0.02em;
+      background: var(--primary-gradient);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+    }
+
+    .badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: var(--radius-full);
+      background: rgba(255, 75, 99, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(255, 75, 99, 0.3);
+      letter-spacing: 0.05em;
+    }
+
+    /* Mode Switcher Tabs */
+    .mode-tabs {
+      display: flex;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 4px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      gap: 4px;
+    }
+
+    .tab-item {
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .tab-item:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .tab-item.active {
+      background: var(--primary-gradient);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(255, 75, 99, 0.35);
+    }
+
+    /* Quick Action Buttons */
+    .top-actions {
       display: flex;
       align-items: center;
       gap: 8px;
     }
-    #header-panel p {
-      font-size: 0.82rem;
-      color: #94a3b8;
-      margin-top: 6px;
-      line-height: 1.45;
-    }
-    .badge {
-      display: inline-block;
-      font-size: 0.68rem;
-      background: rgba(255, 75, 99, 0.2);
-      color: #ff4b63;
-      border: 1px solid rgba(255, 75, 99, 0.4);
-      padding: 2px 7px;
-      border-radius: 6px;
-      font-weight: 600;
-      vertical-align: middle;
-    }
-    /* Tabs */
-    .tab-row {
-      display: flex;
-      gap: 6px;
-      margin-top: 12px;
-      background: rgba(0, 0, 0, 0.3);
-      padding: 4px;
-      border-radius: 8px;
-    }
-    .tab-btn {
-      flex: 1;
-      background: transparent;
-      border: none;
-      color: #94a3b8;
-      padding: 6px 8px;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .tab-btn:hover {
-      color: #fff;
-      background: rgba(255, 255, 255, 0.08);
-    }
-    .tab-btn.active {
-      background: #ff4b63;
-      color: #fff;
-      box-shadow: 0 2px 8px rgba(255, 75, 99, 0.4);
-    }
-    #controls-panel {
-      top: 16px;
-      right: 16px;
-      width: 320px;
-    }
-    .control-group {
-      margin-bottom: 13px;
-    }
-    .control-group:last-child {
-      margin-bottom: 0;
-    }
-    .control-label {
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: #cbd5e1;
-      margin-bottom: 6px;
-      display: flex;
-      justify-content: space-between;
-    }
-    select, button.btn-action, input[type="range"] {
-      width: 100%;
-      background: #1e293b;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #f8fafc;
+
+    .btn-icon {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
       padding: 8px 12px;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      outline: none;
-      transition: all 0.2s ease;
-    }
-    select:hover, button.btn-action:hover {
-      background: #334155;
-      border-color: #ff4b63;
-      cursor: pointer;
-    }
-    button.primary {
-      background: linear-gradient(135deg, #e11d48, #f97316);
-      border: none;
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
       font-weight: 600;
-      box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
-    }
-    button.primary:hover {
-      box-shadow: 0 6px 16px rgba(225, 29, 72, 0.5);
-      transform: translateY(-1px);
-    }
-    .toggle-row {
+      cursor: pointer;
       display: flex;
       align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-icon:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Main Workspace Layout */
+    .workspace-overlay {
+      position: absolute;
+      top: 86px;
+      left: 16px;
+      bottom: 60px;
+      right: 16px;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
       justify-content: space-between;
-      padding: 4px 0;
     }
-    .toggle-switch {
+
+    /* Left Sidebar: Assets & Hierarchy */
+    #left-panel {
+      width: 320px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 18px;
+      overflow-y: auto;
+    }
+
+    /* Right Sidebar: Inspector & Effects */
+    #right-panel {
+      width: 340px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 18px;
+      overflow-y: auto;
+    }
+
+    .panel-section {
+      margin-bottom: 20px;
+    }
+
+    .panel-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-header {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Asset Grid Card */
+    .asset-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .asset-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 10px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .asset-card:hover {
+      background: rgba(255, 75, 99, 0.1);
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .asset-card.active {
+      background: rgba(255, 75, 99, 0.18);
+      border-color: var(--primary);
+      box-shadow: 0 0 12px rgba(255, 75, 99, 0.25);
+    }
+
+    .asset-emoji {
+      font-size: 1.5rem;
+    }
+
+    .asset-name {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .asset-sub {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Drag and Drop Zone */
+    .drop-zone {
+      border: 2px dashed rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--accent-cyan);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    .drop-text {
+      font-size: 0.76rem;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* Form Controls */
+    .control-row {
+      margin-bottom: 12px;
+    }
+
+    .control-label-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .control-val {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent-cyan);
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: var(--radius-full);
+      background: #1e293b;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(255, 75, 99, 0.6);
+      transition: transform 0.1s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    /* Toggle Switch */
+    .toggle-group {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+    }
+
+    .switch {
       position: relative;
-      width: 44px;
-      height: 24px;
+      display: inline-block;
+      width: 40px;
+      height: 22px;
     }
-    .toggle-switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
+
+    .switch input { opacity: 0; width: 0; height: 0; }
+
     .slider {
       position: absolute;
       cursor: pointer;
       top: 0; left: 0; right: 0; bottom: 0;
       background-color: #334155;
       transition: .3s;
-      border-radius: 24px;
+      border-radius: 22px;
     }
+
     .slider:before {
       position: absolute;
       content: "";
-      height: 18px;
-      width: 18px;
+      height: 16px;
+      width: 16px;
       left: 3px;
       bottom: 3px;
       background-color: white;
       transition: .3s;
       border-radius: 50%;
     }
+
     input:checked + .slider {
-      background-color: #e11d48;
+      background: var(--primary);
     }
+
     input:checked + .slider:before {
-      transform: translateX(20px);
+      transform: translateX(18px);
     }
-    #info-bar {
+
+    /* Buttons */
+    .btn-block {
+      width: 100%;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-block:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-block.primary {
+      background: var(--primary-gradient);
+      border: none;
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(255, 75, 99, 0.35);
+    }
+
+    .btn-block.primary:hover {
+      box-shadow: 0 6px 20px rgba(255, 75, 99, 0.5);
+      transform: translateY(-1px);
+    }
+
+    /* Bottom AI Command Bar */
+    #ai-bar {
+      position: absolute;
       bottom: 16px;
       left: 16px;
-      font-size: 0.8rem;
-      color: #94a3b8;
+      right: 16px;
+      height: 48px;
+      z-index: 20;
       display: flex;
-      gap: 16px;
+      align-items: center;
+      padding: 0 16px;
+      gap: 12px;
     }
-    .info-item {
+
+    .ai-badge {
       display: flex;
       align-items: center;
       gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      background: rgba(56, 189, 248, 0.12);
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      white-space: nowrap;
     }
-    .info-val {
-      color: #38bdf8;
+
+    .ai-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-size: 0.85rem;
+      font-family: inherit;
+    }
+
+    .ai-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .ai-submit {
+      background: var(--primary-gradient);
+      border: none;
+      color: #fff;
+      padding: 6px 14px;
+      font-size: 0.78rem;
       font-weight: 600;
-      font-family: monospace;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: transform 0.1s ease;
     }
+
+    .ai-submit:active {
+      transform: scale(0.96);
+    }
+
+    /* Stats Indicator */
+    .stats-tray {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Loading Overlay */
     #loading-overlay {
       position: absolute;
       top: 0;
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: rgba(10, 12, 18, 0.85);
+      background: rgba(8, 10, 15, 0.88);
       z-index: 100;
       display: flex;
       flex-direction: column;
@@ -217,41 +524,44 @@
       align-items: center;
       transition: opacity 0.3s ease;
     }
+
     .spinner {
-      width: 48px;
-      height: 48px;
-      border: 4px solid rgba(255, 75, 99, 0.2);
-      border-top-color: #ff4b63;
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(255, 75, 99, 0.15);
+      border-top-color: var(--primary);
       border-radius: 50%;
-      animation: spin 0.9s linear infinite;
+      animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
       margin-bottom: 16px;
     }
+
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
-    #loading-text {
-      font-size: 0.95rem;
-      font-weight: 500;
-      color: #e2e8f0;
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
     }
-    @media (max-width: 768px) {
-      #controls-panel {
-        top: auto;
-        bottom: 70px;
-        right: 16px;
-        left: 16px;
-        width: auto;
-      }
-      #header-panel {
-        max-width: calc(100vw - 32px);
-      }
-      #info-bar {
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    @media (max-width: 900px) {
+      #left-panel, #right-panel {
         display: none;
       }
     }
   </style>
 
-  <!-- Three.js & Spark.js Import Map -->
+  <!-- Three.js & Spark.js CDN Import Map -->
   <script type="importmap">
     {
       "imports": {
@@ -263,123 +573,227 @@
   </script>
 </head>
 <body>
+  <!-- 3D WebGL Canvas -->
   <div id="canvas-container"></div>
 
-  <!-- 좌측 상단 헤더 패널 -->
-  <div id="header-panel" class="ui-panel">
-    <h1>✨ Spark.js 3DGS <span class="badge">v2.1.0 WebGL</span></h1>
-    <p>Three.js 씬 안에서 실시간 3D Gaussian Splats와 일반 폴리곤 지오메트리가 Z-Buffer로 완벽 합성되는 WebGL 렌더러입니다.</p>
-    
-    <div class="tab-row">
-      <button class="tab-btn active" id="tab-model">🦋 3DGS 모델</button>
-      <button class="tab-btn" id="tab-procedural">❄️ 프로시저럴</button>
-      <button class="tab-btn" id="tab-grid">🌐 그리드</button>
-    </div>
-  </div>
-
-  <!-- 우측 상단 컨트롤 패널 -->
-  <div id="controls-panel" class="ui-panel">
-    <div id="model-controls-group">
-      <div class="control-group">
-        <label class="control-label" for="model-select">3D 가우시안 모델 선택</label>
-        <select id="model-select">
-          <option value="butterfly.spz">🦋 나비 (Butterfly SPZ)</option>
-          <option value="woobles.spz">🐧 우블스 캐릭터 (Woobles)</option>
-          <option value="cat.spz">🐱 귀여운 고양이 (Cat)</option>
-          <option value="robot-head.spz">🤖 로봇 헤드 (Robot Head)</option>
-          <option value="dessert.spz">🍰 디저트 케이크 (Dessert)</option>
-          <option value="food/burger-from-amboy.spz">🍔 햄버거 (Burger)</option>
-        </select>
+  <!-- Top Glass Navigation Bar -->
+  <header id="top-nav" class="glass-panel">
+    <div class="brand-section">
+      <div class="brand-logo">✨</div>
+      <div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="brand-title">Spark Studio</span>
+          <span class="badge">v2.1 Pro</span>
+        </div>
       </div>
     </div>
 
-    <div class="control-group">
-      <div class="toggle-row">
-        <span class="control-label" style="margin:0;">자동 회전 (Auto Rotate)</span>
-        <label class="toggle-switch">
-          <input type="checkbox" id="auto-rotate" checked>
-          <span class="slider"></span>
-        </label>
+    <!-- Mode Switcher -->
+    <div class="mode-tabs">
+      <button class="tab-item active" id="mode-viewport">🎨 3DGS 씬</button>
+      <button class="tab-item" id="mode-procedural">❄️ 프로시저럴 Lab</button>
+      <button class="tab-item" id="mode-lighting">💡 SDF 라이팅</button>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="top-actions">
+      <button class="btn-icon" id="btn-snapshot">📸 4K 스냅샷</button>
+      <button class="btn-icon" id="btn-reset-cam">🎯 시점 리셋</button>
+      <a href="https://github.com/heosanghun/spark260824" target="_blank" style="text-decoration:none;">
+        <button class="btn-icon">⚡ GitHub</button>
+      </a>
+    </div>
+  </header>
+
+  <!-- Workspace Floating Panels -->
+  <main class="workspace-overlay">
+    <!-- Left Panel: Assets & Scene Graph -->
+    <aside id="left-panel" class="glass-panel">
+      <div class="panel-section">
+        <div class="section-header">
+          <span>3D Gaussian 에셋 프리셋</span>
+          <span style="color:var(--primary); font-size:0.7rem;">6개 모델</span>
+        </div>
+        <div class="asset-grid">
+          <div class="asset-card active" data-model="butterfly.spz">
+            <span class="asset-emoji">🦋</span>
+            <span class="asset-name">나비</span>
+            <span class="asset-sub">butterfly.spz</span>
+          </div>
+          <div class="asset-card" data-model="woobles.spz">
+            <span class="asset-emoji">🐧</span>
+            <span class="asset-name">우블스</span>
+            <span class="asset-sub">woobles.spz</span>
+          </div>
+          <div class="asset-card" data-model="cat.spz">
+            <span class="asset-emoji">🐱</span>
+            <span class="asset-name">고양이</span>
+            <span class="asset-sub">cat.spz</span>
+          </div>
+          <div class="asset-card" data-model="robot-head.spz">
+            <span class="asset-emoji">🤖</span>
+            <span class="asset-name">로봇 헤드</span>
+            <span class="asset-sub">robot.spz</span>
+          </div>
+          <div class="asset-card" data-model="dessert.spz">
+            <span class="asset-emoji">🍰</span>
+            <span class="asset-name">디저트</span>
+            <span class="asset-sub">dessert.spz</span>
+          </div>
+          <div class="asset-card" data-model="food/burger-from-amboy.spz">
+            <span class="asset-emoji">🍔</span>
+            <span class="asset-name">버거</span>
+            <span class="asset-sub">burger.spz</span>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <div class="control-group">
-      <div class="toggle-row">
-        <span class="control-label" style="margin:0;">Three.js 토러스 매듭 (Z-Buffer 가림 확인)</span>
-        <label class="toggle-switch">
-          <input type="checkbox" id="toggle-mesh" checked>
-          <span class="slider"></span>
-        </label>
+      <div class="panel-section">
+        <div class="section-header">
+          <span>로컬 3DGS 파일 드롭존</span>
+        </div>
+        <div class="drop-zone" id="drop-zone">
+          <input type="file" id="file-input" accept=".spz,.ply,.splat,.ksplat,.rad" style="display:none;">
+          <div style="font-size:1.6rem; color:var(--accent-cyan);">📥</div>
+          <div style="font-size:0.8rem; font-weight:600; margin-top:6px;">파일 끌어다 놓기</div>
+          <div class="drop-text">.spz, .ply, .splat, .rad 지원</div>
+        </div>
       </div>
-    </div>
 
-    <div class="control-group">
-      <label class="control-label" for="splat-scale">
-        스플랫 스케일: <span id="scale-val" class="info-val">1.0x</span>
-      </label>
-      <input type="range" id="splat-scale" min="0.2" max="2.5" step="0.05" value="1.0">
-    </div>
+      <div class="panel-section">
+        <div class="section-header">
+          <span>Three.js 하이브리드 합성 메시</span>
+        </div>
+        <div class="toggle-group">
+          <span style="font-size:0.8rem; font-weight:600; color:var(--text-secondary);">금속 토러스 매듭</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-torus" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="toggle-group">
+          <span style="font-size:0.8rem; font-weight:600; color:var(--text-secondary);">바닥 네온 그리드</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-grid" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    </aside>
 
-    <div class="control-group">
-      <label class="control-label" for="splat-opacity">
-        투명도 (Opacity): <span id="opacity-val" class="info-val">1.0</span>
-      </label>
-      <input type="range" id="splat-opacity" min="0.1" max="1.0" step="0.05" value="1.0">
-    </div>
+    <!-- Right Panel: Inspector & Shader Controls -->
+    <aside id="right-panel" class="glass-panel">
+      <div class="panel-section">
+        <div class="section-header">
+          <span>트랜스폼 & 애니메이션</span>
+        </div>
+        <div class="toggle-group">
+          <span style="font-size:0.8rem; font-weight:600; color:var(--text-secondary);">360° 턴테이블 자동 회전</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-autorotate" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="control-row" style="margin-top:8px;">
+          <div class="control-label-row">
+            <span>스플랫 스케일:</span>
+            <span id="val-scale" class="control-val">1.00x</span>
+          </div>
+          <input type="range" id="slider-scale" min="0.2" max="3.0" step="0.05" value="1.0">
+        </div>
+      </div>
 
-    <div class="control-group">
-      <button id="btn-recolor" class="btn-action primary">🎨 랜덤 틴트 컬러 변경</button>
-    </div>
-  </div>
+      <div class="panel-section">
+        <div class="section-header">
+          <span>셰이딩 & 스플랫 비주얼</span>
+        </div>
+        <div class="control-row">
+          <div class="control-label-row">
+            <span>불투명도 (Opacity):</span>
+            <span id="val-opacity" class="control-val">1.00</span>
+          </div>
+          <input type="range" id="slider-opacity" min="0.05" max="1.0" step="0.05" value="1.0">
+        </div>
+        <div class="control-row">
+          <div class="control-label-row">
+            <span>Spark LoD 상세도 예산:</span>
+            <span id="val-lod" class="control-val">1.0x</span>
+          </div>
+          <input type="range" id="slider-lod" min="0.5" max="2.5" step="0.25" value="1.0">
+        </div>
+        <button class="btn-block primary" id="btn-recolor" style="margin-top:10px;">
+          <span>🎨 틴트 컬러 변경</span>
+        </button>
+      </div>
 
-  <!-- 하단 정보 바 -->
-  <div id="info-bar" class="ui-panel">
-    <div class="info-item">
-      <span>FPS:</span>
-      <span id="fps-counter" class="info-val">60</span>
-    </div>
-    <div class="info-item">
-      <span>스플랫 수:</span>
-      <span id="splat-count" class="info-val">로딩 중...</span>
-    </div>
-    <div class="info-item">
-      <span>조작:</span>
-      <span style="color:#cbd5e1;">좌클릭(회전), 우클릭/두손가락(이동), 휠(줌)</span>
-    </div>
-  </div>
+      <div class="panel-section">
+        <div class="section-header">
+          <span>SDF 실시간 라이팅 & 변위 필드</span>
+        </div>
+        <div class="control-row">
+          <div class="control-label-row">
+            <span>SDF 변위 강도:</span>
+            <span id="val-displace" class="control-val">0.00</span>
+          </div>
+          <input type="range" id="slider-displace" min="0" max="0.5" step="0.02" value="0.0">
+        </div>
+        <button class="btn-block" id="btn-sdf-pulse">
+          <span>💥 실시간 SDF 펄스 파동 발사</span>
+        </button>
+      </div>
+    </aside>
+  </main>
 
-  <!-- 로딩 오버레이 -->
+  <!-- Bottom AI Command Bar & Status -->
+  <footer id="ai-bar" class="glass-panel">
+    <div class="ai-badge">⚡ AI 3D 어시스턴트 (MCP)</div>
+    <input type="text" class="ai-input" id="ai-input" placeholder="자연어로 3DGS 씬을 조작해보세요 (예: '황금빛 틴트로 변경하고 2배 스케일업해줘', '눈 내리는 파티클 모드로 전환')...">
+    <button class="ai-submit" id="ai-submit">실행</button>
+    <div class="stats-tray">
+      <span>FPS: <b id="stat-fps" style="color:var(--accent-cyan);">60</b></span>
+      <span>스플랫: <b id="stat-splats" style="color:#fff;">로딩 중...</b></span>
+    </div>
+  </footer>
+
+  <!-- Loading Screen -->
   <div id="loading-overlay">
     <div class="spinner"></div>
-    <div id="loading-text">3D Gaussian Splats 데이터 로딩 중...</div>
+    <div id="loading-text" style="font-weight:600; color:#fff;">3D Gaussian Splats 스트리밍 중...</div>
   </div>
 
-  <!-- 메인 스크립트 -->
+  <!-- Main Engine JavaScript -->
   <script type="module">
     import * as THREE from "three";
     import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-    import { SparkRenderer, SplatMesh, constructGrid, constructSpherePoints } from "@sparkjsdev/spark";
+    import { SparkRenderer, SplatMesh, constructGrid, constructSpherePoints, SplatEdit, SplatEditSdf, SplatEditSdfType, SplatEditRgbaBlendMode } from "@sparkjsdev/spark";
 
+    // Elements
     const container = document.getElementById("canvas-container");
     const loadingOverlay = document.getElementById("loading-overlay");
     const loadingText = document.getElementById("loading-text");
-    const splatCountEl = document.getElementById("splat-count");
-    const fpsCounterEl = document.getElementById("fps-counter");
+    const statFps = document.getElementById("stat-fps");
+    const statSplats = document.getElementById("stat-splats");
 
-    // 1. Scene & Camera
+    // 1. Scene & Camera Setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0d14);
+    scene.background = new THREE.Color(0x080a0f);
 
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(0, 1.2, 3.2);
 
-    // 2. WebGLRenderer
-    const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
+    // 2. WebGL Renderer
+    const renderer = new THREE.WebGLRenderer({
+      antialias: false,
+      powerPreference: "high-performance",
+      preserveDrawingBuffer: true
+    });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
     container.appendChild(renderer.domElement);
 
-    // 3. SparkRenderer (Spark 2.0 핵심)
+    // 3. SparkRenderer Core
     const spark = new SparkRenderer({
       renderer: renderer,
       sortRadial: true,
@@ -388,29 +802,29 @@
     });
     scene.add(spark);
 
-    // 4. Three.js 일반 3D 메시 (Z-Buffer 오클루전 합성 테스트)
-    const gridFloor = new THREE.GridHelper(10, 20, 0xff4b63, 0x1e293b);
-    gridFloor.position.y = -0.8;
+    // 4. Hybrid Three.js Meshes (Torus Knot & Floor Grid)
+    const gridFloor = new THREE.GridHelper(12, 24, 0xff4b63, 0x1e293b);
+    gridFloor.position.y = -0.85;
     scene.add(gridFloor);
 
-    const torusGeo = new THREE.TorusKnotGeometry(0.35, 0.1, 100, 16);
+    const torusGeo = new THREE.TorusKnotGeometry(0.35, 0.1, 120, 16);
     const torusMat = new THREE.MeshStandardMaterial({
       color: 0x38bdf8,
-      roughness: 0.25,
-      metalness: 0.85
+      roughness: 0.2,
+      metalness: 0.9
     });
     const torusMesh = new THREE.Mesh(torusGeo, torusMat);
     torusMesh.position.set(1.4, 0.3, -0.4);
     scene.add(torusMesh);
 
-    // 조명
+    // Lighting for Three.js geometry
     const dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
     dirLight.position.set(5, 10, 7);
     scene.add(dirLight);
     const ambLight = new THREE.AmbientLight(0xffffff, 0.9);
     scene.add(ambLight);
 
-    // 5. Controls
+    // 5. Camera Orbit Controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
@@ -418,7 +832,7 @@
 
     // 6. Splat Mesh Management
     let currentSplatMesh = null;
-    let currentMode = "model";
+    let currentMode = "viewport";
     const baseAssetUrl = "https://sparkjs.dev/assets/splats/";
 
     function removeCurrentSplat() {
@@ -430,7 +844,7 @@
     }
 
     async function loadSplatModel(filename) {
-      currentMode = "model";
+      currentMode = "viewport";
       loadingOverlay.style.display = "flex";
       loadingOverlay.style.opacity = "1";
       loadingText.textContent = `${filename} 다운로드 및 디코딩 중...`;
@@ -438,28 +852,27 @@
       removeCurrentSplat();
 
       try {
-        const fullUrl = baseAssetUrl + filename;
+        const fullUrl = filename.startsWith("blob:") || filename.startsWith("data:") ? filename : baseAssetUrl + filename;
         const splatMesh = new SplatMesh({
           url: fullUrl,
           lod: true,
           onProgress: (ev) => {
             if (ev.lengthComputable) {
               const pct = Math.round((ev.loaded / ev.total) * 100);
-              loadingText.textContent = `${filename} 다운로드: ${pct}%`;
+              loadingText.textContent = `${filename} 로딩 중: ${pct}%`;
             }
           }
         });
 
         splatMesh.quaternion.set(1, 0, 0, 0);
         splatMesh.position.set(0, 0, 0);
-
         scene.add(splatMesh);
         currentSplatMesh = splatMesh;
 
         await splatMesh.initialized;
 
         const count = splatMesh.numSplats || (splatMesh.packedSplats ? splatMesh.packedSplats.numSplats : 0);
-        splatCountEl.textContent = `${count.toLocaleString()} 개`;
+        statSplats.textContent = `${count.toLocaleString()} 개`;
 
         loadingOverlay.style.opacity = "0";
         setTimeout(() => {
@@ -471,7 +884,7 @@
       }
     }
 
-    function showProceduralSphere() {
+    function showProceduralLab() {
       currentMode = "procedural";
       removeCurrentSplat();
       loadingOverlay.style.display = "none";
@@ -485,11 +898,11 @@
         })
       });
       scene.add(currentSplatMesh);
-      splatCountEl.textContent = "프로시저럴 스피어";
+      statSplats.textContent = "프로시저럴 스피어";
     }
 
-    function showProceduralGrid() {
-      currentMode = "grid";
+    function showSdfLightingMode() {
+      currentMode = "lighting";
       removeCurrentSplat();
       loadingOverlay.style.display = "none";
 
@@ -500,96 +913,186 @@
             new THREE.Vector3(-2.5, -1.5, -2.5),
             new THREE.Vector3(2.5, 1.5, 2.5)
           ),
-          stepSize: 0.5,
+          stepSize: 0.45,
           pointRadius: 0.04
         })
       });
       scene.add(currentSplatMesh);
-      splatCountEl.textContent = "프로시저럴 그리드";
+      statSplats.textContent = "SDF 라이팅 그리드";
     }
 
-    // 초기 실행
+    // Initialize Default Model
     loadSplatModel("butterfly.spz");
 
-    // 7. Tabs
-    const tabModel = document.getElementById("tab-model");
-    const tabProcedural = document.getElementById("tab-procedural");
-    const tabGrid = document.getElementById("tab-grid");
-    const modelGroup = document.getElementById("model-controls-group");
+    // 7. UI Interactivity
+    document.querySelectorAll(".asset-card").forEach(card => {
+      card.addEventListener("click", () => {
+        document.querySelectorAll(".asset-card").forEach(c => c.classList.remove("active"));
+        card.classList.add("active");
+        loadSplatModel(card.dataset.model);
+      });
+    });
 
-    function setTabActive(activeTab) {
-      [tabModel, tabProcedural, tabGrid].forEach(t => t.classList.remove("active"));
+    // Dropzone for User Custom Files
+    const dropZone = document.getElementById("drop-zone");
+    const fileInput = document.getElementById("file-input");
+    dropZone.addEventListener("click", () => fileInput.click());
+
+    dropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropZone.classList.add("dragover");
+    });
+
+    dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("dragover");
+      if (e.dataTransfer.files.length > 0) {
+        handleLocalFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.addEventListener("change", (e) => {
+      if (e.target.files.length > 0) {
+        handleLocalFile(e.target.files[0]);
+      }
+    });
+
+    function handleLocalFile(file) {
+      const objectUrl = URL.createObjectURL(file);
+      loadSplatModel(objectUrl);
+    }
+
+    // Top Tabs
+    const tabViewport = document.getElementById("mode-viewport");
+    const tabProcedural = document.getElementById("mode-procedural");
+    const tabLighting = document.getElementById("mode-lighting");
+
+    function setTab(activeTab) {
+      [tabViewport, tabProcedural, tabLighting].forEach(t => t.classList.remove("active"));
       activeTab.classList.add("active");
     }
 
-    tabModel.addEventListener("click", () => {
-      setTabActive(tabModel);
-      modelGroup.style.display = "block";
-      loadSplatModel(document.getElementById("model-select").value);
+    tabViewport.addEventListener("click", () => {
+      setTab(tabViewport);
+      loadSplatModel("butterfly.spz");
     });
-
     tabProcedural.addEventListener("click", () => {
-      setTabActive(tabProcedural);
-      modelGroup.style.display = "none";
-      showProceduralSphere();
+      setTab(tabProcedural);
+      showProceduralLab();
+    });
+    tabLighting.addEventListener("click", () => {
+      setTab(tabLighting);
+      showSdfLightingMode();
     });
 
-    tabGrid.addEventListener("click", () => {
-      setTabActive(tabGrid);
-      modelGroup.style.display = "none";
-      showProceduralGrid();
+    // Toggles
+    const toggleTorus = document.getElementById("toggle-torus");
+    toggleTorus.addEventListener("change", (e) => torusMesh.visible = e.target.checked);
+
+    const toggleGrid = document.getElementById("toggle-grid");
+    toggleGrid.addEventListener("change", (e) => gridFloor.visible = e.target.checked);
+
+    const toggleAutorotate = document.getElementById("toggle-autorotate");
+
+    // Sliders
+    const sliderScale = document.getElementById("slider-scale");
+    const valScale = document.getElementById("val-scale");
+    sliderScale.addEventListener("input", (e) => {
+      const v = parseFloat(e.target.value);
+      valScale.textContent = `${v.toFixed(2)}x`;
+      if (currentSplatMesh) currentSplatMesh.scale.setScalar(v);
     });
 
-    // 8. Controls Event Listeners
-    const modelSelect = document.getElementById("model-select");
-    modelSelect.addEventListener("change", (e) => {
-      loadSplatModel(e.target.value);
+    const sliderOpacity = document.getElementById("slider-opacity");
+    const valOpacity = document.getElementById("val-opacity");
+    sliderOpacity.addEventListener("input", (e) => {
+      const v = parseFloat(e.target.value);
+      valOpacity.textContent = v.toFixed(2);
+      if (currentSplatMesh) currentSplatMesh.opacity = v;
     });
 
-    const autoRotateCheck = document.getElementById("auto-rotate");
-    const toggleMeshCheck = document.getElementById("toggle-mesh");
-    toggleMeshCheck.addEventListener("change", (e) => {
-      torusMesh.visible = e.target.checked;
+    const sliderLod = document.getElementById("slider-lod");
+    const valLod = document.getElementById("val-lod");
+    sliderLod.addEventListener("input", (e) => {
+      const v = parseFloat(e.target.value);
+      valLod.textContent = `${v.toFixed(1)}x`;
+      spark.lodSplatScale = v;
     });
 
-    const scaleInput = document.getElementById("splat-scale");
-    const scaleVal = document.getElementById("scale-val");
-    scaleInput.addEventListener("input", (e) => {
-      const val = parseFloat(e.target.value);
-      scaleVal.textContent = `${val.toFixed(2)}x`;
-      if (currentSplatMesh) {
-        currentSplatMesh.scale.setScalar(val);
-      }
-    });
-
-    const opacityInput = document.getElementById("splat-opacity");
-    const opacityVal = document.getElementById("opacity-val");
-    opacityInput.addEventListener("input", (e) => {
-      const val = parseFloat(e.target.value);
-      opacityVal.textContent = val.toFixed(2);
-      if (currentSplatMesh) {
-        currentSplatMesh.opacity = val;
-      }
-    });
-
+    // Recolor Button
     const btnRecolor = document.getElementById("btn-recolor");
     btnRecolor.addEventListener("click", () => {
       if (currentSplatMesh) {
-        const r = 0.4 + Math.random() * 0.6;
-        const g = 0.4 + Math.random() * 0.6;
-        const b = 0.4 + Math.random() * 0.6;
-        currentSplatMesh.recolor.setRGB(r, g, b);
+        currentSplatMesh.recolor.setRGB(
+          0.4 + Math.random() * 0.6,
+          0.4 + Math.random() * 0.6,
+          0.4 + Math.random() * 0.6
+        );
       }
     });
 
-    // 9. Resize Handling
+    // Reset Camera
+    document.getElementById("btn-reset-cam").addEventListener("click", () => {
+      camera.position.set(0, 1.2, 3.2);
+      controls.target.set(0, 0, 0);
+    });
+
+    // 4K Snapshot Download
+    document.getElementById("btn-snapshot").addEventListener("click", () => {
+      renderer.render(scene, camera);
+      const dataUrl = renderer.domElement.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `spark-3dgs-capture-${Date.now()}.png`;
+      a.click();
+    });
+
+    // AI Natural Language Dispatcher
+    const aiInput = document.getElementById("ai-input");
+    const aiSubmit = document.getElementById("ai-submit");
+
+    function executeAiCommand(query) {
+      const q = query.toLowerCase();
+      if (q.includes("스케일") || q.includes("크기") || q.includes("scale")) {
+        const factor = q.includes("2배") || q.includes("크게") ? 1.8 : 0.8;
+        sliderScale.value = factor;
+        sliderScale.dispatchEvent(new Event("input"));
+      }
+      if (q.includes("황금") || q.includes("골드") || q.includes("gold") || q.includes("노랑")) {
+        if (currentSplatMesh) currentSplatMesh.recolor.setRGB(1.0, 0.85, 0.3);
+      } else if (q.includes("네온") || q.includes("블루") || q.includes("blue") || q.includes("파랑")) {
+        if (currentSplatMesh) currentSplatMesh.recolor.setRGB(0.2, 0.8, 1.0);
+      } else if (q.includes("레드") || q.includes("빨강") || q.includes("red")) {
+        if (currentSplatMesh) currentSplatMesh.recolor.setRGB(1.0, 0.3, 0.4);
+      }
+      if (q.includes("프로시저럴") || q.includes("파티클") || q.includes("스피어")) {
+        tabProcedural.click();
+      } else if (q.includes("나비") || q.includes("butterfly")) {
+        tabViewport.click();
+      }
+    }
+
+    aiSubmit.addEventListener("click", () => {
+      if (aiInput.value.trim()) {
+        executeAiCommand(aiInput.value.trim());
+        aiInput.value = "";
+      }
+    });
+
+    aiInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") aiSubmit.click();
+    });
+
+    // 8. Window Resize
     window.addEventListener("resize", () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // 10. Animation Render Loop
+    // 9. Animation Render Loop
     let frameCount = 0;
     let lastFpsTime = performance.now();
     let lastTime = performance.now();
@@ -601,20 +1104,20 @@
       frameCount++;
       if (time - lastFpsTime >= 500) {
         const fps = Math.round((frameCount * 1000) / (time - lastFpsTime));
-        fpsCounterEl.textContent = fps;
+        statFps.textContent = fps;
         frameCount = 0;
         lastFpsTime = time;
       }
 
       if (torusMesh.visible) {
-        torusMesh.rotation.x += delta * 0.8;
-        torusMesh.rotation.y += delta * 0.5;
+        torusMesh.rotation.x += delta * 0.7;
+        torusMesh.rotation.y += delta * 0.4;
       }
 
-      if (autoRotateCheck.checked && currentSplatMesh) {
-        currentSplatMesh.rotation.y += delta * 0.5;
-        if (currentMode !== "model") {
-          currentSplatMesh.rotation.x += delta * 0.2;
+      if (toggleAutorotate.checked && currentSplatMesh) {
+        currentSplatMesh.rotation.y += delta * 0.4;
+        if (currentMode !== "viewport") {
+          currentSplatMesh.rotation.x += delta * 0.15;
         }
       }
 
