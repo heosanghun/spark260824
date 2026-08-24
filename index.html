@@ -1,169 +1,626 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-      <title>Spark Examples</title>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      <link rel="icon" href="data:,">
-      <style>
-        html {
-          font-size: 14px;
-        }
-        body {
-          background: #D43E4C;
-          color: #fff;
-          font: normal 500 1.2rem/1.2 Inconsolata, Andale Mono, Courier New, monospace;
-          padding: 1rem 2rem;
-        }
-        ul {
-          list-style: none;
-          margin: 0;
-          padding: 0;
-        }
-        .header {
-          position: relative;
-        }
-        .resources {
-          font-size: 0;  /* Collapse whitespace. */
-          text-transform: uppercase;
-        }
-        .resources li + li {
-          margin-top: 0.5rem;
-        }
-        .resources a {
-          color: rgba(0,0,0,.5);
-          display: inline-block;
-          font-size: 1.2rem;
-          margin: -0.25rem -0.5rem;
-          padding: 0.25rem 0.5rem;
-          text-decoration: none;
-          transition: all 0.075s ease-in-out;
-        }
-        .resources a:hover {
-          background-color: rgba(0,0,0,0.25);
-          color: #fff;
-        }
-        h1,
-        h2 {
-          line-height: 100%;
-        }
-        h1 {
-          font-size: 1.6rem;
-          font-weight: 100;
-          letter-spacing: 0.04rem;
-          margin-bottom: 1.25rem;
-          text-transform: uppercase;
-        }
-        h2 {
-          color: rgba(0,0,0,0.5);
-          font-size: 0.9rem;
-          font-weight: 300;
-          margin: 2rem 0 0.5rem;
-          padding: 0;
-          text-transform: uppercase;
-        }
-        hr {
-          background: none;
-          border: 0;
-          border-bottom: 1px dashed rgba(255,255,255,0.25);
-          margin: 2rem 0;
-        }
-        .links li + li {
-          box-shadow: inset 0 0.15rem 0.1rem -0.15rem rgba(0,0,0,0.5);
-        }
-        .links a {
-          color: #fff;
-          display: block;
-          font-size: 1.5rem;
-          letter-spacing: 0.01em;
-          padding: 0.75rem 0;
-          text-decoration: none;
-          transition: opacity 0.075s ease-in-out;
-        }
-        .links a em {
-          font-size: .9rem;
-          font-style: normal;
-          opacity: .6;
-        }
-        .links a:hover {
-          background-color: rgba(0,0,0,0.15);
-          box-shadow: inset 0 0 0 0.15rem rgba(0,0,0,0.15);
-        }
-        .links a:active {
-          background-color: rgba(0,0,0,0.25);
-          opacity: 0.75;
-        }
-        .links li:hover,
-        .links li:hover + li {
-          margin: 0 -0.75rem;
-        }
-        .links li:hover a,
-        .links li:hover + li a {
-          padding-left: 0.75rem;
-          padding-right: 0.75rem;
-        }
-        @media only screen and (min-width: 1000px) {
-          h1 {
-            font-size: 3rem;
-          }
-          .resources {
-            font-size: 1.2;
-          }
-          .resources li {
-            display: inline-block;
-          }
-          .resources li + li {
-            margin-left: 2.5rem;
-          }
-        }
-      </style>
-    </head>
-    <body>
-      <header class="header">
-        <h1>Spark Examples</h1>
-        <ul id="resources" class="resources">
-        <li><a href="https://sparkjs.dev/">sparkjs.dev</a></li>
-        <li><a href="https://github.com/sparkjs-dev/spark">GitHub</a></li>
-        </ul>
-      </header>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spark.js 3D Gaussian Splatting WebGL</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #0c0f17;
+      color: #f0f4f8;
+      user-select: none;
+    }
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+    }
+    /* UI Panels */
+    .ui-panel {
+      position: absolute;
+      z-index: 10;
+      background: rgba(15, 20, 32, 0.88);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      padding: 16px 20px;
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
+    }
+    #header-panel {
+      top: 16px;
+      left: 16px;
+      max-width: 400px;
+    }
+    #header-panel h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ff4b63 0%, #ff8b3d 50%, #ffd043 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #header-panel p {
+      font-size: 0.82rem;
+      color: #94a3b8;
+      margin-top: 6px;
+      line-height: 1.45;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      background: rgba(255, 75, 99, 0.2);
+      color: #ff4b63;
+      border: 1px solid rgba(255, 75, 99, 0.4);
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-weight: 600;
+      vertical-align: middle;
+    }
+    /* Tabs */
+    .tab-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 12px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 4px;
+      border-radius: 8px;
+    }
+    .tab-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .tab-btn.active {
+      background: #ff4b63;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(255, 75, 99, 0.4);
+    }
+    #controls-panel {
+      top: 16px;
+      right: 16px;
+      width: 320px;
+    }
+    .control-group {
+      margin-bottom: 13px;
+    }
+    .control-group:last-child {
+      margin-bottom: 0;
+    }
+    .control-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    select, button.btn-action, input[type="range"] {
+      width: 100%;
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #f8fafc;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    select:hover, button.btn-action:hover {
+      background: #334155;
+      border-color: #ff4b63;
+      cursor: pointer;
+    }
+    button.primary {
+      background: linear-gradient(135deg, #e11d48, #f97316);
+      border: none;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+    }
+    button.primary:hover {
+      box-shadow: 0 6px 16px rgba(225, 29, 72, 0.5);
+      transform: translateY(-1px);
+    }
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0;
+    }
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #334155;
+      transition: .3s;
+      border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #e11d48;
+    }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+    #info-bar {
+      bottom: 16px;
+      left: 16px;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      display: flex;
+      gap: 16px;
+    }
+    .info-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .info-val {
+      color: #38bdf8;
+      font-weight: 600;
+      font-family: monospace;
+    }
+    #loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(10, 12, 18, 0.85);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: opacity 0.3s ease;
+    }
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255, 75, 99, 0.2);
+      border-top-color: #ff4b63;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin-bottom: 16px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    #loading-text {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: #e2e8f0;
+    }
+    @media (max-width: 768px) {
+      #controls-panel {
+        top: auto;
+        bottom: 70px;
+        right: 16px;
+        left: 16px;
+        width: auto;
+      }
+      #header-panel {
+        max-width: calc(100vw - 32px);
+      }
+      #info-bar {
+        display: none;
+      }
+    }
+  </style>
 
-      <hr>
+  <!-- Three.js & Spark.js Import Map -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+        "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/2.1.0/spark.module.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="canvas-container"></div>
 
-      <h2>Examples</h2>
+  <!-- 좌측 상단 헤더 패널 -->
+  <div id="header-panel" class="ui-panel">
+    <h1>✨ Spark.js 3DGS <span class="badge">v2.1.0 WebGL</span></h1>
+    <p>Three.js 씬 안에서 실시간 3D Gaussian Splats와 일반 폴리곤 지오메트리가 Z-Buffer로 완벽 합성되는 WebGL 렌더러입니다.</p>
+    
+    <div class="tab-row">
+      <button class="tab-btn active" id="tab-model">🦋 3DGS 모델</button>
+      <button class="tab-btn" id="tab-procedural">❄️ 프로시저럴</button>
+      <button class="tab-btn" id="tab-grid">🌐 그리드</button>
+    </div>
+  </div>
 
-    <ul class="links">
-        <li><a href="/examples/envmap/">Environment Map</a></li>
-        <li><a href="/examples/hello-world/">Hello World</a></li>
-        <li><a href="/examples/interactivity/">Interactivity</a></li>
-        <li><a href="/examples/multiple-splats/">Multiple Splats</a></li>
-        <li><a href="/examples/multiple-viewpoints/">Multiple Viewpoints</a></li>
-        <li><a href="/examples/procedural-splats/">Procedural Splats</a></li>
-        <li><a href="/examples/raycasting/">Raycasting</a></li>
-        <li><a href="/examples/dynamic-lighting/">Dynamic Lighting</a></li>
-        <li><a href="/examples/particle-animation/">Particle Animation</a></li>
-        <li><a href="/examples/particle-simulation/">Particle Simulation</a></li>
-        <li><a href="/examples/splat-painter/">Splat Painter</a></li>
-        <li><a href="/examples/splat-reveal-effects/">Splat Reveal Effects</a></li>
-        <li><a href="/examples/splat-shader-effects/">Splat Shader Effects</a></li>
-        <li><a href="/examples/splat-dissolve-effects/">Splat Dissolve Effects</a></li>
-        <li><a href="/examples/splat-transitions/">Splat Transitions</a></li>
-        <li><a href="/examples/webxr/">WebXR</a></li>
-        <li><a href="/examples/glsl/">GLSL Shaders</a></li>
-        <li><a href="/examples/debug-color/">Debug Coloring</a></li>
-        <li><a href="/examples/depth-of-field/">Depth of Field</a></li>
-        <li><a href="/examples/sogs/">SOGS Compression</a></li>
-        <li><a href="/examples/editor/">Editor</a></li>
-        <li><a href="/examples/viewer/">Viewer</a></li>
-        <li><a href="/examples/basic-xr/">Basic XR</a></li>
-        <li><a href="/examples/interactive-holes/">Interactive Holes</a></li>
-        <li><a href="/examples/lofi/">Lofi Worlds</a></li>
-        <li><a href="/examples/mobile-joystick/">Mobile On-Screen Joystick</a></li>
-        <li><a href="/examples/render-cube-depth/">Render Cube Depthmap</a></li>
-        <li><a href="/examples/lod-on-demand/">LoD-on-demand</a></li>
-        <li><a href="/examples/nonlod/">Simultaneous Non-LoD + LoD</a></li>
-        <li><a href="/examples/extsplats/">Extended Splats encoding</a></li>
-        <li><a href="/examples/streaming-lod/">Streaming LoDs</a></li>
-        <li><a href="/examples/multi-lod/">Multiple Streaming LoDs</a></li>
-      </ul>
-    </body>
+  <!-- 우측 상단 컨트롤 패널 -->
+  <div id="controls-panel" class="ui-panel">
+    <div id="model-controls-group">
+      <div class="control-group">
+        <label class="control-label" for="model-select">3D 가우시안 모델 선택</label>
+        <select id="model-select">
+          <option value="butterfly.spz">🦋 나비 (Butterfly SPZ)</option>
+          <option value="woobles.spz">🐧 우블스 캐릭터 (Woobles)</option>
+          <option value="cat.spz">🐱 귀여운 고양이 (Cat)</option>
+          <option value="robot-head.spz">🤖 로봇 헤드 (Robot Head)</option>
+          <option value="dessert.spz">🍰 디저트 케이크 (Dessert)</option>
+          <option value="food/burger-from-amboy.spz">🍔 햄버거 (Burger)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <div class="toggle-row">
+        <span class="control-label" style="margin:0;">자동 회전 (Auto Rotate)</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="auto-rotate" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <div class="toggle-row">
+        <span class="control-label" style="margin:0;">Three.js 토러스 매듭 (Z-Buffer 가림 확인)</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggle-mesh" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label" for="splat-scale">
+        스플랫 스케일: <span id="scale-val" class="info-val">1.0x</span>
+      </label>
+      <input type="range" id="splat-scale" min="0.2" max="2.5" step="0.05" value="1.0">
+    </div>
+
+    <div class="control-group">
+      <label class="control-label" for="splat-opacity">
+        투명도 (Opacity): <span id="opacity-val" class="info-val">1.0</span>
+      </label>
+      <input type="range" id="splat-opacity" min="0.1" max="1.0" step="0.05" value="1.0">
+    </div>
+
+    <div class="control-group">
+      <button id="btn-recolor" class="btn-action primary">🎨 랜덤 틴트 컬러 변경</button>
+    </div>
+  </div>
+
+  <!-- 하단 정보 바 -->
+  <div id="info-bar" class="ui-panel">
+    <div class="info-item">
+      <span>FPS:</span>
+      <span id="fps-counter" class="info-val">60</span>
+    </div>
+    <div class="info-item">
+      <span>스플랫 수:</span>
+      <span id="splat-count" class="info-val">로딩 중...</span>
+    </div>
+    <div class="info-item">
+      <span>조작:</span>
+      <span style="color:#cbd5e1;">좌클릭(회전), 우클릭/두손가락(이동), 휠(줌)</span>
+    </div>
+  </div>
+
+  <!-- 로딩 오버레이 -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div id="loading-text">3D Gaussian Splats 데이터 로딩 중...</div>
+  </div>
+
+  <!-- 메인 스크립트 -->
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { SparkRenderer, SplatMesh, constructGrid, constructSpherePoints } from "@sparkjsdev/spark";
+
+    const container = document.getElementById("canvas-container");
+    const loadingOverlay = document.getElementById("loading-overlay");
+    const loadingText = document.getElementById("loading-text");
+    const splatCountEl = document.getElementById("splat-count");
+    const fpsCounterEl = document.getElementById("fps-counter");
+
+    // 1. Scene & Camera
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0d14);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 1.2, 3.2);
+
+    // 2. WebGLRenderer
+    const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+
+    // 3. SparkRenderer (Spark 2.0 핵심)
+    const spark = new SparkRenderer({
+      renderer: renderer,
+      sortRadial: true,
+      lodSplatScale: 1.0,
+      enableLod: true
+    });
+    scene.add(spark);
+
+    // 4. Three.js 일반 3D 메시 (Z-Buffer 오클루전 합성 테스트)
+    const gridFloor = new THREE.GridHelper(10, 20, 0xff4b63, 0x1e293b);
+    gridFloor.position.y = -0.8;
+    scene.add(gridFloor);
+
+    const torusGeo = new THREE.TorusKnotGeometry(0.35, 0.1, 100, 16);
+    const torusMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      roughness: 0.25,
+      metalness: 0.85
+    });
+    const torusMesh = new THREE.Mesh(torusGeo, torusMat);
+    torusMesh.position.set(1.4, 0.3, -0.4);
+    scene.add(torusMesh);
+
+    // 조명
+    const dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
+    dirLight.position.set(5, 10, 7);
+    scene.add(dirLight);
+    const ambLight = new THREE.AmbientLight(0xffffff, 0.9);
+    scene.add(ambLight);
+
+    // 5. Controls
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.target.set(0, 0, 0);
+
+    // 6. Splat Mesh Management
+    let currentSplatMesh = null;
+    let currentMode = "model";
+    const baseAssetUrl = "https://sparkjs.dev/assets/splats/";
+
+    function removeCurrentSplat() {
+      if (currentSplatMesh) {
+        scene.remove(currentSplatMesh);
+        currentSplatMesh.dispose();
+        currentSplatMesh = null;
+      }
+    }
+
+    async function loadSplatModel(filename) {
+      currentMode = "model";
+      loadingOverlay.style.display = "flex";
+      loadingOverlay.style.opacity = "1";
+      loadingText.textContent = `${filename} 다운로드 및 디코딩 중...`;
+
+      removeCurrentSplat();
+
+      try {
+        const fullUrl = baseAssetUrl + filename;
+        const splatMesh = new SplatMesh({
+          url: fullUrl,
+          lod: true,
+          onProgress: (ev) => {
+            if (ev.lengthComputable) {
+              const pct = Math.round((ev.loaded / ev.total) * 100);
+              loadingText.textContent = `${filename} 다운로드: ${pct}%`;
+            }
+          }
+        });
+
+        splatMesh.quaternion.set(1, 0, 0, 0);
+        splatMesh.position.set(0, 0, 0);
+
+        scene.add(splatMesh);
+        currentSplatMesh = splatMesh;
+
+        await splatMesh.initialized;
+
+        const count = splatMesh.numSplats || (splatMesh.packedSplats ? splatMesh.packedSplats.numSplats : 0);
+        splatCountEl.textContent = `${count.toLocaleString()} 개`;
+
+        loadingOverlay.style.opacity = "0";
+        setTimeout(() => {
+          loadingOverlay.style.display = "none";
+        }, 300);
+      } catch (err) {
+        console.error("SplatMesh 로드 실패:", err);
+        loadingText.textContent = `오류 발생: ${err.message}`;
+      }
+    }
+
+    function showProceduralSphere() {
+      currentMode = "procedural";
+      removeCurrentSplat();
+      loadingOverlay.style.display = "none";
+
+      currentSplatMesh = new SplatMesh({
+        constructSplats: (splats) => constructSpherePoints({
+          splats,
+          radius: 1.5,
+          maxDepth: 4,
+          pointRadius: 0.035
+        })
+      });
+      scene.add(currentSplatMesh);
+      splatCountEl.textContent = "프로시저럴 스피어";
+    }
+
+    function showProceduralGrid() {
+      currentMode = "grid";
+      removeCurrentSplat();
+      loadingOverlay.style.display = "none";
+
+      currentSplatMesh = new SplatMesh({
+        constructSplats: (splats) => constructGrid({
+          splats,
+          extents: new THREE.Box3(
+            new THREE.Vector3(-2.5, -1.5, -2.5),
+            new THREE.Vector3(2.5, 1.5, 2.5)
+          ),
+          stepSize: 0.5,
+          pointRadius: 0.04
+        })
+      });
+      scene.add(currentSplatMesh);
+      splatCountEl.textContent = "프로시저럴 그리드";
+    }
+
+    // 초기 실행
+    loadSplatModel("butterfly.spz");
+
+    // 7. Tabs
+    const tabModel = document.getElementById("tab-model");
+    const tabProcedural = document.getElementById("tab-procedural");
+    const tabGrid = document.getElementById("tab-grid");
+    const modelGroup = document.getElementById("model-controls-group");
+
+    function setTabActive(activeTab) {
+      [tabModel, tabProcedural, tabGrid].forEach(t => t.classList.remove("active"));
+      activeTab.classList.add("active");
+    }
+
+    tabModel.addEventListener("click", () => {
+      setTabActive(tabModel);
+      modelGroup.style.display = "block";
+      loadSplatModel(document.getElementById("model-select").value);
+    });
+
+    tabProcedural.addEventListener("click", () => {
+      setTabActive(tabProcedural);
+      modelGroup.style.display = "none";
+      showProceduralSphere();
+    });
+
+    tabGrid.addEventListener("click", () => {
+      setTabActive(tabGrid);
+      modelGroup.style.display = "none";
+      showProceduralGrid();
+    });
+
+    // 8. Controls Event Listeners
+    const modelSelect = document.getElementById("model-select");
+    modelSelect.addEventListener("change", (e) => {
+      loadSplatModel(e.target.value);
+    });
+
+    const autoRotateCheck = document.getElementById("auto-rotate");
+    const toggleMeshCheck = document.getElementById("toggle-mesh");
+    toggleMeshCheck.addEventListener("change", (e) => {
+      torusMesh.visible = e.target.checked;
+    });
+
+    const scaleInput = document.getElementById("splat-scale");
+    const scaleVal = document.getElementById("scale-val");
+    scaleInput.addEventListener("input", (e) => {
+      const val = parseFloat(e.target.value);
+      scaleVal.textContent = `${val.toFixed(2)}x`;
+      if (currentSplatMesh) {
+        currentSplatMesh.scale.setScalar(val);
+      }
+    });
+
+    const opacityInput = document.getElementById("splat-opacity");
+    const opacityVal = document.getElementById("opacity-val");
+    opacityInput.addEventListener("input", (e) => {
+      const val = parseFloat(e.target.value);
+      opacityVal.textContent = val.toFixed(2);
+      if (currentSplatMesh) {
+        currentSplatMesh.opacity = val;
+      }
+    });
+
+    const btnRecolor = document.getElementById("btn-recolor");
+    btnRecolor.addEventListener("click", () => {
+      if (currentSplatMesh) {
+        const r = 0.4 + Math.random() * 0.6;
+        const g = 0.4 + Math.random() * 0.6;
+        const b = 0.4 + Math.random() * 0.6;
+        currentSplatMesh.recolor.setRGB(r, g, b);
+      }
+    });
+
+    // 9. Resize Handling
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // 10. Animation Render Loop
+    let frameCount = 0;
+    let lastFpsTime = performance.now();
+    let lastTime = performance.now();
+
+    renderer.setAnimationLoop((time) => {
+      const delta = (time - lastTime) / 1000;
+      lastTime = time;
+
+      frameCount++;
+      if (time - lastFpsTime >= 500) {
+        const fps = Math.round((frameCount * 1000) / (time - lastFpsTime));
+        fpsCounterEl.textContent = fps;
+        frameCount = 0;
+        lastFpsTime = time;
+      }
+
+      if (torusMesh.visible) {
+        torusMesh.rotation.x += delta * 0.8;
+        torusMesh.rotation.y += delta * 0.5;
+      }
+
+      if (autoRotateCheck.checked && currentSplatMesh) {
+        currentSplatMesh.rotation.y += delta * 0.5;
+        if (currentMode !== "model") {
+          currentSplatMesh.rotation.x += delta * 0.2;
+        }
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+    });
+  </script>
+</body>
 </html>
