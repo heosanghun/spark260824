@@ -985,13 +985,13 @@
         <!-- Drag & Drop Zone -->
         <div>
           <div class="section-header">
-            <span>로컬 3DGS 파일 드롭존</span>
+            <span>로컬 3DGS & 3D 모델 드롭존</span>
           </div>
           <div class="drop-zone" id="drop-zone">
-            <input type="file" id="file-input" accept=".spz,.ply,.splat,.ksplat,.rad" style="display:none;">
+            <input type="file" id="file-input" accept=".spz,.ply,.splat,.ksplat,.rad,.fbx,.glb,.gltf,.obj" style="display:none;">
             <div style="font-size:1.5rem; color:var(--accent-cyan);">📥</div>
             <div style="font-size:0.78rem; font-weight:600; margin-top:4px;">파일 끌어다 놓기</div>
-            <div class="drop-text">.spz, .ply, .splat, .rad 지원</div>
+            <div class="drop-text">.spz, .ply, .splat, .rad, .fbx, .glb 지원</div>
           </div>
         </div>
       </div>
@@ -1246,6 +1246,9 @@
   <script type="module">
     import * as THREE from "three";
     import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
+    import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+    import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
     import { SparkRenderer, SplatMesh, constructGrid, constructSpherePoints } from "@sparkjsdev/spark";
 
     // Elements
@@ -1459,12 +1462,25 @@
     controls.dampingFactor = 0.05;
     controls.target.set(0, 0, 0);
 
-    // 7. Splat Mesh Management
+    // 7. Splat & 3D Mesh Management
     let currentSplatMesh = null;
+    let currentCustomMesh = null;
     let currentMode = "viewport";
     let currentDtDomain = "ev";
     let guidesVisible = true;
     const baseAssetUrl = "https://sparkjs.dev/assets/splats/";
+
+    function removeCustomMesh() {
+      if (currentCustomMesh) {
+        scene.remove(currentCustomMesh);
+        if (currentCustomMesh.geometry) currentCustomMesh.geometry.dispose();
+        if (currentCustomMesh.material) {
+          if (Array.isArray(currentCustomMesh.material)) currentCustomMesh.material.forEach(m => m.dispose());
+          else currentCustomMesh.material.dispose();
+        }
+        currentCustomMesh = null;
+      }
+    }
 
     function removeCurrentSplat() {
       if (currentSplatMesh) {
@@ -1472,6 +1488,7 @@
         currentSplatMesh.dispose();
         currentSplatMesh = null;
       }
+      removeCustomMesh();
     }
 
     async function loadSplatModel(filename) {
@@ -1730,9 +1747,124 @@
       if (e.target.files.length > 0) handleLocalFile(e.target.files[0]);
     });
 
-    function handleLocalFile(file) {
-      const objectUrl = URL.createObjectURL(file);
-      loadSplatModel(objectUrl);
+    async function handleLocalFile(file) {
+      const name = file.name;
+      const ext = name.split('.').pop().toLowerCase();
+      
+      loadingOverlay.style.display = "flex";
+      loadingOverlay.style.opacity = "1";
+      loadingText.textContent = `${name} 파일 분석 및 로딩 중...`;
+
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+
+        if (["spz", "ply", "splat", "ksplat", "rad"].includes(ext)) {
+          removeCurrentSplat();
+
+          let fileType = ext;
+          if (ext === "ksplat") fileType = "splat";
+
+          const splatMesh = new SplatMesh({
+            fileBytes: new Uint8Array(arrayBuffer),
+            fileType: fileType,
+            lod: true,
+            onProgress: (ev) => {
+              if (ev.lengthComputable) {
+                const pct = Math.round((ev.loaded / ev.total) * 100);
+                loadingText.textContent = `${name} 로딩 중: ${pct}%`;
+              }
+            }
+          });
+
+          splatMesh.quaternion.set(1, 0, 0, 0);
+          splatMesh.position.set(0, 0, 0);
+          scene.add(splatMesh);
+          currentSplatMesh = splatMesh;
+
+          await splatMesh.initialized;
+          const count = splatMesh.numSplats || (splatMesh.packedSplats ? splatMesh.packedSplats.numSplats : 0);
+          statSplats.textContent = `${count.toLocaleString()} 개 (로컬 3DGS)`;
+        }
+        else if (ext === "fbx") {
+          removeCurrentSplat();
+
+          const loader = new FBXLoader();
+          const fbx = loader.parse(arrayBuffer, "");
+          
+          const bbox = new THREE.Box3().setFromObject(fbx);
+          const size = bbox.getSize(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z);
+          if (maxDim > 0) {
+            const scale = 2.0 / maxDim;
+            fbx.scale.setScalar(scale);
+          }
+          const center = bbox.getCenter(new THREE.Vector3());
+          fbx.position.sub(center.multiplyScalar(fbx.scale.x));
+          fbx.position.y += 0.2;
+
+          scene.add(fbx);
+          currentCustomMesh = fbx;
+          statSplats.textContent = "FBX 3D 모델";
+        }
+        else if (["gltf", "glb"].includes(ext)) {
+          removeCurrentSplat();
+
+          const loader = new GLTFLoader();
+          const gltf = await loader.parseAsync(arrayBuffer, "");
+          const obj = gltf.scene;
+
+          const bbox = new THREE.Box3().setFromObject(obj);
+          const size = bbox.getSize(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z);
+          if (maxDim > 0) {
+            const scale = 2.0 / maxDim;
+            obj.scale.setScalar(scale);
+          }
+          const center = bbox.getCenter(new THREE.Vector3());
+          obj.position.sub(center.multiplyScalar(obj.scale.x));
+          obj.position.y += 0.2;
+
+          scene.add(obj);
+          currentCustomMesh = obj;
+          statSplats.textContent = "GLTF/GLB 3D 모델";
+        }
+        else if (ext === "obj") {
+          removeCurrentSplat();
+
+          const loader = new OBJLoader();
+          const text = new TextDecoder().decode(arrayBuffer);
+          const obj = loader.parse(text);
+
+          const bbox = new THREE.Box3().setFromObject(obj);
+          const size = bbox.getSize(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z);
+          if (maxDim > 0) {
+            const scale = 2.0 / maxDim;
+            obj.scale.setScalar(scale);
+          }
+          const center = bbox.getCenter(new THREE.Vector3());
+          obj.position.sub(center.multiplyScalar(obj.scale.x));
+          obj.position.y += 0.2;
+
+          scene.add(obj);
+          currentCustomMesh = obj;
+          statSplats.textContent = "OBJ 3D 모델";
+        }
+        else {
+          throw new Error(`지원하지 않는 파일 형식: .${ext} (.spz, .ply, .splat, .rad, .fbx, .glb, .obj 지원)`);
+        }
+
+        loadingOverlay.style.opacity = "0";
+        setTimeout(() => {
+          loadingOverlay.style.display = "none";
+        }, 250);
+      } catch (err) {
+        console.error("로컬 파일 로드 실패:", err);
+        loadingText.textContent = `로드 실패: ${err.message}`;
+        setTimeout(() => {
+          loadingOverlay.style.display = "none";
+        }, 3000);
+      }
     }
 
     // Hierarchy Eye Toggles
