@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=no">
-  <title>Spark Studio Pro • Next-Gen 3DGS Web Platform</title>
+  <title>Spark Studio Pro • Generative AI Digital Twin & 3DGS Platform</title>
   
   <!-- Font & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,17 +13,19 @@
   <style>
     :root {
       --bg-base: #06080d;
-      --bg-surface: rgba(13, 17, 28, 0.78);
-      --bg-surface-elevated: rgba(20, 27, 45, 0.88);
-      --bg-card: rgba(26, 35, 58, 0.5);
+      --bg-surface: rgba(13, 17, 28, 0.82);
+      --bg-surface-elevated: rgba(20, 27, 45, 0.92);
+      --bg-card: rgba(26, 35, 58, 0.55);
       --bg-input: #121826;
       --border-subtle: rgba(255, 255, 255, 0.09);
       --border-focus: rgba(255, 75, 99, 0.5);
       --primary: #ff4b63;
       --primary-gradient: linear-gradient(135deg, #ff4b63 0%, #ff7843 50%, #ffb830 100%);
+      --dt-gradient: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 50%, #8b5cf6 100%);
       --accent-cyan: #38bdf8;
       --accent-purple: #a855f7;
       --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
       --text-primary: #f8fafc;
       --text-secondary: #94a3b8;
       --text-muted: #64748b;
@@ -70,7 +72,7 @@
       height: 100vh;
       pointer-events: none;
       z-index: 2;
-      background: radial-gradient(circle at center, transparent 40%, rgba(6, 8, 13, 0.75) 100%);
+      background: radial-gradient(circle at center, transparent 40%, rgba(6, 8, 13, 0.8) 100%);
     }
 
     /* Glass Panels */
@@ -144,6 +146,18 @@
       letter-spacing: 0.05em;
     }
 
+    .badge-dt {
+      background: rgba(14, 165, 233, 0.2);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(14, 165, 233, 0.4);
+      animation: pulse-badge 2s infinite;
+    }
+
+    @keyframes pulse-badge {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
     /* Mode Switcher Tabs */
     .mode-tabs {
       display: flex;
@@ -155,7 +169,7 @@
     }
 
     .tab-item {
-      padding: 6px 14px;
+      padding: 6px 13px;
       font-size: 0.8rem;
       font-weight: 600;
       border-radius: var(--radius-sm);
@@ -178,6 +192,11 @@
       background: var(--primary-gradient);
       color: #fff;
       box-shadow: 0 4px 12px rgba(255, 75, 99, 0.35);
+    }
+
+    .tab-item.active.dt-active {
+      background: var(--dt-gradient);
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.4);
     }
 
     /* Top Actions */
@@ -221,26 +240,25 @@
       justify-content: space-between;
     }
 
-    /* Left Sidebar: Assets & Hierarchy */
+    /* Sidebars */
     #left-panel {
-      width: 320px;
+      width: 330px;
       height: 100%;
       display: flex;
       flex-direction: column;
       padding: 18px;
       overflow-y: auto;
-      gap: 18px;
+      gap: 16px;
     }
 
-    /* Right Sidebar: Inspector */
     #right-panel {
-      width: 340px;
+      width: 350px;
       height: 100%;
       display: flex;
       flex-direction: column;
       padding: 18px;
       overflow-y: auto;
-      gap: 18px;
+      gap: 16px;
     }
 
     .section-header {
@@ -303,6 +321,113 @@
       color: var(--text-muted);
       font-family: 'JetBrains Mono', monospace;
     }
+
+    /* Digital Twin Stage Pipeline Card */
+    .dt-stage-card {
+      background: rgba(18, 24, 38, 0.75);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .dt-stage-card:hover {
+      border-color: var(--accent-cyan);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    .dt-stage-card.active {
+      border-color: var(--accent-cyan);
+      background: rgba(14, 165, 233, 0.15);
+      box-shadow: 0 0 12px rgba(14, 165, 233, 0.25);
+    }
+
+    .dt-stage-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text-primary);
+    }
+
+    .dt-stage-tech {
+      font-size: 0.68rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent-cyan);
+      background: rgba(56, 189, 248, 0.1);
+      padding: 2px 6px;
+      border-radius: var(--radius-xs);
+    }
+
+    .dt-stage-desc {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      margin-top: 4px;
+      line-height: 1.35;
+    }
+
+    /* Live Telemetry Gauges */
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .telemetry-box {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+    }
+
+    .telemetry-label {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .telemetry-val {
+      font-size: 1.05rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent-cyan);
+      margin-top: 2px;
+    }
+
+    /* Causal Reasoning Log Stream */
+    .reasoning-stream {
+      background: rgba(6, 9, 15, 0.85);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 10px;
+      height: 125px;
+      overflow-y: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      line-height: 1.5;
+    }
+
+    .log-item {
+      margin-bottom: 6px;
+      padding-bottom: 4px;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
+    }
+
+    .log-tag {
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 3px;
+      margin-right: 4px;
+    }
+
+    .log-tag.vlm { background: rgba(56, 189, 248, 0.2); color: var(--accent-cyan); }
+    .log-tag.pinn { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); }
+    .log-tag.rl { background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald); }
+    .log-tag.xai { background: rgba(168, 85, 247, 0.2); color: var(--accent-purple); }
 
     /* Scene Tree Items */
     .scene-tree-item {
@@ -566,6 +691,13 @@
       box-shadow: 0 4px 14px rgba(255, 75, 99, 0.35);
     }
 
+    .btn-block.dt {
+      background: var(--dt-gradient);
+      border: none;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.4);
+    }
+
     /* Bottom AI Command Bar */
     #bottom-container {
       position: absolute;
@@ -730,11 +862,15 @@
       </div>
     </div>
 
-    <!-- Mode Switcher Tabs -->
+    <!-- Mode Switcher Tabs with Digital Twin -->
     <div class="mode-tabs">
       <button class="tab-item active" id="mode-viewport">🎨 3DGS 씬</button>
       <button class="tab-item" id="mode-procedural">❄️ 프로시저럴 Lab</button>
       <button class="tab-item" id="mode-lighting">💡 SDF 라이팅</button>
+      <button class="tab-item" id="mode-digitaltwin" style="color:var(--accent-cyan); font-weight:700;">
+        <span>🏭 생성AI 디지털트윈</span>
+        <span class="badge badge-dt">NEW</span>
+      </button>
     </div>
 
     <!-- Quick Action Toolbar -->
@@ -749,177 +885,288 @@
 
   <!-- Workspace Floating Panels -->
   <main class="workspace-overlay">
-    <!-- Left Sidebar: Hierarchy & Assets -->
+    <!-- Left Sidebar: Hierarchy & Assets / Digital Twin 4-Stage Pipeline -->
     <aside id="left-panel" class="glass-panel">
-      <!-- Scene Hierarchy -->
-      <div>
-        <div class="section-header">
-          <span>씬 계층 구조 (Hierarchy)</span>
-          <span style="color:var(--accent-cyan); font-size:0.68rem;">LIVE</span>
+      <!-- Standard Studio Left View -->
+      <div id="studio-left-content">
+        <!-- Scene Hierarchy -->
+        <div style="margin-bottom:16px;">
+          <div class="section-header">
+            <span>씬 계층 구조 (Hierarchy)</span>
+            <span style="color:var(--accent-cyan); font-size:0.68rem;">LIVE</span>
+          </div>
+          <div class="scene-tree-item active">
+            <span>✨ SplatMesh (3DGS)</span>
+            <button class="btn-eye visible" id="eye-splat">👁️</button>
+          </div>
+          <div class="scene-tree-item">
+            <span>💍 Torus Knot (Mesh)</span>
+            <button class="btn-eye visible" id="eye-torus">👁️</button>
+          </div>
+          <div class="scene-tree-item">
+            <span>⭕ Studio Pedestal</span>
+            <button class="btn-eye visible" id="eye-pedestal">👁️</button>
+          </div>
+          <div class="scene-tree-item">
+            <span>💡 Studio Directional Light</span>
+            <button class="btn-eye visible" id="eye-light">👁️</button>
+          </div>
         </div>
-        <div class="scene-tree-item active">
-          <span>✨ SplatMesh (3DGS)</span>
-          <button class="btn-eye visible" id="eye-splat">👁️</button>
+
+        <!-- Asset Presets -->
+        <div style="margin-bottom:16px;">
+          <div class="section-header">
+            <span>3D Gaussian 에셋 프리셋</span>
+            <span style="color:var(--primary); font-size:0.7rem;">6개 모델</span>
+          </div>
+          <div class="asset-grid">
+            <div class="asset-card active" data-model="butterfly.spz">
+              <span class="asset-emoji">🦋</span>
+              <span class="asset-name">나비</span>
+              <span class="asset-sub">butterfly.spz</span>
+            </div>
+            <div class="asset-card" data-model="woobles.spz">
+              <span class="asset-emoji">🐧</span>
+              <span class="asset-name">우블스</span>
+              <span class="asset-sub">woobles.spz</span>
+            </div>
+            <div class="asset-card" data-model="cat.spz">
+              <span class="asset-emoji">🐱</span>
+              <span class="asset-name">고양이</span>
+              <span class="asset-sub">cat.spz</span>
+            </div>
+            <div class="asset-card" data-model="robot-head.spz">
+              <span class="asset-emoji">🤖</span>
+              <span class="asset-name">로봇 헤드</span>
+              <span class="asset-sub">robot.spz</span>
+            </div>
+            <div class="asset-card" data-model="dessert.spz">
+              <span class="asset-emoji">🍰</span>
+              <span class="asset-name">디저트</span>
+              <span class="asset-sub">dessert.spz</span>
+            </div>
+            <div class="asset-card" data-model="food/burger-from-amboy.spz">
+              <span class="asset-emoji">🍔</span>
+              <span class="asset-name">버거</span>
+              <span class="asset-sub">burger.spz</span>
+            </div>
+          </div>
         </div>
-        <div class="scene-tree-item">
-          <span>💍 Torus Knot (Mesh)</span>
-          <button class="btn-eye visible" id="eye-torus">👁️</button>
-        </div>
-        <div class="scene-tree-item">
-          <span>⭕ Studio Pedestal</span>
-          <button class="btn-eye visible" id="eye-pedestal">👁️</button>
-        </div>
-        <div class="scene-tree-item">
-          <span>💡 Studio Directional Light</span>
-          <button class="btn-eye visible" id="eye-light">👁️</button>
+
+        <!-- Drag & Drop Zone -->
+        <div>
+          <div class="section-header">
+            <span>로컬 3DGS 파일 드롭존</span>
+          </div>
+          <div class="drop-zone" id="drop-zone">
+            <input type="file" id="file-input" accept=".spz,.ply,.splat,.ksplat,.rad" style="display:none;">
+            <div style="font-size:1.5rem; color:var(--accent-cyan);">📥</div>
+            <div style="font-size:0.78rem; font-weight:600; margin-top:4px;">파일 끌어다 놓기</div>
+            <div class="drop-text">.spz, .ply, .splat, .rad 지원</div>
+          </div>
         </div>
       </div>
 
-      <!-- Asset Presets -->
-      <div>
+      <!-- Digital Twin Left View (4-Stage Closed-Loop Pipeline) -->
+      <div id="dt-left-content" style="display:none;">
         <div class="section-header">
-          <span>3D Gaussian 에셋 프리셋</span>
-          <span style="color:var(--primary); font-size:0.7rem;">6개 모델</span>
+          <span>산업 도메인 시나리오</span>
+          <span style="color:var(--accent-cyan); font-size:0.68rem;">SIM'S REALITY AI</span>
         </div>
-        <div class="asset-grid">
-          <div class="asset-card active" data-model="butterfly.spz">
-            <span class="asset-emoji">🦋</span>
-            <span class="asset-name">나비</span>
-            <span class="asset-sub">butterfly.spz</span>
-          </div>
-          <div class="asset-card" data-model="woobles.spz">
-            <span class="asset-emoji">🐧</span>
-            <span class="asset-name">우블스</span>
-            <span class="asset-sub">woobles.spz</span>
-          </div>
-          <div class="asset-card" data-model="cat.spz">
-            <span class="asset-emoji">🐱</span>
-            <span class="asset-name">고양이</span>
-            <span class="asset-sub">cat.spz</span>
-          </div>
-          <div class="asset-card" data-model="robot-head.spz">
-            <span class="asset-emoji">🤖</span>
-            <span class="asset-name">로봇 헤드</span>
-            <span class="asset-sub">robot.spz</span>
-          </div>
-          <div class="asset-card" data-model="dessert.spz">
-            <span class="asset-emoji">🍰</span>
-            <span class="asset-name">디저트</span>
-            <span class="asset-sub">dessert.spz</span>
-          </div>
-          <div class="asset-card" data-model="food/burger-from-amboy.spz">
-            <span class="asset-emoji">🍔</span>
-            <span class="asset-name">버거</span>
-            <span class="asset-sub">burger.spz</span>
-          </div>
+        <div style="display:flex; gap:6px; margin-bottom:14px;">
+          <button class="tab-item active" id="dt-domain-ev" style="flex:1; justify-content:center;">⚡ 전기차 모터</button>
+          <button class="tab-item" id="dt-domain-port" style="flex:1; justify-content:center;">🚢 스마트 항만</button>
         </div>
-      </div>
 
-      <!-- Drag & Drop Zone -->
-      <div>
         <div class="section-header">
-          <span>로컬 3DGS 파일 드롭존</span>
+          <span>4대 핵심 영역 & 자율 폐쇄 루프</span>
         </div>
-        <div class="drop-zone" id="drop-zone">
-          <input type="file" id="file-input" accept=".spz,.ply,.splat,.ksplat,.rad" style="display:none;">
-          <div style="font-size:1.5rem; color:var(--accent-cyan);">📥</div>
-          <div style="font-size:0.78rem; font-weight:600; margin-top:4px;">파일 끌어다 놓기</div>
-          <div class="drop-text">.spz, .ply, .splat, .rad 지원</div>
+
+        <div class="dt-stage-card active" data-stage="1">
+          <div class="dt-stage-title">
+            <span>1단계: 디지털 트윈 (DT)</span>
+            <span class="dt-stage-tech">VAE 센서 압축</span>
+          </div>
+          <div class="dt-stage-desc">현실 IoT 진동·온도 수집 및 저차원 잠재 공간(Latent Space) 3D 실시간 동기화 복제</div>
+        </div>
+
+        <div class="dt-stage-card" data-stage="2">
+          <div class="dt-stage-title">
+            <span>2단계: 공간 지능 (SI)</span>
+            <span class="dt-stage-tech">VLM 3D 지각</span>
+          </div>
+          <div class="dt-stage-desc">3DGS 공간 내 부품 간격(0.01mm) 및 사물의 쓰임새(Affordance) 시각-언어 의미론적 파악</div>
+        </div>
+
+        <div class="dt-stage-card" data-stage="3">
+          <div class="dt-stage-title">
+            <span>3단계: 월드 모델 (WM)</span>
+            <span class="dt-stage-tech">PINN 물리 법칙</span>
+          </div>
+          <div class="dt-stage-desc">열역학·유체역학·마찰력 기반 가상 샌드박스에서 미래 상태 예측 및 사전 충돌 회피</div>
+        </div>
+
+        <div class="dt-stage-card" data-stage="4">
+          <div class="dt-stage-title">
+            <span>4단계: 피지컬 AI (PAI)</span>
+            <span class="dt-stage-tech">RL & LAM 제어</span>
+          </div>
+          <div class="dt-stage-desc">강화학습 최적 제어 궤적과 거시적 자연어 명령을 다관절 로봇·AGV의 물리 신호로 변환 실행</div>
         </div>
       </div>
     </aside>
 
-    <!-- Right Sidebar: Inspector & Shading -->
+    <!-- Right Sidebar: Inspector & Shading / Digital Twin Telemetry & XAI -->
     <aside id="right-panel" class="glass-panel">
-      <!-- Transform & Animation -->
-      <div>
-        <div class="section-header">
-          <span>트랜스폼 & 턴테이블</span>
+      <!-- Standard Studio Right View -->
+      <div id="studio-right-content">
+        <!-- Transform & Animation -->
+        <div style="margin-bottom:16px;">
+          <div class="section-header">
+            <span>트랜스폼 & 턴테이블</span>
+          </div>
+          <div class="toggle-group">
+            <span style="font-size:0.78rem; font-weight:600; color:var(--text-secondary);">360° 턴테이블 자동 회전</span>
+            <label class="switch">
+              <input type="checkbox" id="toggle-autorotate" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="control-row" style="margin-top:8px;">
+            <div class="control-label-row">
+              <span>스플랫 스케일</span>
+              <div class="number-input-wrap">
+                <input type="number" id="num-scale" class="number-input" value="1.00" step="0.05" min="0.2" max="3.0">
+              </div>
+            </div>
+            <input type="range" id="slider-scale" min="0.2" max="3.0" step="0.05" value="1.0">
+          </div>
         </div>
-        <div class="toggle-group">
-          <span style="font-size:0.78rem; font-weight:600; color:var(--text-secondary);">360° 턴테이블 자동 회전</span>
-          <label class="switch">
-            <input type="checkbox" id="toggle-autorotate" checked>
-            <span class="slider"></span>
-          </label>
+
+        <!-- Camera Presets -->
+        <div style="margin-bottom:16px;">
+          <div class="section-header">
+            <span>카메라 프리셋 뷰</span>
+          </div>
+          <div class="cam-grid">
+            <button class="cam-btn" data-cam="hero">🎬 45° 뷰</button>
+            <button class="cam-btn" data-cam="front">👁️ 정면</button>
+            <button class="cam-btn" data-cam="top">📐 탑뷰</button>
+            <button class="cam-btn" data-cam="close">🔍 줌인</button>
+          </div>
         </div>
-        <div class="control-row" style="margin-top:8px;">
-          <div class="control-label-row">
-            <span>스플랫 스케일</span>
-            <div class="number-input-wrap">
-              <input type="number" id="num-scale" class="number-input" value="1.00" step="0.05" min="0.2" max="3.0">
+
+        <!-- Shading & Material Tuning -->
+        <div style="margin-bottom:16px;">
+          <div class="section-header">
+            <span>셰이딩 & 스플랫 비주얼</span>
+          </div>
+          <div class="control-row">
+            <div class="control-label-row">
+              <span>불투명도 (Opacity)</span>
+              <div class="number-input-wrap">
+                <input type="number" id="num-opacity" class="number-input" value="1.00" step="0.05" min="0.05" max="1.0">
+              </div>
+            </div>
+            <input type="range" id="slider-opacity" min="0.05" max="1.0" step="0.05" value="1.0">
+          </div>
+
+          <div class="control-row">
+            <div class="control-label-row">
+              <span>Spark LoD 상세도 예산</span>
+              <div class="number-input-wrap">
+                <input type="number" id="num-lod" class="number-input" value="1.0" step="0.25" min="0.5" max="2.5">
+              </div>
+            </div>
+            <input type="range" id="slider-lod" min="0.5" max="2.5" step="0.25" value="1.0">
+          </div>
+
+          <!-- Color Palette Swatches -->
+          <div class="control-row">
+            <div class="control-label-row">
+              <span>컬러 틴트 팔레트</span>
+            </div>
+            <div class="palette-grid">
+              <div class="swatch" style="background:#ffffff;" data-color="#ffffff" title="원본 White"></div>
+              <div class="swatch" style="background:#ff4b63;" data-color="#ff4b63" title="루비 레드"></div>
+              <div class="swatch" style="background:#fbbf24;" data-color="#fbbf24" title="황금빛 Gold"></div>
+              <div class="swatch" style="background:#38bdf8;" data-color="#38bdf8" title="네온 사이언"></div>
+              <div class="swatch" style="background:#a855f7;" data-color="#a855f7" title="사이버 바이올렛"></div>
+              <div class="swatch" style="background:#10b981;" data-color="#10b981" title="에메랄드 그린"></div>
+            </div>
+            <div class="color-input-wrap">
+              <input type="color" id="picker-color" value="#ffffff">
+              <span style="font-size:0.75rem; color:var(--text-muted);">직접 색상 선택 (Color Picker)</span>
             </div>
           </div>
-          <input type="range" id="slider-scale" min="0.2" max="3.0" step="0.05" value="1.0">
+        </div>
+
+        <!-- SDF Modifiers -->
+        <div>
+          <div class="section-header">
+            <span>SDF 실시간 변위 필드</span>
+          </div>
+          <button class="btn-block" id="btn-sdf-pulse">
+            <span>💥 실시간 SDF 펄스 파동 발사</span>
+          </button>
         </div>
       </div>
 
-      <!-- Camera Presets -->
-      <div>
-        <div class="section-header">
-          <span>카메라 프리셋 뷰</span>
-        </div>
-        <div class="cam-grid">
-          <button class="cam-btn" data-cam="hero">🎬 45° 뷰</button>
-          <button class="cam-btn" data-cam="front">👁️ 정면</button>
-          <button class="cam-btn" data-cam="top">📐 탑뷰</button>
-          <button class="cam-btn" data-cam="close">🔍 줌인</button>
-        </div>
-      </div>
-
-      <!-- Shading & Material Tuning -->
-      <div>
-        <div class="section-header">
-          <span>셰이딩 & 스플랫 비주얼</span>
-        </div>
-        <div class="control-row">
-          <div class="control-label-row">
-            <span>불투명도 (Opacity)</span>
-            <div class="number-input-wrap">
-              <input type="number" id="num-opacity" class="number-input" value="1.00" step="0.05" min="0.05" max="1.0">
+      <!-- Digital Twin Right View (Telemetry, Sim-to-Real Controls & XAI Causal Log) -->
+      <div id="dt-right-content" style="display:none;">
+        <!-- Live Telemetry Box -->
+        <div style="margin-bottom:14px;">
+          <div class="section-header">
+            <span>실시간 IoT 센서 텔레메트리</span>
+            <span style="color:var(--accent-emerald); font-size:0.68rem;">● 정상 동기화</span>
+          </div>
+          <div class="telemetry-grid">
+            <div class="telemetry-box">
+              <div class="telemetry-label"><span>온도 (Thermal)</span><span>PINN</span></div>
+              <div class="telemetry-val" id="dt-val-temp">42.8 °C</div>
+            </div>
+            <div class="telemetry-box">
+              <div class="telemetry-label"><span>진동 주파수</span><span>VAE</span></div>
+              <div class="telemetry-val" id="dt-val-vib">12.4 Hz</div>
+            </div>
+            <div class="telemetry-box">
+              <div class="telemetry-label"><span>조립 접촉 저항</span><span>RL</span></div>
+              <div class="telemetry-val" id="dt-val-load">0.02 N</div>
+            </div>
+            <div class="telemetry-box">
+              <div class="telemetry-label"><span>Sim-to-Real 정밀도</span><span>Closed-Loop</span></div>
+              <div class="telemetry-val" style="color:var(--accent-emerald);">99.8 %</div>
             </div>
           </div>
-          <input type="range" id="slider-opacity" min="0.05" max="1.0" step="0.05" value="1.0">
         </div>
 
-        <div class="control-row">
-          <div class="control-label-row">
-            <span>Spark LoD 상세도 예산</span>
-            <div class="number-input-wrap">
-              <input type="number" id="num-lod" class="number-input" value="1.0" step="0.25" min="0.5" max="2.5">
-            </div>
+        <!-- Simulation Injection Actions -->
+        <div style="margin-bottom:14px;">
+          <div class="section-header">
+            <span>월드 모델 가상 시뮬레이션 인젝터</span>
           </div>
-          <input type="range" id="slider-lod" min="0.5" max="2.5" step="0.25" value="1.0">
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <button class="btn-block" id="btn-trigger-anomaly" style="border-color:rgba(239, 68, 68, 0.4); color:#fca5a5;">
+              <span>🚨 이상(열화/풍압) 시뮬레이션 발생</span>
+            </button>
+            <button class="btn-block dt" id="btn-trigger-recovery">
+              <span>⚡ 월드 모델 자율 최적화 & 복구 (PINN + RL)</span>
+            </button>
+          </div>
         </div>
 
-        <!-- Color Palette Swatches -->
-        <div class="control-row">
-          <div class="control-label-row">
-            <span>컬러 틴트 팔레트</span>
+        <!-- XAI Causal Reasoning Stream -->
+        <div>
+          <div class="section-header">
+            <span>설명 가능한 AI (XAI) 인과 추론 로그</span>
+            <span style="color:var(--accent-purple); font-size:0.68rem;">LIVE LOG</span>
           </div>
-          <div class="palette-grid">
-            <div class="swatch" style="background:#ffffff;" data-color="#ffffff" title="원본 White"></div>
-            <div class="swatch" style="background:#ff4b63;" data-color="#ff4b63" title="루비 레드"></div>
-            <div class="swatch" style="background:#fbbf24;" data-color="#fbbf24" title="황금빛 Gold"></div>
-            <div class="swatch" style="background:#38bdf8;" data-color="#38bdf8" title="네온 사이언"></div>
-            <div class="swatch" style="background:#a855f7;" data-color="#a855f7" title="사이버 바이올렛"></div>
-            <div class="swatch" style="background:#10b981;" data-color="#10b981" title="에메랄드 그린"></div>
-          </div>
-          <div class="color-input-wrap">
-            <input type="color" id="picker-color" value="#ffffff">
-            <span style="font-size:0.75rem; color:var(--text-muted);">직접 색상 선택 (Color Picker)</span>
+          <div class="reasoning-stream" id="reasoning-log-box">
+            <div class="log-item"><span class="log-tag vlm">VLM</span><span style="color:#cbd5e1;">조립 라인 3번 스테이터 코어 3D 위치 및 틈새(0.01mm) 정밀 지각 완료</span></div>
+            <div class="log-item"><span class="log-tag pinn">PINN</span><span style="color:#cbd5e1;">전자기장 및 열역학 미분방정식 연산: 정상 발열 범위(42.8°C) 확인</span></div>
+            <div class="log-item"><span class="log-tag rl">RL</span><span style="color:#cbd5e1;">다관절 로봇 6축 토크 최적 경로 정책 하달 (Downtime: 0초)</span></div>
           </div>
         </div>
-      </div>
-
-      <!-- SDF Modifiers -->
-      <div>
-        <div class="section-header">
-          <span>SDF 실시간 변위 필드</span>
-        </div>
-        <button class="btn-block" id="btn-sdf-pulse">
-          <span>💥 실시간 SDF 펄스 파동 발사</span>
-        </button>
       </div>
     </aside>
   </main>
@@ -927,19 +1174,19 @@
   <!-- Bottom AI Command Bar & Status -->
   <div id="bottom-container">
     <!-- Quick Prompt Chips -->
-    <div class="ai-chips-row">
+    <div class="ai-chips-row" id="ai-chips-container">
+      <button class="ai-chip" data-prompt="전기차 모터 부품 조립 라인 생성적 디지털트윈을 실행해줘">🏭 전기차 모터 DT</button>
+      <button class="ai-chip" data-prompt="스마트 항만 컨테이너터미널 자율 항만 모드로 전환해줘">🚢 스마트 항만 DT</button>
       <button class="ai-chip" data-prompt="황금빛 틴트로 변경하고 2배 스케일업해줘">✨ 황금빛 글로우</button>
       <button class="ai-chip" data-prompt="사이버펑크 네온 블루 틴트 적용해줘">🌈 사이버펑크 네온</button>
       <button class="ai-chip" data-prompt="프로시저럴 스피어 파티클 모드로 전환해줘">❄️ 프로시저럴 Lab</button>
       <button class="ai-chip" data-prompt="우블스 펭귄 모델로 전환해줘">🐧 우블스 로드</button>
-      <button class="ai-chip" data-prompt="버거 모델로 전환하고 45도 시네마틱 뷰로 이동해줘">🍔 버거 45° 뷰</button>
-      <button class="ai-chip" data-prompt="스케일을 0.8배로 축소하고 투명도를 0.8로 맞춰줘">📐 미니멀 뷰</button>
     </div>
 
     <!-- AI Command Input Bar -->
     <footer id="ai-bar" class="glass-panel">
-      <div class="ai-badge">⚡ AI 3D Copilot (MCP)</div>
-      <input type="text" class="ai-input" id="ai-input" placeholder="자연어로 3DGS 씬을 조작해보세요 (예: '황금빛 틴트로 변경하고 2배 스케일업해줘')...">
+      <div class="ai-badge" id="ai-badge-label">⚡ AI 3D Copilot (MCP)</div>
+      <input type="text" class="ai-input" id="ai-input" placeholder="자연어로 3DGS 씬 및 디지털트윈을 제어하세요 (예: '모터 조립 속도 15% 가속하고 AGV 배차해줘')...">
       <button class="ai-submit" id="ai-submit">실행</button>
       <div class="stats-tray">
         <span>FPS: <b id="stat-fps" style="color:var(--accent-cyan);">60</b></span>
@@ -966,6 +1213,12 @@
     const loadingText = document.getElementById("loading-text");
     const statFps = document.getElementById("stat-fps");
     const statSplats = document.getElementById("stat-splats");
+
+    // Panels View Toggles
+    const studioLeft = document.getElementById("studio-left-content");
+    const dtLeft = document.getElementById("dt-left-content");
+    const studioRight = document.getElementById("studio-right-content");
+    const dtRight = document.getElementById("dt-right-content");
 
     // 1. Scene & Camera Setup
     const scene = new THREE.Scene();
@@ -995,10 +1248,8 @@
     });
     scene.add(spark);
 
-    // 4. Studio Hologram Turntable Pedestal (Circular Rings & Shadow Base)
+    // 4. Studio Pedestal (Circular Rings & Shadow Base)
     const pedestalGroup = new THREE.Group();
-    
-    // Base Disc
     const baseDiscGeo = new THREE.CircleGeometry(2.2, 64);
     const baseDiscMat = new THREE.MeshBasicMaterial({
       color: 0x0f172a,
@@ -1011,7 +1262,6 @@
     baseDisc.position.y = -0.82;
     pedestalGroup.add(baseDisc);
 
-    // Outer Glowing Ring
     const outerRingGeo = new THREE.RingGeometry(2.18, 2.22, 64);
     const outerRingMat = new THREE.MeshBasicMaterial({
       color: 0xff4b63,
@@ -1024,7 +1274,6 @@
     outerRing.position.y = -0.81;
     pedestalGroup.add(outerRing);
 
-    // Inner Subtle Ring
     const innerRingGeo = new THREE.RingGeometry(1.4, 1.42, 64);
     const innerRingMat = new THREE.MeshBasicMaterial({
       color: 0x38bdf8,
@@ -1039,7 +1288,7 @@
 
     scene.add(pedestalGroup);
 
-    // Three.js Metal Torus Knot (Z-Buffer Occlusion Test)
+    // Standard Three.js Metal Torus Knot (Z-Buffer Occlusion Test)
     const torusGeo = new THREE.TorusKnotGeometry(0.32, 0.09, 120, 16);
     const torusMat = new THREE.MeshStandardMaterial({
       color: 0x38bdf8,
@@ -1050,6 +1299,79 @@
     torusMesh.position.set(1.4, 0.25, -0.4);
     scene.add(torusMesh);
 
+    // 5. Digital Twin Specialized 3D Meshes (EV Motor & Robotic Arm & Bounding Boxes)
+    const dtSceneGroup = new THREE.Group();
+    dtSceneGroup.visible = false;
+
+    // EV Motor Stator & Rotor Assembly
+    const motorGroup = new THREE.Group();
+    const statorGeo = new THREE.CylinderGeometry(0.7, 0.7, 0.9, 32, 1, true);
+    const statorMat = new THREE.MeshStandardMaterial({
+      color: 0x334155,
+      metalness: 0.8,
+      roughness: 0.3,
+      side: THREE.DoubleSide
+    });
+    const statorMesh = new THREE.Mesh(statorGeo, statorMat);
+    statorMesh.position.y = 0.2;
+    motorGroup.add(statorMesh);
+
+    // Rotor Core Inside
+    const rotorGeo = new THREE.CylinderGeometry(0.45, 0.45, 1.1, 24);
+    const rotorMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      metalness: 0.9,
+      roughness: 0.2
+    });
+    const rotorMesh = new THREE.Mesh(rotorGeo, rotorMat);
+    rotorMesh.position.y = 0.2;
+    motorGroup.add(rotorMesh);
+
+    // Copper Coil Windings (Golden Tubes)
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const coilGeo = new THREE.TorusGeometry(0.18, 0.04, 16, 32);
+      const coilMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.8, roughness: 0.3 });
+      const coilMesh = new THREE.Mesh(coilGeo, coilMat);
+      coilMesh.position.set(Math.cos(angle) * 0.58, 0.2, Math.sin(angle) * 0.58);
+      coilMesh.rotation.y = angle;
+      motorGroup.add(coilMesh);
+    }
+
+    // Spatial Intelligence Hologram Bounding Box
+    const bboxGeo = new THREE.BoxGeometry(1.6, 1.3, 1.6);
+    const bboxEdges = new THREE.EdgesGeometry(bboxGeo);
+    const bboxLine = new THREE.LineSegments(bboxEdges, new THREE.LineBasicMaterial({ color: 0x38bdf8 }));
+    bboxLine.position.y = 0.2;
+    motorGroup.add(bboxLine);
+
+    dtSceneGroup.add(motorGroup);
+
+    // Multi-joint Robotic Arm Stand
+    const robotArmGroup = new THREE.Group();
+    robotArmGroup.position.set(-1.4, -0.6, 0);
+
+    const armBaseGeo = new THREE.CylinderGeometry(0.3, 0.35, 0.3, 16);
+    const armBaseMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.7, roughness: 0.4 });
+    const armBase = new THREE.Mesh(armBaseGeo, armBaseMat);
+    robotArmGroup.add(armBase);
+
+    const armJointGeo = new THREE.SphereGeometry(0.12, 16, 16);
+    const armJointMat = new THREE.MeshStandardMaterial({ color: 0xff4b63, metalness: 0.8 });
+    const joint1 = new THREE.Mesh(armJointGeo, armJointMat);
+    joint1.position.y = 0.3;
+    robotArmGroup.add(joint1);
+
+    const armLinkGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.8, 16);
+    const armLinkMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8 });
+    const link1 = new THREE.Mesh(armLinkGeo, armLinkMat);
+    link1.position.set(0.3, 0.6, 0);
+    link1.rotation.z = -Math.PI / 4;
+    robotArmGroup.add(link1);
+
+    dtSceneGroup.add(robotArmGroup);
+    scene.add(dtSceneGroup);
+
     // Studio Lighting
     const dirLight = new THREE.DirectionalLight(0xffffff, 2.8);
     dirLight.position.set(5, 10, 7);
@@ -1057,13 +1379,13 @@
     const ambLight = new THREE.AmbientLight(0xffffff, 0.95);
     scene.add(ambLight);
 
-    // 5. Camera Orbit Controls
+    // 6. Camera Orbit Controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.target.set(0, 0, 0);
 
-    // 6. Splat Mesh Management
+    // 7. Splat Mesh Management
     let currentSplatMesh = null;
     let currentMode = "viewport";
     const baseAssetUrl = "https://sparkjs.dev/assets/splats/";
@@ -1154,11 +1476,156 @@
       statSplats.textContent = "SDF 라이팅 그리드";
     }
 
+    function showDigitalTwinMode(domain = "ev") {
+      currentMode = "digitaltwin";
+      loadingOverlay.style.display = "none";
+
+      // Toggle Left and Right views
+      studioLeft.style.display = "none";
+      dtLeft.style.display = "block";
+      studioRight.style.display = "none";
+      dtRight.style.display = "block";
+
+      // Show specialized digital twin geometries
+      torusMesh.visible = false;
+      dtSceneGroup.visible = true;
+
+      // Adjust camera for industrial layout
+      camera.position.set(2.4, 1.5, 2.8);
+      controls.target.set(0, 0.2, 0);
+
+      // Load background 3DGS splat environment
+      if (domain === "ev") {
+        loadSplatModel("robot-head.spz");
+        appendReasoningLog("VLM", "전기차 모터 3번 라인 스테이터 및 로터 3D 공간 기하학(0.01mm) 정밀 매핑");
+        appendReasoningLog("PINN", "모터 내부 전자기장 및 발열(42.8°C) 물리 시뮬레이션 안정 상태 검증");
+      } else {
+        loadSplatModel("food/burger-from-amboy.spz");
+        appendReasoningLog("VLM", "스마트 항만 컨테이너터미널 6면 외관 및 씰(Seal) 손상 무정차 판독 완료");
+        appendReasoningLog("WM", "야드 크레인 적재 스케줄링 시계열 분석: 리핸들링 0회 최적 궤적 도출");
+      }
+    }
+
+    function hideDigitalTwinMode() {
+      studioLeft.style.display = "block";
+      dtLeft.style.display = "none";
+      studioRight.style.display = "block";
+      dtRight.style.display = "none";
+      dtSceneGroup.visible = false;
+      torusMesh.visible = document.getElementById("eye-torus").classList.contains("visible");
+    }
+
     // Initial Load
     loadSplatModel("butterfly.spz");
 
-    // 7. Interactive Controls & UI Bindings
-    // Asset Cards
+    // 8. Mode Tabs Event Listeners
+    const tabViewport = document.getElementById("mode-viewport");
+    const tabProcedural = document.getElementById("mode-procedural");
+    const tabLighting = document.getElementById("mode-lighting");
+    const tabDigitalTwin = document.getElementById("mode-digitaltwin");
+
+    function setTab(activeTab) {
+      [tabViewport, tabProcedural, tabLighting, tabDigitalTwin].forEach(t => {
+        t.classList.remove("active");
+        t.classList.remove("dt-active");
+      });
+      activeTab.classList.add("active");
+      if (activeTab === tabDigitalTwin) {
+        activeTab.classList.add("dt-active");
+        showDigitalTwinMode();
+      } else {
+        hideDigitalTwinMode();
+      }
+    }
+
+    tabViewport.addEventListener("click", () => {
+      setTab(tabViewport);
+      loadSplatModel("butterfly.spz");
+    });
+    tabProcedural.addEventListener("click", () => {
+      setTab(tabProcedural);
+      showProceduralLab();
+    });
+    tabLighting.addEventListener("click", () => {
+      setTab(tabLighting);
+      showSdfLightingMode();
+    });
+    tabDigitalTwin.addEventListener("click", () => {
+      setTab(tabDigitalTwin);
+    });
+
+    // Domain Switcher
+    const dtEvBtn = document.getElementById("dt-domain-ev");
+    const dtPortBtn = document.getElementById("dt-domain-port");
+
+    dtEvBtn.addEventListener("click", () => {
+      dtEvBtn.classList.add("active");
+      dtPortBtn.classList.remove("active");
+      showDigitalTwinMode("ev");
+    });
+
+    dtPortBtn.addEventListener("click", () => {
+      dtPortBtn.classList.add("active");
+      dtEvBtn.classList.remove("active");
+      showDigitalTwinMode("port");
+    });
+
+    // 4-Stage Pipeline Card clicks
+    document.querySelectorAll(".dt-stage-card").forEach(card => {
+      card.addEventListener("click", () => {
+        document.querySelectorAll(".dt-stage-card").forEach(c => c.classList.remove("active"));
+        card.classList.add("active");
+        const stage = card.dataset.stage;
+        if (stage === "1") appendReasoningLog("DT", "1단계 [디지털 트윈]: IoT 센서 원시 데이터 VAE 잠재 공간 압축 수신");
+        else if (stage === "2") appendReasoningLog("VLM", "2단계 [공간 지능]: 3D 기하학 바운딩박스 및 장애물 어포던스 맥락 파악");
+        else if (stage === "3") appendReasoningLog("PINN", "3단계 [월드 모델]: 물리 법칙 기반 미래 충돌/열화 시뮬레이션 예측 수행");
+        else if (stage === "4") appendReasoningLog("RL", "4단계 [피지컬 AI]: LAM 자연어 지시 → 다관절 로봇 6축 정밀 자율 제어 실행");
+      });
+    });
+
+    // Reasoning Log Helper
+    const logBox = document.getElementById("reasoning-log-box");
+    function appendReasoningLog(tag, message) {
+      const item = document.createElement("div");
+      item.className = "log-item";
+      const tagSpan = document.createElement("span");
+      tagSpan.className = `log-tag ${tag.toLowerCase()}`;
+      tagSpan.textContent = tag;
+      const textSpan = document.createElement("span");
+      textSpan.style.color = "#cbd5e1";
+      textSpan.textContent = message;
+      item.appendChild(tagSpan);
+      item.appendChild(textSpan);
+      logBox.prepend(item);
+    }
+
+    // Digital Twin Simulation Injections
+    const valTemp = document.getElementById("dt-val-temp");
+    const valVib = document.getElementById("dt-val-vib");
+    const valLoad = document.getElementById("dt-val-load");
+
+    document.getElementById("btn-trigger-anomaly").addEventListener("click", () => {
+      valTemp.textContent = "89.4 °C (위험)";
+      valTemp.style.color = "#ef4444";
+      valVib.textContent = "48.2 Hz (이상)";
+      valVib.style.color = "#ef4444";
+      rotorMesh.material.color.setHex(0xef4444);
+      appendReasoningLog("VAE", "🚨 경고: 모터 하우징 2번 센서 이상 진동(48.2Hz) 및 급격한 열화 감지!");
+      appendReasoningLog("XAI", "월드 모델 시뮬레이션: 2.4초 후 절삭 공구 파손 및 라인 병목 100% 예상");
+    });
+
+    document.getElementById("btn-trigger-recovery").addEventListener("click", () => {
+      valTemp.textContent = "43.1 °C (정상)";
+      valTemp.style.color = "var(--accent-cyan)";
+      valVib.textContent = "12.8 Hz (안정)";
+      valVib.style.color = "var(--accent-cyan)";
+      valLoad.textContent = "0.01 N (최적)";
+      rotorMesh.material.color.setHex(0xf59e0b);
+      appendReasoningLog("WM(PINN)", "✨ 물리 정보 신경망(PINN): 냉각 유체 순환 속도 20% 가속 보정");
+      appendReasoningLog("PAI(RL)", "자율 폐쇄 루프: 다관절 로봇 조립 속도 미세 조절 및 자동 복구 완료 (Downtime: 0초)");
+    });
+
+    // 9. Standard Studio UI Bindings
     document.querySelectorAll(".asset-card").forEach(card => {
       card.addEventListener("click", () => {
         document.querySelectorAll(".asset-card").forEach(c => c.classList.remove("active"));
@@ -1167,7 +1634,6 @@
       });
     });
 
-    // Local Dropzone
     const dropZone = document.getElementById("drop-zone");
     const fileInput = document.getElementById("file-input");
     dropZone.addEventListener("click", () => fileInput.click());
@@ -1186,29 +1652,6 @@
       const objectUrl = URL.createObjectURL(file);
       loadSplatModel(objectUrl);
     }
-
-    // Top Tabs
-    const tabViewport = document.getElementById("mode-viewport");
-    const tabProcedural = document.getElementById("mode-procedural");
-    const tabLighting = document.getElementById("mode-lighting");
-
-    function setTab(activeTab) {
-      [tabViewport, tabProcedural, tabLighting].forEach(t => t.classList.remove("active"));
-      activeTab.classList.add("active");
-    }
-
-    tabViewport.addEventListener("click", () => {
-      setTab(tabViewport);
-      loadSplatModel("butterfly.spz");
-    });
-    tabProcedural.addEventListener("click", () => {
-      setTab(tabProcedural);
-      showProceduralLab();
-    });
-    tabLighting.addEventListener("click", () => {
-      setTab(tabLighting);
-      showSdfLightingMode();
-    });
 
     // Hierarchy Eye Toggles
     const eyeSplat = document.getElementById("eye-splat");
@@ -1307,7 +1750,7 @@
       a.click();
     });
 
-    // SDF Pulse Wave Action
+    // SDF Pulse Action
     document.getElementById("btn-sdf-pulse").addEventListener("click", () => {
       if (currentSplatMesh) {
         let startTime = performance.now();
@@ -1333,6 +1776,19 @@
     function executeAiCommand(query) {
       const q = query.toLowerCase();
       
+      // Digital Twin domain commands
+      if (q.includes("디지털트윈") || q.includes("digital twin") || q.includes("모터") || q.includes("제조")) {
+        tabDigitalTwin.click();
+        dtEvBtn.click();
+        appendReasoningLog("LAM", `자연어 지시 실행: "${query}" → 전기차 모터 자율제조 DT 활성화`);
+        return;
+      } else if (q.includes("항만") || q.includes("컨테이너") || q.includes("port")) {
+        tabDigitalTwin.click();
+        dtPortBtn.click();
+        appendReasoningLog("LAM", `자연어 지시 실행: "${query}" → 스마트 항만 자율 물류 DT 활성화`);
+        return;
+      }
+
       // Models
       if (q.includes("우블스") || q.includes("woobles") || q.includes("펭귄")) {
         loadSplatModel("woobles.spz");
@@ -1394,14 +1850,14 @@
       });
     });
 
-    // 8. Window Resize
+    // 10. Window Resize
     window.addEventListener("resize", () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // 9. Animation Render Loop
+    // 11. Animation Render Loop
     const toggleAutorotate = document.getElementById("toggle-autorotate");
     let frameCount = 0;
     let lastFpsTime = performance.now();
@@ -1426,11 +1882,17 @@
         torusMesh.rotation.y += delta * 0.4;
       }
 
+      // Digital Twin Motor Rotor Rotation
+      if (dtSceneGroup.visible) {
+        rotorMesh.rotation.y += delta * 2.5;
+        robotArmGroup.rotation.y = Math.sin(time * 0.0015) * 0.4;
+      }
+
       // Turntable Rotation
       if (toggleAutorotate.checked) {
         if (currentSplatMesh) {
           currentSplatMesh.rotation.y += delta * 0.35;
-          if (currentMode !== "viewport") {
+          if (currentMode === "procedural" || currentMode === "lighting") {
             currentSplatMesh.rotation.x += delta * 0.15;
           }
         }
