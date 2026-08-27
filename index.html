@@ -1875,7 +1875,10 @@
       if (e.dataTransfer.files.length > 0) handleLocalFile(e.dataTransfer.files[0]);
     });
     fileInput.addEventListener("change", (e) => {
-      if (e.target.files.length > 0) handleLocalFile(e.target.files[0]);
+      if (e.target.files.length > 0) {
+        handleLocalFile(e.target.files[0]);
+        fileInput.value = "";
+      }
     });
 
     const dtDropZone = document.getElementById("dt-drop-zone");
@@ -1890,9 +1893,33 @@
         if (e.dataTransfer.files.length > 0) handleLocalFile(e.dataTransfer.files[0]);
       });
       dtFileInput.addEventListener("change", (e) => {
-        if (e.target.files.length > 0) handleLocalFile(e.target.files[0]);
+        if (e.target.files.length > 0) {
+          handleLocalFile(e.target.files[0]);
+          dtFileInput.value = "";
+        }
       });
     }
+
+    // Global Window Drag & Drop (Supports dragging anywhere onto the 3D viewport)
+    window.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropZone.classList.add("dragover");
+      if (dtDropZone) dtDropZone.classList.add("dragover");
+    });
+    window.addEventListener("dragleave", (e) => {
+      if (e.clientX <= 0 || e.clientY <= 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight) {
+        dropZone.classList.remove("dragover");
+        if (dtDropZone) dtDropZone.classList.remove("dragover");
+      }
+    });
+    window.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("dragover");
+      if (dtDropZone) dtDropZone.classList.remove("dragover");
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        handleLocalFile(e.dataTransfer.files[0]);
+      }
+    });
 
     async function handleLocalFile(file) {
       const name = file.name;
