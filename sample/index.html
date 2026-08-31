@@ -1676,17 +1676,42 @@
         if (type === "fbx") {
           const loader = new FBXLoader();
           const obj = loader.parse(arrayBuffer, "");
+
+          let vertCount = 0;
+          obj.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+              if (child.geometry) {
+                child.geometry.computeVertexNormals();
+                if (child.geometry.attributes && child.geometry.attributes.position) {
+                  vertCount += child.geometry.attributes.position.count;
+                }
+              }
+              // Vibrant emerald-cyan dragon material with double-sided rendering
+              child.material = new THREE.MeshStandardMaterial({
+                color: 0x0284c7,
+                roughness: 0.25,
+                metalness: 0.5,
+                side: THREE.DoubleSide
+              });
+            }
+          });
+
+          // Precise auto-scaling and centering
           const bbox = new THREE.Box3().setFromObject(obj);
           const size = bbox.getSize(new THREE.Vector3());
-          const maxDim = Math.max(size.x, size.y, size.z);
-          if (maxDim > 0) obj.scale.setScalar(2.2 / maxDim);
           const center = bbox.getCenter(new THREE.Vector3());
-          obj.position.sub(center.multiplyScalar(obj.scale.x));
-          obj.position.y += 0.35;
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const scale = maxDim > 0 ? (2.2 / maxDim) : 1.0;
+
+          obj.scale.setScalar(scale);
+          obj.position.set(-center.x * scale, -center.y * scale + 0.35, -center.z * scale);
+
           scene.add(obj);
           currentCustomMesh = obj;
-          statSplats.textContent = "3D FBX 드래곤 메시 (고정밀 폴리곤)";
-          appendXaiLog("[3D GS] 🐉 정품 3D FBX 드래곤 모델 렌더링 완료 (22,126 버텍스)");
+          statSplats.textContent = `${vertCount.toLocaleString()} 버텍스 (정품 3D FBX 드래곤)`;
+          appendXaiLog(`[3D GS] 🐉 정품 3D FBX 드래곤 모델 (${vertCount.toLocaleString()} 버텍스) 렌더링 완료!`);
         } else if (type === "ply") {
           const loader = new PLYLoader();
           const geometry = loader.parse(arrayBuffer);
@@ -1924,16 +1949,40 @@
           removeCurrentSplat();
           const loader = new FBXLoader();
           const obj = loader.parse(arrayBuffer, "");
+
+          let vertCount = 0;
+          obj.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+              if (child.geometry) {
+                child.geometry.computeVertexNormals();
+                if (child.geometry.attributes && child.geometry.attributes.position) {
+                  vertCount += child.geometry.attributes.position.count;
+                }
+              }
+              child.material = new THREE.MeshStandardMaterial({
+                color: 0x0284c7,
+                roughness: 0.25,
+                metalness: 0.5,
+                side: THREE.DoubleSide
+              });
+            }
+          });
+
           const bbox = new THREE.Box3().setFromObject(obj);
           const size = bbox.getSize(new THREE.Vector3());
-          const maxDim = Math.max(size.x, size.y, size.z);
-          if (maxDim > 0) obj.scale.setScalar(2.2 / maxDim);
           const center = bbox.getCenter(new THREE.Vector3());
-          obj.position.sub(center.multiplyScalar(obj.scale.x));
-          obj.position.y += 0.2;
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const scale = maxDim > 0 ? (2.2 / maxDim) : 1.0;
+
+          obj.scale.setScalar(scale);
+          obj.position.set(-center.x * scale, -center.y * scale + 0.35, -center.z * scale);
+
           scene.add(obj);
           currentCustomMesh = obj;
-          statSplats.textContent = "FBX 3D 모델";
+          statSplats.textContent = `${vertCount.toLocaleString()} 버텍스 (3D FBX 모델)`;
+          appendXaiLog(`[3D 로더] 🐉 FBX 3D 모델 (${vertCount.toLocaleString()} 버텍스) 렌더링 완료!`);
         }
         else if (["glb", "gltf"].includes(ext)) {
           removeCurrentSplat();
