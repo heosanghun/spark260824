@@ -1316,13 +1316,13 @@
 
           const group = new THREE.Group();
 
-          // 1. Point Cloud Splats (3DGS)
+          // 1. Point Cloud Splats (3DGS - Ultra-fine Micro-sand)
           const pMat = new THREE.PointsMaterial({
-            size: 0.038,
+            size: 0.015,
             vertexColors: true,
             map: texture,
             transparent: true,
-            opacity: 0.96,
+            opacity: 0.98,
             depthWrite: true
           });
           const points = new THREE.Points(geometry, pMat);
@@ -2099,7 +2099,13 @@
       const val = parseFloat(e.target.value);
       labelScale.textContent = val.toFixed(1);
       if (currentSplatMesh) currentSplatMesh.scale.setScalar(val);
-      if (currentCustomMesh) currentCustomMesh.scale.setScalar(val);
+      if (currentCustomMesh) {
+        currentCustomMesh.traverse((child) => {
+          if (child.isPoints && child.material) {
+            child.material.size = 0.015 * val;
+          }
+        });
+      }
     });
 
     const sliderOpacity = document.getElementById("slider-opacity");
@@ -2109,6 +2115,16 @@
       labelOpacity.textContent = val.toFixed(2);
       if (currentSplatMesh && currentSplatMesh.material) {
         currentSplatMesh.material.opacity = val;
+      }
+      if (currentCustomMesh) {
+        currentCustomMesh.traverse((child) => {
+          if (child.isPoints && child.material) {
+            child.material.opacity = val;
+          }
+          if (child.isMesh && child.material) {
+            child.material.opacity = val * 0.75;
+          }
+        });
       }
     });
 
