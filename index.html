@@ -1678,11 +1678,47 @@
       }
     }
 
+    function computeDistanceTransform(mask, W, H) {
+      const dist = new Float32Array(W * H);
+      const INF = 999999;
+      for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+          const idx = y * W + x;
+          if (mask[idx] === 0) {
+            dist[idx] = 0;
+          } else {
+            let d = INF;
+            if (x > 0) d = Math.min(d, dist[idx - 1] + 1);
+            if (y > 0) d = Math.min(d, dist[idx - W] + 1);
+            if (x > 0 && y > 0) d = Math.min(d, dist[idx - W - 1] + 1.414);
+            if (x < W - 1 && y > 0) d = Math.min(d, dist[idx - W + 1] + 1.414);
+            dist[idx] = d;
+          }
+        }
+      }
+      let maxD = 0.001;
+      for (let y = H - 1; y >= 0; y--) {
+        for (let x = W - 1; x >= 0; x--) {
+          const idx = y * W + x;
+          if (mask[idx] > 0) {
+            let d = dist[idx];
+            if (x < W - 1) d = Math.min(d, dist[idx + 1] + 1);
+            if (y < H - 1) d = Math.min(d, dist[idx + W] + 1);
+            if (x < W - 1 && y < H - 1) d = Math.min(d, dist[idx + W + 1] + 1.414);
+            if (x > 0 && y < H - 1) d = Math.min(d, dist[idx + W - 1] + 1.414);
+            dist[idx] = d;
+            if (d > maxD) maxD = d;
+          }
+        }
+      }
+      for (let i = 0; i < W * H; i++) dist[i] /= maxD;
+      return dist;
+    }
+
     function fuseMultiViewImages(loadedImgs) {
       const n = loadedImgs.length;
       const maskSize = 128;
-      const processedMasks = [];
-      const processedImgs = [];
+      const views = [];
 
       for (let k = 0; k < n; k++) {
         const img = loadedImgs[k];
@@ -1693,19 +1729,17 @@
         rawCtx.drawImage(img, 0, 0, rawCanvas.width, rawCanvas.height);
         const rawData = rawCtx.getImageData(0, 0, rawCanvas.width, rawCanvas.height).data;
 
-        // Sample 4 corners for background color estimation
+        // Sample background from 4 corners
         const W = rawCanvas.width;
         const H = rawCanvas.height;
         const cornerIndices = [0, (W - 1) * 4, (H - 1) * W * 4, ((H - 1) * W + (W - 1)) * 4];
         let bgR = 0, bgG = 0, bgB = 0;
         cornerIndices.forEach(idx => {
-          bgR += rawData[idx];
-          bgG += rawData[idx + 1];
-          bgB += rawData[idx + 2];
+          bgR += rawData[idx]; bgG += rawData[idx + 1]; bgB += rawData[idx + 2];
         });
         bgR /= 4; bgG /= 4; bgB /= 4;
 
-        // Find bounding box of foreground
+        // Find bounding box
         let minX = W, maxX = 0, minY = H, maxY = 0;
         let fgCount = 0;
         for (let y = 0; y < H; y++) {
@@ -1713,7 +1747,7 @@
             const i = (y * W + x) * 4;
             const r = rawData[i], g = rawData[i + 1], b = rawData[i + 2], a = rawData[i + 3];
             const dist = Math.sqrt((r - bgR)**2 + (g - bgG)**2 + (b - bgB)**2);
-            if (dist > 22 && a > 40) {
+            if (dist > 18 && a > 35) {
               if (x < minX) minX = x;
               if (x > maxX) maxX = x;
               if (y < minY) minY = y;
@@ -1723,12 +1757,10 @@
           }
         }
 
-        // Fallback if no clean background contrast
         if (fgCount < 50 || minX >= maxX || minY >= maxY) {
           minX = 0; maxX = W; minY = 0; maxY = H;
         }
 
-        // Crop centered square onto maskCanvas
         const cropW = maxX - minX;
         const cropH = maxY - minY;
         const maxDim = Math.max(cropW, cropH);
@@ -1737,8 +1769,7 @@
         sqCanvas.width = maskSize;
         sqCanvas.height = maskSize;
         const sqCtx = sqCanvas.getContext("2d");
-        
-        // Draw centered and scaled
+
         const scale = maskSize / maxDim;
         const offX = (maskSize - cropW * scale) / 2;
         const offY = (maskSize - cropH * scale) / 2;
@@ -1752,96 +1783,79 @@
             const i = (y * maskSize + x) * 4;
             const r = sqData[i], g = sqData[i + 1], b = sqData[i + 2], a = sqData[i + 3];
             const dist = Math.sqrt((r - bgR)**2 + (g - bgG)**2 + (b - bgB)**2);
-            if (dist > 18 && a > 35) {
+            if (dist > 16 && a > 30) {
               mask[y * maskSize + x] = 1;
             }
           }
         }
 
-        processedMasks.push(mask);
-        processedImgs.push(sqData);
-      }
+        const distRelief = computeDistanceTransform(mask, maskSize, maskSize);
 
-      // Space Carving Grid Resolution
-      const resX = 84;
-      const resY = 56;
-      const resZ = 84;
-      const scaleFactor = 0.85; // 3D space to camera UV scale
+        // Classify camera elevation (check if image is a top view by aspect ratio & vertical centroid)
+        const isTopView = (cropW / cropH > 1.35 && k >= n - 1) || (n >= 4 && k === 3);
+        const az = isTopView ? (k * Math.PI * 0.5) : (k * (Math.PI * 2 / (isTopView ? n : Math.max(1, n - 1))));
+        const el = isTopView ? (65 * Math.PI / 180) : (15 * Math.PI / 180);
 
-      const angles = [];
-      for (let k = 0; k < n; k++) {
-        angles.push((k / n) * (Math.PI * 2));
+        views.push({
+          data: sqData,
+          mask: mask,
+          relief: distRelief,
+          azimuth: az,
+          elevation: el
+        });
       }
 
       const allPositions = [];
       const allColors = [];
-      const requiredInside = n >= 4 ? 3 : Math.max(1, n - 1);
+      const stride = 1; // High resolution pixel sampling
 
-      const stepX = 2.4 / (resX - 1);
-      const stepY = 1.6 / (resY - 1);
-      const stepZ = 2.4 / (resZ - 1);
+      for (let vIdx = 0; vIdx < views.length; vIdx++) {
+        const v = views[vIdx];
+        const sqData = v.data;
+        const mask = v.mask;
+        const relief = v.relief;
+        const az = v.azimuth;
+        const el = v.elevation;
 
-      for (let xi = 0; xi < resX; xi++) {
-        const x = -1.2 + xi * stepX;
-        for (let yi = 0; yi < resY; yi++) {
-          const y = -0.7 + yi * stepY;
-          for (let zi = 0; zi < resZ; zi++) {
-            const z = -1.2 + zi * stepZ;
+        const cosAz = Math.cos(az), sinAz = Math.sin(az);
+        const cosEl = Math.cos(el), sinEl = Math.sin(el);
 
-            let insideCount = 0;
-            let bestView = 0;
-            let maxCamZ = -999.0;
+        for (let y = 0; y < maskSize; y += stride) {
+          for (let x = 0; x < maskSize; x += stride) {
+            const idx = y * maskSize + x;
+            if (mask[idx] === 0) continue;
 
-            for (let k = 0; k < n; k++) {
-              const theta = angles[k];
-              const cosT = Math.cos(theta);
-              const sinT = Math.sin(theta);
+            const u = (x / maskSize - 0.5) * 1.5;
+            const vCoord = -(y / maskSize - 0.5) * 1.5;
+            const d = relief[idx] * 0.45; // surface curved depth relief
 
-              // 3D Point in Camera Coordinates
-              const xk = x * cosT - z * sinT;
-              const yk = y;
-              const zk = x * sinT + z * cosT;
+            // Surface point in camera coordinates
+            const yInter = vCoord * cosEl - d * sinEl;
+            const zInter = vCoord * sinEl + d * cosEl;
 
-              // Camera UV Projection
-              const u = 0.5 + xk * scaleFactor;
-              const v = 0.5 - yk * scaleFactor;
+            const xWorld = u * cosAz + zInter * sinAz;
+            const yWorld = yInter + 0.35;
+            const zWorld = -u * sinAz + zInter * cosAz;
 
-              if (u >= 0.0 && u < 1.0 && v >= 0.0 && v < 1.0) {
-                const px = Math.min(maskSize - 1, Math.max(0, Math.floor(u * maskSize)));
-                const py = Math.min(maskSize - 1, Math.max(0, Math.floor(v * maskSize)));
-                if (processedMasks[k][py * maskSize + px] === 1) {
-                  insideCount++;
-                  if (zk > maxCamZ) {
-                    maxCamZ = zk;
-                    bestView = k;
-                  }
-                }
-              }
-            }
+            const pIdx = idx * 4;
+            const r = sqData[pIdx] / 255;
+            const g = sqData[pIdx + 1] / 255;
+            const b = sqData[pIdx + 2] / 255;
 
-            if (insideCount >= requiredInside) {
-              // Sample color from best viewing angle
-              const sqData = processedImgs[bestView];
-              const theta = angles[bestView];
-              const xk = x * Math.cos(theta) - z * Math.sin(theta);
-              const u = 0.5 + xk * scaleFactor;
-              const v = 0.5 - y * scaleFactor;
-              const px = Math.min(maskSize - 1, Math.max(0, Math.floor(u * maskSize)));
-              const py = Math.min(maskSize - 1, Math.max(0, Math.floor(v * maskSize)));
-              const pIdx = (py * maskSize + px) * 4;
+            allPositions.push(xWorld, yWorld, zWorld);
+            allColors.push(r, g, b);
 
-              const r = sqData[pIdx] / 255;
-              const g = sqData[pIdx + 1] / 255;
-              const b = sqData[pIdx + 2] / 255;
+            // Add volumetric internal fill for solid body
+            if (d > 0.12) {
+              const dSub = d * 0.5;
+              const yIn = vCoord * cosEl - dSub * sinEl;
+              const zIn = vCoord * sinEl + dSub * cosEl;
+              const xwIn = u * cosAz + zIn * sinAz;
+              const ywIn = yIn + 0.35;
+              const zwIn = -u * sinAz + zIn * cosAz;
 
-              // Add primary voxel point
-              allPositions.push(x, y + 0.35, z);
-              allColors.push(r, g, b);
-
-              // Micro-densification jitter for dense smooth surface
-              const jitter = 0.015;
-              allPositions.push(x + (Math.random() - 0.5) * jitter, y + 0.35 + (Math.random() - 0.5) * jitter, z + (Math.random() - 0.5) * jitter);
-              allColors.push(r, g, b);
+              allPositions.push(xwIn, ywIn, zwIn);
+              allColors.push(r * 0.95, g * 0.95, b * 0.95);
             }
           }
         }
@@ -1865,11 +1879,11 @@
       const texture = new THREE.CanvasTexture(canvasParticle);
 
       const material = new THREE.PointsMaterial({
-        size: 0.038,
+        size: 0.032,
         vertexColors: true,
         map: texture,
         transparent: true,
-        opacity: 0.95,
+        opacity: 0.96,
         depthWrite: true,
         blending: THREE.NormalBlending
       });
@@ -1878,7 +1892,7 @@
       scene.add(pointCloud);
       currentCustomMesh = pointCloud;
 
-      statSplats.textContent = `${numPoints.toLocaleString()} 개 (360° Visual Hull 실체 융합)`;
+      statSplats.textContent = `${numPoints.toLocaleString()} 개 (360° 고밀도 실체 융합)`;
     }
 
     // 13. Hierarchy Eye Toggles (Studio & DT)
