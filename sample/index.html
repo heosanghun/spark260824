@@ -1137,22 +1137,40 @@
     // J1: Base Turntable Swivel Axis (1축: 360° 대형 선회 턴테이블)
     const j1Base = new THREE.Group();
     j1Base.position.y = 0.28;
-    const j1DiskGeo = new THREE.CylinderGeometry(0.36, 0.36, 0.18, 24);
+    const j1DiskGeo = new THREE.CylinderGeometry(0.36, 0.36, 0.16, 24);
     const j1Disk = new THREE.Mesh(j1DiskGeo, robotMatWhite);
-    j1Disk.position.y = 0.09;
+    j1Disk.position.y = 0.08;
     j1Base.add(j1Disk);
-    const j1MotorGeo = new THREE.CylinderGeometry(0.14, 0.14, 0.24, 16);
-    const j1Motor = new THREE.Mesh(j1MotorGeo, robotMatOrange);
-    j1Motor.position.set(0.20, 0.16, 0);
-    j1Base.add(j1Motor);
 
-    // J2: Dual-Fork Heavy Shoulder Pitch Joint (2축: 숄더 포크 대형 피벗 관절)
+    // Symmetric Shoulder Support Brackets (좌/우 대칭 숄더 지지 브라켓)
+    const bracketGeo = new THREE.BoxGeometry(0.24, 0.22, 0.08);
+    const leftBracket = new THREE.Mesh(bracketGeo, robotMatDark);
+    leftBracket.position.set(0, 0.20, -0.16);
+    j1Base.add(leftBracket);
+    const rightBracket = new THREE.Mesh(bracketGeo, robotMatDark);
+    rightBracket.position.set(0, 0.20, 0.16);
+    j1Base.add(rightBracket);
+
+    // J2: Dual-Fork Heavy Shoulder Pitch Joint (2축: 숄더 피벗 정밀 회전 관절)
     const j2Shoulder = new THREE.Group();
-    j2Shoulder.position.set(0, 0.24, 0);
-    const j2JointGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.36, 24);
+    j2Shoulder.position.set(0, 0.22, 0);
+
+    // Central Symmetrical Rotary Pivot Barrel (Z축 피벗 원통 - Z축 정렬)
+    const j2JointGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.28, 24);
     const j2Joint = new THREE.Mesh(j2JointGeo, robotMatOrange);
-    j2Joint.rotation.z = Math.PI / 2;
+    j2Joint.rotation.x = Math.PI / 2;
     j2Shoulder.add(j2Joint);
+
+    // Dual Chrome Bearing End-Caps
+    const capGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.03, 20);
+    const leftCap = new THREE.Mesh(capGeo, robotMatChrome);
+    leftCap.rotation.x = Math.PI / 2;
+    leftCap.position.z = -0.15;
+    j2Shoulder.add(leftCap);
+    const rightCap = new THREE.Mesh(capGeo, robotMatChrome);
+    rightCap.rotation.x = Math.PI / 2;
+    rightCap.position.z = 0.15;
+    j2Shoulder.add(rightCap);
 
     // Link 1: Heavy Lower Arm Boom (대형 하부 메인 붐 암 - 길이 0.95m)
     const link1Geo = new THREE.CylinderGeometry(0.11, 0.13, 0.95, 20);
@@ -1160,8 +1178,8 @@
     link1.position.y = 0.48;
     j2Shoulder.add(link1);
 
-    // Black Cable Conduit Channel on Lower Arm
-    const cableGeo = new THREE.BoxGeometry(0.06, 0.85, 0.06);
+    // Cable Conduit Channel on Lower Arm
+    const cableGeo = new THREE.BoxGeometry(0.05, 0.85, 0.05);
     const cableMesh = new THREE.Mesh(cableGeo, robotMatDark);
     cableMesh.position.set(0.12, 0.48, 0);
     j2Shoulder.add(cableMesh);
@@ -3067,7 +3085,7 @@
         // Axis 2 (J2): Shoulder Fork Pitch (앞으로 숙여 모터 위로 도달)
         j2Shoulder.rotation.z = -0.55 + Math.sin(t * 0.9) * 0.15;
         // Axis 3 (J3): Elbow Knuckle Pitch (팔꿈치를 굽혀 하향 전개)
-        j3Elbow.rotation.x = 0.95 + Math.cos(t * 0.9) * 0.18;
+        j3Elbow.rotation.z = 0.95 + Math.cos(t * 0.9) * 0.18;
         // Axis 4 (J4): Forearm Roll (전완 배럴 360도 비틀림)
         j4Roll.rotation.y = Math.sin(t * 1.2) * 0.45;
         // Axis 5 (J5): Wrist Pitch Gimbal (손목을 모터 권선 구멍을 향해 아래로 꺾음)
