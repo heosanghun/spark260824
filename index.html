@@ -998,56 +998,142 @@
     torusMesh.position.set(1.4, 0.6, -0.4);
     scene.add(torusMesh);
 
-    // 6. 3D Digital Twin Industrial Models (EV Motor & Smart Port)
+    // 6. 3D Digital Twin Industrial Models (EV Motor Assembly & Smart Port)
     const dtEvGroup = new THREE.Group();
     dtEvGroup.visible = false;
 
-    // Stator
-    const statorGeo = new THREE.CylinderGeometry(0.8, 0.8, 1.0, 32, 1, true);
-    const statorMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.85, roughness: 0.25, side: THREE.DoubleSide });
-    const statorMesh = new THREE.Mesh(statorGeo, statorMat);
-    statorMesh.position.y = 0.5;
-    dtEvGroup.add(statorMesh);
+    // A. EV Motor Stator Assembly (알루미늄 하우징 + 12구 헤어핀 구리 권선 코일)
+    const statorAssembly = new THREE.Group();
 
-    // Stator Glowing 3D Bounding Box (VLM Grounding)
-    const statorBBoxGeo = new THREE.BoxGeometry(1.7, 1.1, 1.7);
-    const statorBBoxMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true, transparent: true, opacity: 0.6 });
+    // 1. Outer Aluminum Stator Housing (초경량 알루미늄 합금 케이싱)
+    const housingMat = new THREE.MeshStandardMaterial({
+      color: 0x64748b,
+      metalness: 0.85,
+      roughness: 0.25
+    });
+    const housingGeo = new THREE.CylinderGeometry(0.85, 0.85, 0.9, 36, 1, true);
+    const housingMesh = new THREE.Mesh(housingGeo, housingMat);
+    housingMesh.position.y = 0.5;
+    statorAssembly.add(housingMesh);
+
+    // Flange Rings (상/하단 볼트 체결 플랜지 링)
+    const flangeGeo = new THREE.TorusGeometry(0.86, 0.04, 16, 36);
+    const flangeMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.9, roughness: 0.2 });
+    const topFlange = new THREE.Mesh(flangeGeo, flangeMat);
+    topFlange.rotation.x = Math.PI / 2;
+    topFlange.position.y = 0.95;
+    statorAssembly.add(topFlange);
+    const bottomFlange = new THREE.Mesh(flangeGeo, flangeMat);
+    bottomFlange.rotation.x = Math.PI / 2;
+    bottomFlange.position.y = 0.05;
+    statorAssembly.add(bottomFlange);
+
+    // 2. Heat Dissipation Cooling Fins (16개 방열 리브 핀)
+    const finGeo = new THREE.BoxGeometry(0.04, 0.82, 0.08);
+    const finMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.3 });
+    for (let i = 0; i < 16; i++) {
+      const angle = (i / 16) * Math.PI * 2;
+      const fin = new THREE.Mesh(finGeo, finMat);
+      fin.position.set(Math.cos(angle) * 0.89, 0.5, Math.sin(angle) * 0.89);
+      fin.rotation.y = -angle;
+      statorAssembly.add(fin);
+    }
+
+    // 3. Copper Hairpin Windings (12구 구리 헤어핀 권선 코일)
+    const coilMat = new THREE.MeshStandardMaterial({
+      color: 0xd97706,
+      metalness: 0.92,
+      roughness: 0.18,
+      emissive: 0x78350f,
+      emissiveIntensity: 0.2
+    });
+    const coilGeo = new THREE.BoxGeometry(0.08, 0.96, 0.16);
+    for (let i = 0; i < 12; i++) {
+      const angle = (i / 12) * Math.PI * 2;
+      const coil = new THREE.Mesh(coilGeo, coilMat);
+      coil.position.set(Math.cos(angle) * 0.72, 0.5, Math.sin(angle) * 0.72);
+      coil.rotation.y = -angle;
+      statorAssembly.add(coil);
+    }
+
+    // Stator Precision Guide Ring
+    const statorBBoxGeo = new THREE.TorusGeometry(0.88, 0.015, 8, 36);
+    const statorBBoxMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.7 });
     const statorBBox = new THREE.Mesh(statorBBoxGeo, statorBBoxMat);
-    statorBBox.position.set(0, 0.5, 0);
-    dtEvGroup.add(statorBBox);
+    statorBBox.rotation.x = Math.PI / 2;
+    statorBBox.position.y = 1.0;
+    statorAssembly.add(statorBBox);
 
-    // Rotor
-    const rotorGeo = new THREE.CylinderGeometry(0.48, 0.48, 1.2, 24);
-    const rotorMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.9, roughness: 0.2 });
-    const rotorMesh = new THREE.Mesh(rotorGeo, rotorMat);
+    dtEvGroup.add(statorAssembly);
+
+    // B. Permanent Magnet Synchronous Rotor (영구자석 동기식 회전자 샤프트)
+    const rotorGroup = new THREE.Group();
+
+    // Chrome Drive Shaft (크롬 스틸 구동축)
+    const shaftGeo = new THREE.CylinderGeometry(0.12, 0.12, 1.5, 24);
+    const shaftMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.95, roughness: 0.1 });
+    const shaft = new THREE.Mesh(shaftGeo, shaftMat);
+    shaft.position.y = 0.5;
+    rotorGroup.add(shaft);
+
+    // Rotor Silicon Steel Core (규소강판 로터 코어)
+    const rotorCoreGeo = new THREE.CylinderGeometry(0.52, 0.52, 0.82, 32);
+    const rotorCoreMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.85, roughness: 0.35 });
+    const rotorMesh = new THREE.Mesh(rotorCoreGeo, rotorCoreMat);
     rotorMesh.position.y = 0.5;
-    dtEvGroup.add(rotorMesh);
+    rotorGroup.add(rotorMesh);
 
-    // 6-Axis Robotic Arm Group
+    // Permanent Magnet Poles (8개 네오디뮴 영구자석 N/S극 자극 띠)
+    const magMatN = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.8, roughness: 0.2 });
+    const magMatS = new THREE.MeshStandardMaterial({ color: 0x3b82f6, metalness: 0.8, roughness: 0.2 });
+    const magGeo = new THREE.BoxGeometry(0.06, 0.78, 0.14);
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const mag = new THREE.Mesh(magGeo, (i % 2 === 0) ? magMatN : magMatS);
+      mag.position.set(Math.cos(angle) * 0.53, 0.5, Math.sin(angle) * 0.53);
+      mag.rotation.y = -angle;
+      rotorGroup.add(mag);
+    }
+
+    // Ball Bearing Rings (상/하단 정밀 볼 베어링)
+    const bearingGeo = new THREE.TorusGeometry(0.24, 0.05, 12, 24);
+    const bearingMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.9, roughness: 0.15 });
+    const topBearing = new THREE.Mesh(bearingGeo, bearingMat);
+    topBearing.rotation.x = Math.PI / 2;
+    topBearing.position.y = 0.98;
+    rotorGroup.add(topBearing);
+    const btmBearing = new THREE.Mesh(bearingGeo, bearingMat);
+    btmBearing.rotation.x = Math.PI / 2;
+    btmBearing.position.y = 0.02;
+    rotorGroup.add(btmBearing);
+
+    dtEvGroup.add(rotorGroup);
+
+    // C. 6-Axis High-Tech Industrial Robotic Arm (6축 정밀 산업용 로봇 팔)
     const robotArmGroup = new THREE.Group();
-    robotArmGroup.position.set(-1.3, 0, 0);
+    robotArmGroup.position.set(-1.25, 0, 0);
 
-    const baseGeo = new THREE.CylinderGeometry(0.35, 0.4, 0.25, 24);
-    const baseMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9 });
+    const baseGeo = new THREE.CylinderGeometry(0.32, 0.38, 0.22, 24);
+    const baseMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.9, roughness: 0.2 });
     const armBase = new THREE.Mesh(baseGeo, baseMat);
-    armBase.position.y = 0.125;
+    armBase.position.y = 0.11;
     robotArmGroup.add(armBase);
 
-    const jointGeo = new THREE.SphereGeometry(0.12, 16, 16);
-    const jointMat = new THREE.MeshStandardMaterial({ color: 0xff4b63, metalness: 0.8 });
+    const jointGeo = new THREE.SphereGeometry(0.13, 16, 16);
+    const jointMat = new THREE.MeshStandardMaterial({ color: 0xf97316, metalness: 0.8, roughness: 0.2 });
     const joint1 = new THREE.Mesh(jointGeo, jointMat);
     joint1.position.y = 0.28;
     robotArmGroup.add(joint1);
 
-    const linkGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.85, 16);
-    const linkMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8 });
+    const linkGeo = new THREE.CylinderGeometry(0.065, 0.065, 0.85, 16);
+    const linkMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.6, roughness: 0.3 });
     const link1 = new THREE.Mesh(linkGeo, linkMat);
     link1.position.set(0.3, 0.65, 0);
     link1.rotation.z = -Math.PI / 4;
     robotArmGroup.add(link1);
 
-    // Coolant Spray Nozzle on Arm
-    const nozzleGeo = new THREE.ConeGeometry(0.05, 0.15, 12);
+    // Coolant Spray & Laser Tool End-Effector
+    const nozzleGeo = new THREE.ConeGeometry(0.05, 0.16, 12);
     const nozzleMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.9 });
     const nozzleMesh = new THREE.Mesh(nozzleGeo, nozzleMat);
     nozzleMesh.position.set(0.62, 0.95, 0);
@@ -1071,7 +1157,7 @@
     const sprayParticles = new THREE.Points(sprayGeo, sprayMat);
     scene.add(sprayParticles);
 
-    // Smart Port Group
+    // D. Smart Port Scenario Group (스마트 항만 물류 컨테이너 & AGV)
     const dtPortGroup = new THREE.Group();
     dtPortGroup.visible = false;
 
@@ -1081,7 +1167,7 @@
     portFloor.rotation.x = -Math.PI / 2;
     dtPortGroup.add(portFloor);
 
-    // Containers
+    // Containers with detailed Corrugations
     const containerColors = [0x0284c7, 0xf43f5e, 0x10b981, 0xf59e0b];
     for (let i = 0; i < 6; i++) {
       const cGeo = new THREE.BoxGeometry(1.2, 0.5, 0.5);
@@ -2858,7 +2944,7 @@
 
       // Digital Twin EV Motor Rotor & Arm Rotation
       if (dtEvGroup.visible) {
-        rotorMesh.rotation.y += delta * (rotorSpeed || 2.5);
+        rotorGroup.rotation.y += delta * (rotorSpeed || 2.5);
         robotArmGroup.rotation.y = Math.sin(time * 0.0015 * (robotArmSpeed || 1.0)) * 0.4;
       }
 
