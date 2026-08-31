@@ -1117,6 +1117,16 @@
         scene.remove(currentCustomMesh);
         currentCustomMesh = null;
       }
+      // Automatically hide background industrial motor fixtures (black cylinder/stator) when loading custom models
+      if (dtEvGroup) dtEvGroup.visible = false;
+      if (dtPortGroup) dtPortGroup.visible = false;
+      if (vlmLabelsContainer) vlmLabelsContainer.style.display = "none";
+      const statorTag = document.getElementById("vlm-stator-tag");
+      const robotTag = document.getElementById("vlm-robot-tag");
+      if (statorTag) statorTag.style.display = "none";
+      if (robotTag) robotTag.style.display = "none";
+      const dtEyeEquipment = document.getElementById("dt-eye-equipment");
+      if (dtEyeEquipment) dtEyeEquipment.classList.remove("visible");
     }
 
     // Splat Loader
