@@ -1805,56 +1805,130 @@
         });
       }
 
+      // Continuous 360-Degree Spherical Visual Hull Ray-Marching (Eliminates Cross '+' Artifact)
       const allPositions = [];
       const allColors = [];
-      const stride = 1; // High resolution pixel sampling
+      const numTheta = 160;  // 360 deg azimuth
+      const numPhi = 80;     // -70 to +70 deg elevation
+      const scaleFactor = 0.75;
+      const rMax = 1.35;
+      const rSteps = 45;
 
-      for (let vIdx = 0; vIdx < views.length; vIdx++) {
-        const v = views[vIdx];
-        const sqData = v.data;
-        const mask = v.mask;
-        const relief = v.relief;
-        const az = v.azimuth;
-        const el = v.elevation;
+      const dTheta = (Math.PI * 2) / numTheta;
+      const phiMin = -Math.PI * 0.38;
+      const phiMax = Math.PI * 0.38;
+      const dPhi = (phiMax - phiMin) / (numPhi - 1);
 
-        const cosAz = Math.cos(az), sinAz = Math.sin(az);
-        const cosEl = Math.cos(el), sinEl = Math.sin(el);
+      for (let pIdx = 0; pIdx < numPhi; pIdx++) {
+        const phi = phiMin + pIdx * dPhi;
+        const cosPhi = Math.cos(phi);
+        const sinPhi = Math.sin(phi);
 
-        for (let y = 0; y < maskSize; y += stride) {
-          for (let x = 0; x < maskSize; x += stride) {
-            const idx = y * maskSize + x;
-            if (mask[idx] === 0) continue;
+        for (let tIdx = 0; tIdx < numTheta; tIdx++) {
+          const theta = tIdx * dTheta;
+          const dirX = cosPhi * Math.sin(theta);
+          const dirY = sinPhi;
+          const dirZ = cosPhi * Math.cos(theta);
 
-            const u = (x / maskSize - 0.5) * 1.5;
-            const vCoord = -(y / maskSize - 0.5) * 1.5;
-            const d = relief[idx] * 0.45; // surface curved depth relief
+          // Ray march along r from rMax down to 0
+          let foundR = 0.0;
+          let bestView = 0;
 
-            // Surface point in camera coordinates
-            const yInter = vCoord * cosEl - d * sinEl;
-            const zInter = vCoord * sinEl + d * cosEl;
+          for (let step = 0; step < rSteps; step++) {
+            const r = rMax * (1.0 - step / rSteps);
+            const pxW = r * dirX;
+            const pyW = r * dirY;
+            const pzW = r * dirZ;
 
-            const xWorld = u * cosAz + zInter * sinAz;
-            const yWorld = yInter + 0.35;
-            const zWorld = -u * sinAz + zInter * cosAz;
+            let insideAll = true;
+            for (let k = 0; k < n; k++) {
+              const v = views[k];
+              const az = v.azimuth;
+              const el = v.elevation;
+              const cosAz = Math.cos(az), sinAz = Math.sin(az);
+              const cosEl = Math.cos(el), sinEl = Math.sin(el);
 
-            const pIdx = idx * 4;
-            const r = sqData[pIdx] / 255;
-            const g = sqData[pIdx + 1] / 255;
-            const b = sqData[pIdx + 2] / 255;
+              // 1. Yaw around Y
+              const xk1 = pxW * cosAz - pzW * sinAz;
+              const yk1 = pyW;
+              const zk1 = pxW * sinAz + pzW * cosAz;
 
-            allPositions.push(xWorld, yWorld, zWorld);
+              // 2. Pitch around X
+              const xk = xk1;
+              const yk = yk1 * cosEl + zk1 * sinEl;
+
+              // Project to UV
+              const u = 0.5 + xk * scaleFactor;
+              const vCoord = 0.5 - yk * scaleFactor;
+
+              if (u >= 0.0 && u < 1.0 && vCoord >= 0.0 && vCoord < 1.0) {
+                const ix = Math.min(maskSize - 1, Math.max(0, Math.floor(u * maskSize)));
+                const iy = Math.min(maskSize - 1, Math.max(0, Math.floor(vCoord * maskSize)));
+                if (v.mask[iy * maskSize + ix] === 0) {
+                  insideAll = false;
+                  break;
+                }
+              } else {
+                insideAll = false;
+                break;
+              }
+            }
+
+            if (insideAll) {
+              foundR = r;
+              break;
+            }
+          }
+
+          if (foundR > 0.08) {
+            // Find camera view most facing this ray direction
+            let maxDot = -999.0;
+            for (let k = 0; k < n; k++) {
+              const v = views[k];
+              const camDirX = Math.sin(v.azimuth);
+              const camDirZ = Math.cos(v.azimuth);
+              const dot = dirX * camDirX + dirZ * camDirZ;
+              if (dot > maxDot) {
+                maxDot = dot;
+                bestView = k;
+              }
+            }
+
+            const bestV = views[bestView];
+            const az = bestV.azimuth;
+            const el = bestV.elevation;
+            const cosAz = Math.cos(az), sinAz = Math.sin(az);
+            const cosEl = Math.cos(el), sinEl = Math.sin(el);
+
+            const xkW = (foundR * dirX) * cosAz - (foundR * dirZ) * sinAz;
+            const ykW = (foundR * dirY) * cosEl + ((foundR * dirX) * sinAz + (foundR * dirZ) * cosAz) * sinEl;
+            const u = 0.5 + xkW * scaleFactor;
+            const vCoord = 0.5 - ykW * scaleFactor;
+
+            const ix = Math.min(maskSize - 1, Math.max(0, Math.floor(u * maskSize)));
+            const iy = Math.min(maskSize - 1, Math.max(0, Math.floor(vCoord * maskSize)));
+            const cIdx = (iy * maskSize + ix) * 4;
+
+            const r = bestV.data[cIdx] / 255;
+            const g = bestV.data[cIdx + 1] / 255;
+            const b = bestV.data[cIdx + 2] / 255;
+
+            const surfX = foundR * dirX;
+            const surfY = foundR * dirY + 0.35;
+            const surfZ = foundR * dirZ;
+
+            // Outer surface point
+            allPositions.push(surfX, surfY, surfZ);
             allColors.push(r, g, b);
 
-            // Add volumetric internal fill for solid body
-            if (d > 0.12) {
-              const dSub = d * 0.5;
-              const yIn = vCoord * cosEl - dSub * sinEl;
-              const zIn = vCoord * sinEl + dSub * cosEl;
-              const xwIn = u * cosAz + zIn * sinAz;
-              const ywIn = yIn + 0.35;
-              const zwIn = -u * sinAz + zIn * cosAz;
+            // Jittered surface densification
+            const j = 0.012;
+            allPositions.push(surfX + (Math.random() - 0.5) * j, surfY + (Math.random() - 0.5) * j, surfZ + (Math.random() - 0.5) * j);
+            allColors.push(r, g, b);
 
-              allPositions.push(xwIn, ywIn, zwIn);
+            // Solid interior layers (no hollow centers)
+            for (let f of [0.85, 0.7, 0.55]) {
+              allPositions.push(surfX * f, (surfY - 0.35) * f + 0.35, surfZ * f);
               allColors.push(r * 0.95, g * 0.95, b * 0.95);
             }
           }
@@ -1879,7 +1953,7 @@
       const texture = new THREE.CanvasTexture(canvasParticle);
 
       const material = new THREE.PointsMaterial({
-        size: 0.032,
+        size: 0.038,
         vertexColors: true,
         map: texture,
         transparent: true,
@@ -1892,7 +1966,7 @@
       scene.add(pointCloud);
       currentCustomMesh = pointCloud;
 
-      statSplats.textContent = `${numPoints.toLocaleString()} 개 (360° 고밀도 실체 융합)`;
+      statSplats.textContent = `${numPoints.toLocaleString()} 개 (360° Spherical Hull 연속체)`;
     }
 
     // 13. Hierarchy Eye Toggles (Studio & DT)
