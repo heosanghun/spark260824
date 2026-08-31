@@ -1680,50 +1680,169 @@
 
     function fuseMultiViewImages(loadedImgs) {
       const n = loadedImgs.length;
-      const w = 110;
-      const h = 110;
-      const canvas = document.createElement("canvas");
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext("2d");
-
-      const allPositions = [];
-      const allColors = [];
+      const maskSize = 128;
+      const processedMasks = [];
+      const processedImgs = [];
 
       for (let k = 0; k < n; k++) {
         const img = loadedImgs[k];
-        ctx.clearRect(0, 0, w, h);
-        ctx.drawImage(img, 0, 0, w, h);
-        const imgData = ctx.getImageData(0, 0, w, h).data;
+        const rawCanvas = document.createElement("canvas");
+        rawCanvas.width = img.width || 256;
+        rawCanvas.height = img.height || 256;
+        const rawCtx = rawCanvas.getContext("2d");
+        rawCtx.drawImage(img, 0, 0, rawCanvas.width, rawCanvas.height);
+        const rawData = rawCtx.getImageData(0, 0, rawCanvas.width, rawCanvas.height).data;
 
-        // Angle around Y axis for view k
-        const theta = (k / n) * (Math.PI * 2);
-        const cosT = Math.cos(theta);
-        const sinT = Math.sin(theta);
+        // Sample 4 corners for background color estimation
+        const W = rawCanvas.width;
+        const H = rawCanvas.height;
+        const cornerIndices = [0, (W - 1) * 4, (H - 1) * W * 4, ((H - 1) * W + (W - 1)) * 4];
+        let bgR = 0, bgG = 0, bgB = 0;
+        cornerIndices.forEach(idx => {
+          bgR += rawData[idx];
+          bgG += rawData[idx + 1];
+          bgB += rawData[idx + 2];
+        });
+        bgR /= 4; bgG /= 4; bgB /= 4;
 
-        for (let y = 0; y < h; y++) {
-          for (let x = 0; x < w; x++) {
-            const i = (y * w + x) * 4;
-            const r = imgData[i] / 255;
-            const g = imgData[i + 1] / 255;
-            const b = imgData[i + 2] / 255;
-            const a = imgData[i + 3] / 255;
+        // Find bounding box of foreground
+        let minX = W, maxX = 0, minY = H, maxY = 0;
+        let fgCount = 0;
+        for (let y = 0; y < H; y++) {
+          for (let x = 0; x < W; x++) {
+            const i = (y * W + x) * 4;
+            const r = rawData[i], g = rawData[i + 1], b = rawData[i + 2], a = rawData[i + 3];
+            const dist = Math.sqrt((r - bgR)**2 + (g - bgG)**2 + (b - bgB)**2);
+            if (dist > 22 && a > 40) {
+              if (x < minX) minX = x;
+              if (x > maxX) maxX = x;
+              if (y < minY) minY = y;
+              if (y > maxY) maxY = y;
+              fgCount++;
+            }
+          }
+        }
 
-            // Filter out dark background
-            const luma = 0.299 * r + 0.587 * g + 0.114 * b;
-            if (luma < 0.12 || a < 0.2) continue;
+        // Fallback if no clean background contrast
+        if (fgCount < 50 || minX >= maxX || minY >= maxY) {
+          minX = 0; maxX = W; minY = 0; maxY = H;
+        }
 
-            const u = (x / w - 0.5) * 1.8;
-            const v = ((h - y) / h - 0.5) * 1.8;
-            const depth = (luma - 0.5) * 0.45 + 0.4; // radial distance from center
+        // Crop centered square onto maskCanvas
+        const cropW = maxX - minX;
+        const cropH = maxY - minY;
+        const maxDim = Math.max(cropW, cropH);
 
-            // 360° Cylindrical / Polar orbit projection
-            const posX = u * cosT + depth * sinT;
-            const posZ = -u * sinT + depth * cosT;
-            const posY = v + 0.4;
+        const sqCanvas = document.createElement("canvas");
+        sqCanvas.width = maskSize;
+        sqCanvas.height = maskSize;
+        const sqCtx = sqCanvas.getContext("2d");
+        
+        // Draw centered and scaled
+        const scale = maskSize / maxDim;
+        const offX = (maskSize - cropW * scale) / 2;
+        const offY = (maskSize - cropH * scale) / 2;
+        sqCtx.drawImage(img, minX, minY, cropW, cropH, offX, offY, cropW * scale, cropH * scale);
 
-            allPositions.push(posX, posY, posZ);
-            allColors.push(r, g, b);
+        const sqData = sqCtx.getImageData(0, 0, maskSize, maskSize).data;
+        const mask = new Uint8Array(maskSize * maskSize);
+
+        for (let y = 0; y < maskSize; y++) {
+          for (let x = 0; x < maskSize; x++) {
+            const i = (y * maskSize + x) * 4;
+            const r = sqData[i], g = sqData[i + 1], b = sqData[i + 2], a = sqData[i + 3];
+            const dist = Math.sqrt((r - bgR)**2 + (g - bgG)**2 + (b - bgB)**2);
+            if (dist > 18 && a > 35) {
+              mask[y * maskSize + x] = 1;
+            }
+          }
+        }
+
+        processedMasks.push(mask);
+        processedImgs.push(sqData);
+      }
+
+      // Space Carving Grid Resolution
+      const resX = 84;
+      const resY = 56;
+      const resZ = 84;
+      const scaleFactor = 0.85; // 3D space to camera UV scale
+
+      const angles = [];
+      for (let k = 0; k < n; k++) {
+        angles.push((k / n) * (Math.PI * 2));
+      }
+
+      const allPositions = [];
+      const allColors = [];
+      const requiredInside = n >= 4 ? 3 : Math.max(1, n - 1);
+
+      const stepX = 2.4 / (resX - 1);
+      const stepY = 1.6 / (resY - 1);
+      const stepZ = 2.4 / (resZ - 1);
+
+      for (let xi = 0; xi < resX; xi++) {
+        const x = -1.2 + xi * stepX;
+        for (let yi = 0; yi < resY; yi++) {
+          const y = -0.7 + yi * stepY;
+          for (let zi = 0; zi < resZ; zi++) {
+            const z = -1.2 + zi * stepZ;
+
+            let insideCount = 0;
+            let bestView = 0;
+            let maxCamZ = -999.0;
+
+            for (let k = 0; k < n; k++) {
+              const theta = angles[k];
+              const cosT = Math.cos(theta);
+              const sinT = Math.sin(theta);
+
+              // 3D Point in Camera Coordinates
+              const xk = x * cosT - z * sinT;
+              const yk = y;
+              const zk = x * sinT + z * cosT;
+
+              // Camera UV Projection
+              const u = 0.5 + xk * scaleFactor;
+              const v = 0.5 - yk * scaleFactor;
+
+              if (u >= 0.0 && u < 1.0 && v >= 0.0 && v < 1.0) {
+                const px = Math.min(maskSize - 1, Math.max(0, Math.floor(u * maskSize)));
+                const py = Math.min(maskSize - 1, Math.max(0, Math.floor(v * maskSize)));
+                if (processedMasks[k][py * maskSize + px] === 1) {
+                  insideCount++;
+                  if (zk > maxCamZ) {
+                    maxCamZ = zk;
+                    bestView = k;
+                  }
+                }
+              }
+            }
+
+            if (insideCount >= requiredInside) {
+              // Sample color from best viewing angle
+              const sqData = processedImgs[bestView];
+              const theta = angles[bestView];
+              const xk = x * Math.cos(theta) - z * Math.sin(theta);
+              const u = 0.5 + xk * scaleFactor;
+              const v = 0.5 - y * scaleFactor;
+              const px = Math.min(maskSize - 1, Math.max(0, Math.floor(u * maskSize)));
+              const py = Math.min(maskSize - 1, Math.max(0, Math.floor(v * maskSize)));
+              const pIdx = (py * maskSize + px) * 4;
+
+              const r = sqData[pIdx] / 255;
+              const g = sqData[pIdx + 1] / 255;
+              const b = sqData[pIdx + 2] / 255;
+
+              // Add primary voxel point
+              allPositions.push(x, y + 0.35, z);
+              allColors.push(r, g, b);
+
+              // Micro-densification jitter for dense smooth surface
+              const jitter = 0.015;
+              allPositions.push(x + (Math.random() - 0.5) * jitter, y + 0.35 + (Math.random() - 0.5) * jitter, z + (Math.random() - 0.5) * jitter);
+              allColors.push(r, g, b);
+            }
           }
         }
       }
@@ -1739,19 +1858,19 @@
       const pCtx = canvasParticle.getContext("2d");
       const grad = pCtx.createRadialGradient(16, 16, 0, 16, 16, 16);
       grad.addColorStop(0, "rgba(255,255,255,1)");
-      grad.addColorStop(0.4, "rgba(255,255,255,0.7)");
+      grad.addColorStop(0.5, "rgba(255,255,255,0.85)");
       grad.addColorStop(1, "rgba(255,255,255,0)");
       pCtx.fillStyle = grad;
       pCtx.fillRect(0, 0, 32, 32);
       const texture = new THREE.CanvasTexture(canvasParticle);
 
       const material = new THREE.PointsMaterial({
-        size: 0.042,
+        size: 0.038,
         vertexColors: true,
         map: texture,
         transparent: true,
-        opacity: 0.92,
-        depthWrite: false,
+        opacity: 0.95,
+        depthWrite: true,
         blending: THREE.NormalBlending
       });
 
@@ -1759,7 +1878,7 @@
       scene.add(pointCloud);
       currentCustomMesh = pointCloud;
 
-      statSplats.textContent = `${numPoints.toLocaleString()} 개 (360° 다중시점 융합)`;
+      statSplats.textContent = `${numPoints.toLocaleString()} 개 (360° Visual Hull 실체 융합)`;
     }
 
     // 13. Hierarchy Eye Toggles (Studio & DT)
