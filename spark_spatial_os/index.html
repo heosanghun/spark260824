@@ -1002,39 +1002,39 @@
     const dtEvGroup = new THREE.Group();
     dtEvGroup.visible = false;
 
-    // A. EV Motor Stator Assembly (알루미늄 하우징 + 12구 헤어핀 구리 권선 코일)
+    // A. EV Motor Stator Assembly (콤팩트 고전압 알루미늄 하우징 + 12구 헤어핀 구리 권선)
     const statorAssembly = new THREE.Group();
 
-    // 1. Outer Aluminum Stator Housing (초경량 알루미늄 합금 케이싱)
+    // 1. Outer Aluminum Stator Housing (초경량 알루미늄 합금 케이싱: 반경 0.55m, 높이 0.55m)
     const housingMat = new THREE.MeshStandardMaterial({
       color: 0x64748b,
       metalness: 0.85,
       roughness: 0.25
     });
-    const housingGeo = new THREE.CylinderGeometry(0.85, 0.85, 0.9, 36, 1, true);
+    const housingGeo = new THREE.CylinderGeometry(0.55, 0.55, 0.55, 36, 1, true);
     const housingMesh = new THREE.Mesh(housingGeo, housingMat);
-    housingMesh.position.y = 0.5;
+    housingMesh.position.y = 0.35;
     statorAssembly.add(housingMesh);
 
     // Flange Rings (상/하단 볼트 체결 플랜지 링)
-    const flangeGeo = new THREE.TorusGeometry(0.86, 0.04, 16, 36);
+    const flangeGeo = new THREE.TorusGeometry(0.56, 0.03, 16, 36);
     const flangeMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.9, roughness: 0.2 });
     const topFlange = new THREE.Mesh(flangeGeo, flangeMat);
     topFlange.rotation.x = Math.PI / 2;
-    topFlange.position.y = 0.95;
+    topFlange.position.y = 0.62;
     statorAssembly.add(topFlange);
     const bottomFlange = new THREE.Mesh(flangeGeo, flangeMat);
     bottomFlange.rotation.x = Math.PI / 2;
-    bottomFlange.position.y = 0.05;
+    bottomFlange.position.y = 0.08;
     statorAssembly.add(bottomFlange);
 
     // 2. Heat Dissipation Cooling Fins (16개 방열 리브 핀)
-    const finGeo = new THREE.BoxGeometry(0.04, 0.82, 0.08);
+    const finGeo = new THREE.BoxGeometry(0.03, 0.50, 0.06);
     const finMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.3 });
     for (let i = 0; i < 16; i++) {
       const angle = (i / 16) * Math.PI * 2;
       const fin = new THREE.Mesh(finGeo, finMat);
-      fin.position.set(Math.cos(angle) * 0.89, 0.5, Math.sin(angle) * 0.89);
+      fin.position.set(Math.cos(angle) * 0.58, 0.35, Math.sin(angle) * 0.58);
       fin.rotation.y = -angle;
       statorAssembly.add(fin);
     }
@@ -1045,23 +1045,23 @@
       metalness: 0.92,
       roughness: 0.18,
       emissive: 0x78350f,
-      emissiveIntensity: 0.2
+      emissiveIntensity: 0.25
     });
-    const coilGeo = new THREE.BoxGeometry(0.08, 0.96, 0.16);
+    const coilGeo = new THREE.BoxGeometry(0.06, 0.60, 0.12);
     for (let i = 0; i < 12; i++) {
       const angle = (i / 12) * Math.PI * 2;
       const coil = new THREE.Mesh(coilGeo, coilMat);
-      coil.position.set(Math.cos(angle) * 0.72, 0.5, Math.sin(angle) * 0.72);
+      coil.position.set(Math.cos(angle) * 0.46, 0.35, Math.sin(angle) * 0.46);
       coil.rotation.y = -angle;
       statorAssembly.add(coil);
     }
 
     // Stator Precision Guide Ring
-    const statorBBoxGeo = new THREE.TorusGeometry(0.88, 0.015, 8, 36);
+    const statorBBoxGeo = new THREE.TorusGeometry(0.58, 0.012, 8, 36);
     const statorBBoxMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.7 });
     const statorBBox = new THREE.Mesh(statorBBoxGeo, statorBBoxMat);
     statorBBox.rotation.x = Math.PI / 2;
-    statorBBox.position.y = 1.0;
+    statorBBox.position.y = 0.65;
     statorAssembly.add(statorBBox);
 
     dtEvGroup.add(statorAssembly);
@@ -1070,154 +1070,184 @@
     const rotorGroup = new THREE.Group();
 
     // Chrome Drive Shaft (크롬 스틸 구동축)
-    const shaftGeo = new THREE.CylinderGeometry(0.12, 0.12, 1.5, 24);
+    const shaftGeo = new THREE.CylinderGeometry(0.08, 0.08, 1.0, 24);
     const shaftMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.95, roughness: 0.1 });
     const shaft = new THREE.Mesh(shaftGeo, shaftMat);
-    shaft.position.y = 0.5;
+    shaft.position.y = 0.35;
     rotorGroup.add(shaft);
 
     // Rotor Silicon Steel Core (규소강판 로터 코어)
-    const rotorCoreGeo = new THREE.CylinderGeometry(0.52, 0.52, 0.82, 32);
+    const rotorCoreGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.50, 32);
     const rotorCoreMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.85, roughness: 0.35 });
     const rotorMesh = new THREE.Mesh(rotorCoreGeo, rotorCoreMat);
-    rotorMesh.position.y = 0.5;
+    rotorMesh.position.y = 0.35;
     rotorGroup.add(rotorMesh);
 
     // Permanent Magnet Poles (8개 네오디뮴 영구자석 N/S극 자극 띠)
     const magMatN = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.8, roughness: 0.2 });
     const magMatS = new THREE.MeshStandardMaterial({ color: 0x3b82f6, metalness: 0.8, roughness: 0.2 });
-    const magGeo = new THREE.BoxGeometry(0.06, 0.78, 0.14);
+    const magGeo = new THREE.BoxGeometry(0.04, 0.48, 0.10);
     for (let i = 0; i < 8; i++) {
       const angle = (i / 8) * Math.PI * 2;
       const mag = new THREE.Mesh(magGeo, (i % 2 === 0) ? magMatN : magMatS);
-      mag.position.set(Math.cos(angle) * 0.53, 0.5, Math.sin(angle) * 0.53);
+      mag.position.set(Math.cos(angle) * 0.33, 0.35, Math.sin(angle) * 0.33);
       mag.rotation.y = -angle;
       rotorGroup.add(mag);
     }
 
     // Ball Bearing Rings (상/하단 정밀 볼 베어링)
-    const bearingGeo = new THREE.TorusGeometry(0.24, 0.05, 12, 24);
+    const bearingGeo = new THREE.TorusGeometry(0.16, 0.035, 12, 24);
     const bearingMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.9, roughness: 0.15 });
     const topBearing = new THREE.Mesh(bearingGeo, bearingMat);
     topBearing.rotation.x = Math.PI / 2;
-    topBearing.position.y = 0.98;
+    topBearing.position.y = 0.64;
     rotorGroup.add(topBearing);
     const btmBearing = new THREE.Mesh(bearingGeo, bearingMat);
     btmBearing.rotation.x = Math.PI / 2;
-    btmBearing.position.y = 0.02;
+    btmBearing.position.y = 0.06;
     rotorGroup.add(btmBearing);
 
     dtEvGroup.add(rotorGroup);
 
-    // C. True 6-Axis Industrial Multi-Joint Robot Arm (6축 정밀 다관절 산업용 로봇 팔)
+    // C. Heavy Industrial 6-Axis Articulated Robot Arm (2.3m급 대형 산업용 6축 로봇 팔)
     const robotArmGroup = new THREE.Group();
-    robotArmGroup.position.set(-1.25, 0, 0);
+    robotArmGroup.position.set(-1.65, 0, 0.15);
 
     const robotMatWhite = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.5, roughness: 0.25 });
-    const robotMatOrange = new THREE.MeshStandardMaterial({ color: 0xf97316, metalness: 0.75, roughness: 0.2 });
+    const robotMatOrange = new THREE.MeshStandardMaterial({ color: 0xea580c, metalness: 0.8, roughness: 0.2 });
     const robotMatDark = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.9, roughness: 0.3 });
     const robotMatChrome = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.95, roughness: 0.1 });
     const robotMatGold = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.9, roughness: 0.15 });
 
-    // J0: Heavy Fixed Floor Base (고정 베이스 프레임)
-    const baseStandGeo = new THREE.CylinderGeometry(0.32, 0.38, 0.18, 24);
+    // J0: Heavy Pedestal Foundation Base (대형 볼트 체결 바닥 베이스)
+    const baseStandGeo = new THREE.CylinderGeometry(0.42, 0.48, 0.28, 24);
     const baseStand = new THREE.Mesh(baseStandGeo, robotMatDark);
-    baseStand.position.y = 0.09;
+    baseStand.position.y = 0.14;
     robotArmGroup.add(baseStand);
 
-    // J1: Base Turntable Yaw Axis (1축: 베이스 360° 선회 관절)
+    // Foundation Bolt Details (6개 앵커 볼트)
+    const boltGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.06, 12);
+    for (let i = 0; i < 6; i++) {
+      const bAngle = (i / 6) * Math.PI * 2;
+      const bolt = new THREE.Mesh(boltGeo, robotMatChrome);
+      bolt.position.set(Math.cos(bAngle) * 0.42, 0.28, Math.sin(bAngle) * 0.42);
+      robotArmGroup.add(bolt);
+    }
+
+    // J1: Base Turntable Swivel Axis (1축: 360° 대형 선회 턴테이블)
     const j1Base = new THREE.Group();
-    j1Base.position.y = 0.18;
-    const j1DiskGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.12, 24);
+    j1Base.position.y = 0.28;
+    const j1DiskGeo = new THREE.CylinderGeometry(0.36, 0.36, 0.18, 24);
     const j1Disk = new THREE.Mesh(j1DiskGeo, robotMatWhite);
-    j1Disk.position.y = 0.06;
+    j1Disk.position.y = 0.09;
     j1Base.add(j1Disk);
-    const j1MotorGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.18, 16);
+    const j1MotorGeo = new THREE.CylinderGeometry(0.14, 0.14, 0.24, 16);
     const j1Motor = new THREE.Mesh(j1MotorGeo, robotMatOrange);
-    j1Motor.position.set(0.14, 0.12, 0);
+    j1Motor.position.set(0.20, 0.16, 0);
     j1Base.add(j1Motor);
 
-    // J2: Shoulder Pitch Axis (2축: 숄더 견관절)
+    // J2: Dual-Fork Heavy Shoulder Pitch Joint (2축: 숄더 포크 대형 피벗 관절)
     const j2Shoulder = new THREE.Group();
-    j2Shoulder.position.set(0, 0.16, 0);
-    const j2JointGeo = new THREE.SphereGeometry(0.14, 16, 16);
+    j2Shoulder.position.set(0, 0.24, 0);
+    const j2JointGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.36, 24);
     const j2Joint = new THREE.Mesh(j2JointGeo, robotMatOrange);
+    j2Joint.rotation.z = Math.PI / 2;
     j2Shoulder.add(j2Joint);
 
-    // Link 1: Lower Arm (하부 메인 붐 암)
-    const link1Geo = new THREE.CylinderGeometry(0.075, 0.085, 0.55, 16);
+    // Link 1: Heavy Lower Arm Boom (대형 하부 메인 붐 암 - 길이 0.95m)
+    const link1Geo = new THREE.CylinderGeometry(0.11, 0.13, 0.95, 20);
     const link1 = new THREE.Mesh(link1Geo, robotMatWhite);
-    link1.position.y = 0.28;
+    link1.position.y = 0.48;
     j2Shoulder.add(link1);
 
-    // J3: Elbow Pitch Axis (3축: 엘보우 주관절)
+    // Black Cable Conduit Channel on Lower Arm
+    const cableGeo = new THREE.BoxGeometry(0.06, 0.85, 0.06);
+    const cableMesh = new THREE.Mesh(cableGeo, robotMatDark);
+    cableMesh.position.set(0.12, 0.48, 0);
+    j2Shoulder.add(cableMesh);
+
+    // J3: Pronounced Elbow Joint Knuckle (3축: 돌출형 엘보우 주관절 - 직경 0.36m)
     const j3Elbow = new THREE.Group();
-    j3Elbow.position.set(0, 0.55, 0);
-    const j3JointGeo = new THREE.CylinderGeometry(0.11, 0.11, 0.18, 16);
+    j3Elbow.position.set(0, 0.95, 0);
+    const j3JointGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.32, 20);
     const j3Joint = new THREE.Mesh(j3JointGeo, robotMatOrange);
     j3Joint.rotation.x = Math.PI / 2;
     j3Elbow.add(j3Joint);
 
-    // Link 2: Upper Forearm (상부 전완 링크)
-    const link2Geo = new THREE.CylinderGeometry(0.065, 0.07, 0.45, 16);
+    // Link 2: Upper Forearm Link (상부 전완 붐 암 - 길이 0.85m)
+    const link2Geo = new THREE.CylinderGeometry(0.09, 0.10, 0.85, 20);
     const link2 = new THREE.Mesh(link2Geo, robotMatWhite);
-    link2.position.y = 0.22;
+    link2.position.y = 0.42;
     j3Elbow.add(link2);
 
-    // J4: Forearm Roll Axis (4축: 전완 비틀림 롤 관절)
+    // J4: Forearm Roll Axis Barrel (4축: 전완 비틀림 롤 배럴)
     const j4Roll = new THREE.Group();
-    j4Roll.position.set(0, 0.45, 0);
-    const j4RingGeo = new THREE.CylinderGeometry(0.07, 0.07, 0.08, 16);
+    j4Roll.position.set(0, 0.85, 0);
+    const j4RingGeo = new THREE.CylinderGeometry(0.11, 0.11, 0.16, 20);
     const j4Ring = new THREE.Mesh(j4RingGeo, robotMatDark);
     j4Roll.add(j4Ring);
+    const j4RingAccentGeo = new THREE.TorusGeometry(0.115, 0.02, 12, 24);
+    const j4RingAccent = new THREE.Mesh(j4RingAccentGeo, robotMatOrange);
+    j4RingAccent.rotation.x = Math.PI / 2;
+    j4Roll.add(j4RingAccent);
 
-    // J5: Wrist Pitch Axis (5축: 손목 틸트 굴곡 관절)
+    // J5: Dual-Lug Wrist Pitch Gimbal (5축: 손목 틸트 굴곡 관절)
     const j5Wrist = new THREE.Group();
-    j5Wrist.position.set(0, 0.08, 0);
-    const j5JointGeo = new THREE.SphereGeometry(0.09, 16, 16);
+    j5Wrist.position.set(0, 0.14, 0);
+    const j5JointGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.22, 16);
     const j5Joint = new THREE.Mesh(j5JointGeo, robotMatOrange);
+    j5Joint.rotation.z = Math.PI / 2;
     j5Wrist.add(j5Joint);
 
-    // J6: Tool Flange Roll & End-Effector (6축: 회전 공구 플랜지 & 2-Finger 정밀 그리퍼)
+    // J6: Tool Flange Roll & Heavy 2-Finger Industrial Gripper (6축: 회전 공구 플랜지 & 대형 2-Finger 그리퍼)
     const j6Tool = new THREE.Group();
-    j6Tool.position.set(0, 0.1, 0);
+    j6Tool.position.set(0, 0.16, 0);
 
-    // Gold Flange
-    const flangeMeshGeo = new THREE.CylinderGeometry(0.07, 0.07, 0.04, 16);
+    // Gold Anodized Quick-Change Tool Flange Disc
+    const flangeMeshGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.06, 24);
     const flangeMesh = new THREE.Mesh(flangeMeshGeo, robotMatGold);
     j6Tool.add(flangeMesh);
 
-    // Gripper Base Block
-    const gripBaseGeo = new THREE.BoxGeometry(0.18, 0.06, 0.08);
+    // Pneumatic Gripper Actuator Block (공압식 그리퍼 본체)
+    const gripBaseGeo = new THREE.BoxGeometry(0.32, 0.10, 0.14);
     const gripBase = new THREE.Mesh(gripBaseGeo, robotMatDark);
-    gripBase.position.y = 0.04;
+    gripBase.position.y = 0.08;
     j6Tool.add(gripBase);
 
-    // Parallel Gripper Fingers (2-Finger 정밀 집게 죠)
-    const fingerGeo = new THREE.BoxGeometry(0.025, 0.14, 0.04);
+    // Twin Pneumatic Pistons (듀얼 피스톤 실린더)
+    const cylGeo = new THREE.CylinderGeometry(0.035, 0.035, 0.12, 16);
+    const leftCyl = new THREE.Mesh(cylGeo, robotMatChrome);
+    leftCyl.position.set(-0.11, 0.14, 0);
+    j6Tool.add(leftCyl);
+    const rightCyl = new THREE.Mesh(cylGeo, robotMatChrome);
+    rightCyl.position.set(0.11, 0.14, 0);
+    j6Tool.add(rightCyl);
+
+    // Heavy Industrial Parallel Gripper Fingers (대형 2-Finger 집게 죠)
+    const fingerGeo = new THREE.BoxGeometry(0.045, 0.26, 0.08);
     const leftFinger = new THREE.Mesh(fingerGeo, robotMatChrome);
-    leftFinger.position.set(-0.065, 0.12, 0);
+    leftFinger.position.set(-0.11, 0.24, 0);
     j6Tool.add(leftFinger);
     const rightFinger = new THREE.Mesh(fingerGeo, robotMatChrome);
-    rightFinger.position.set(0.065, 0.12, 0);
+    rightFinger.position.set(0.11, 0.24, 0);
     j6Tool.add(rightFinger);
 
-    // Coolant Mist Nozzle & Laser Diode (노즐 및 레이저 포인터)
-    const nozzleGeo = new THREE.ConeGeometry(0.03, 0.12, 12);
+    // High-Pressure Coolant Mist Nozzle & Laser Diode (노즐 & 레이저 포인터)
+    const nozzleGeo = new THREE.ConeGeometry(0.04, 0.18, 16);
     const nozzleMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.95, roughness: 0.1 });
     const nozzleMesh = new THREE.Mesh(nozzleGeo, nozzleMat);
-    nozzleMesh.position.set(0, 0.11, 0);
+    nozzleMesh.position.set(0, 0.20, 0);
     nozzleMesh.rotation.x = Math.PI;
     j6Tool.add(nozzleMesh);
 
-    // Laser Beam Guide
-    const laserGeo = new THREE.CylinderGeometry(0.005, 0.005, 0.45, 8);
-    const laserMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.75 });
+    // Laser Beam Guide toward Stator Coils
+    const laserGeo = new THREE.CylinderGeometry(0.006, 0.006, 0.85, 8);
+    const laserMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.85 });
     const laserBeam = new THREE.Mesh(laserGeo, laserMat);
-    laserBeam.position.set(0, 0.35, 0);
+    laserBeam.position.set(0, 0.65, 0);
     j6Tool.add(laserBeam);
 
-    // Assemble 6-Axis Hierarchy
+    // Assemble Full 6-Axis Kinematic Chain
     j5Wrist.add(j6Tool);
     j4Roll.add(j5Wrist);
     j3Elbow.add(j4Roll);
@@ -3032,17 +3062,17 @@
         rotorGroup.rotation.y += delta * (rotorSpeed || 2.5);
 
         const t = time * 0.0018 * (robotArmSpeed || 1.0);
-        // Axis 1: Base Turntable Yaw
-        j1Base.rotation.y = Math.sin(t * 0.7) * 0.45;
-        // Axis 2: Shoulder Pitch (Bending Forward/Backward)
-        j2Shoulder.rotation.z = -0.45 + Math.sin(t * 1.1) * 0.22;
-        // Axis 3: Elbow Pitch (Forearm Reach)
-        j3Elbow.rotation.z = 0.75 + Math.cos(t * 1.1) * 0.28;
-        // Axis 4: Forearm Roll (Axial Twist)
-        j4Roll.rotation.y = Math.sin(t * 1.3) * 0.4;
-        // Axis 5: Wrist Pitch (Tilt toward Stator Coils)
-        j5Wrist.rotation.z = -0.3 + Math.sin(t * 1.1) * 0.25;
-        // Axis 6: Tool Flange Roll (Continuous Inspection Rotation)
+        // Axis 1 (J1): Base Turntable Yaw (선회 회전)
+        j1Base.rotation.y = Math.sin(t * 0.6) * 0.35;
+        // Axis 2 (J2): Shoulder Fork Pitch (앞으로 숙여 모터 위로 도달)
+        j2Shoulder.rotation.z = -0.55 + Math.sin(t * 0.9) * 0.15;
+        // Axis 3 (J3): Elbow Knuckle Pitch (팔꿈치를 굽혀 하향 전개)
+        j3Elbow.rotation.x = 0.95 + Math.cos(t * 0.9) * 0.18;
+        // Axis 4 (J4): Forearm Roll (전완 배럴 360도 비틀림)
+        j4Roll.rotation.y = Math.sin(t * 1.2) * 0.45;
+        // Axis 5 (J5): Wrist Pitch Gimbal (손목을 모터 권선 구멍을 향해 아래로 꺾음)
+        j5Wrist.rotation.z = -0.75 + Math.sin(t * 0.9) * 0.15;
+        // Axis 6 (J6): Tool Flange Roll (대형 2-Finger 집게 및 레이저 회전)
         j6Tool.rotation.y = t * 2.2;
       }
 
