@@ -181,6 +181,12 @@
         break;
       }
 
+      case "open_lingbot_world": {
+        window.open("https://lingbot-world-v2-webui.pages.dev/", "_blank", "noopener,noreferrer");
+        desc = "LingBot-World 2.0 무한 3D 시뮬레이터 새 창 열기";
+        break;
+      }
+
       case "open_research_article": {
         window.open("https://www.aicitybuilders.com/gn1#1", "_blank", "noopener,noreferrer");
         desc = "AI City Builders 시뮬레이션 칼럼 새 창 열기";
@@ -296,6 +302,10 @@
       executeAction("navigate_section", { section: "works" });
       return "주요 프로젝트 및 포트폴리오 섹션으로 이동합니다.";
     }
+    if (t.includes("링봇") || t.includes("lingbot") || t.includes("인피니티") || t.includes("월드시뮬레이터")) {
+      executeAction("open_lingbot_world");
+      return "LingBot-World 2.0 무한 월드 시뮬레이터를 새 창에서 열었습니다. 2D 이미지로 생성된 3D 가상 세계를 WASD 키보드로 자유롭게 탐험해 보세요!";
+    }
     if (t.includes("칼럼") || t.includes("시티빌더스") || t.includes("aicity") || t.includes("굿나잇") || t.includes("강화학습")) {
       executeAction("open_research_article");
       return "AI City Builders의 'LLM 다음은 시뮬레이션이다, 강화학습' 특별 연구 칼럼을 새 창에서 열었습니다.";
@@ -403,6 +413,14 @@
       function: {
         name: "run_picking_benchmark",
         description: "60점 레이캐스팅 정확도 평가 벤치마크 루틴을 가동합니다.",
+        parameters: { type: "object", properties: {} }
+      }
+    },
+    {
+      type: "function",
+      function: {
+        name: "open_lingbot_world",
+        description: "LingBot-World 2.0 무한 3D 월드 시뮬레이터(lingbot-world-v2-webui.pages.dev)를 새 창에서 엽니다.",
         parameters: { type: "object", properties: {} }
       }
     },
@@ -1640,6 +1658,7 @@
 
           <div class="nova-group-title">📄 물리 AI & 강화학습 연구 (Research Papers)</div>
           <div class="nova-chip-grid">
+            <button type="button" class="nova-chip-btn highlight" data-action="open_lingbot_world" data-param='{}' data-label="링봇 월드 2.0 시뮬레이터 열어줘" style="border-color: #ff6f00 !important; color: #ffb74d !important;">🎮 LingBot-World 2.0 ↗</button>
             <button type="button" class="nova-chip-btn highlight" data-action="open_research_article" data-param='{}' data-label="강화학습 칼럼 아티클 열어줘">📚 AI시티빌더스 칼럼 ↗</button>
             <button type="button" class="nova-chip-btn" data-action="navigate_section" data-param='{"section":"whitepapers"}' data-label="화이트페이퍼 섹션 보여줘">📑 리서치 페이퍼</button>
           </div>
