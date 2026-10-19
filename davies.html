@@ -338,6 +338,184 @@
         .drop-card, .drop-card::before, .drop-card__icon-box, .drop-card__icon-arrow,
         .drop-card__chip, .drop-card.is-impact, .drop-card.is-impact .drop-card__bang { animation: none !important; }
       }
+
+      /* ===== Exhibition stage: [left rail] [viewport] [right rail] ===== */
+      .lab-rail { display: none; }
+      .drop-card__cta { display: none; }
+      .lab-rail {
+        position: relative; border-radius: 24px; padding: 22px 20px;
+        background: linear-gradient(165deg, rgba(13, 19, 32, 0.92), rgba(5, 8, 15, 0.94));
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        color: #e2e8f0;
+      }
+      @media (min-width: 1600px) {
+        .lab-stage {
+          --rail-w: 270px;
+          display: grid; grid-template-columns: var(--rail-w) minmax(0, 1fr) var(--rail-w);
+          gap: 20px; align-items: stretch;
+          width: min(1880px, calc(100vw - 48px));
+          margin-left: calc(50% - min(940px, 50vw - 24px));
+        }
+        .lab-rail { display: flex; flex-direction: column; min-width: 0; }
+        .theme-pill { display: none !important; }
+      }
+      @media (min-width: 1800px) { .lab-stage { --rail-w: 300px; } }
+
+      /* Left rail hosts the drop card full-height */
+      .lab-rail--left { padding: 0; background: none; border: 0; box-shadow: none; }
+      .lab-rail .drop-card {
+        width: 100%; max-width: none; height: 100%; padding: 22px 20px 18px;
+        display: flex; flex-direction: column; border-radius: 24px;
+      }
+      .lab-rail .drop-card[hidden] { display: flex; }
+      .lab-rail .drop-card__close, .lab-rail .drop-card__pill { display: none !important; }
+      .lab-rail .drop-card__body { display: flex; flex-direction: column; flex: 1; gap: 4px; }
+      .lab-rail .drop-card__head { padding-right: 0; }
+      .lab-rail .drop-card__title { font-size: 20px; }
+      .lab-rail .drop-card__subtitle { font-size: 12.5px; }
+      .lab-rail .drop-card__stepper { margin: 18px 0 14px; }
+      .lab-rail .drop-card__metrics { flex: 1; min-height: 180px; }
+      .lab-rail .drop-card__gauge { flex-basis: 40px; }
+      .lab-rail .drop-card__gauge .g-track { width: 10px; }
+      .lab-rail .drop-card__stats { grid-template-columns: 1fr; gap: 8px; }
+      .lab-rail .drop-card__stat { flex-direction: row; align-items: baseline; justify-content: space-between; padding: 10px 12px; text-align: left; }
+      .lab-rail .drop-card__stat .v { font-size: 22px; order: 2; }
+      .lab-rail .drop-card__stat .k { margin: 0; font-size: 11.5px; order: 1; }
+      .lab-rail .drop-card__tip p { font-size: 12px; }
+      .lab-rail .drop-card__bang { right: 12px; top: 38%; font-size: 22px; }
+      .lab-rail .drop-card.is-collapsed { width: 100%; padding: 22px 20px 18px; border-radius: 24px; }
+      .lab-rail .drop-card.is-collapsed .drop-card__body { display: flex; }
+      .drop-card__cta {
+        align-items: center; justify-content: center; gap: 8px; margin-top: 12px; width: 100%;
+        height: 46px; border-radius: 14px; border: 1px solid rgba(56,189,248,.55); cursor: pointer;
+        font-size: 14px; font-weight: 800; letter-spacing: .3px; color: #e0f2fe;
+        background: linear-gradient(135deg, rgba(56,189,248,.28), rgba(56,189,248,.08));
+        box-shadow: 0 0 0 0 rgba(56,189,248,.45); animation: ctaPulse 2.2s ease-in-out infinite;
+        transition: transform .15s, background .2s;
+      }
+      .drop-card__cta:hover { transform: translateY(-1px); background: linear-gradient(135deg, rgba(56,189,248,.42), rgba(56,189,248,.14)); }
+      .drop-card.is-idle .drop-card__cta { display: inline-flex; }
+      .drop-card.is-idle .drop-card__live, .drop-card.is-idle .drop-card__result { display: none !important; }
+      .drop-card.is-idle .g-marker { animation: idleMarker 2.4s cubic-bezier(.55,0,1,.45) infinite; }
+      .drop-card.is-idle .g-fill { animation: idleFill 2.4s cubic-bezier(.55,0,1,.45) infinite; }
+      @keyframes idleMarker { 0%, 15% { bottom: 100%; } 70% { bottom: 0%; } 78% { bottom: 8%; } 86%, 100% { bottom: 0%; } }
+      @keyframes idleFill { 0%, 15% { height: 100%; } 70%, 100% { height: 0%; } }
+      @keyframes ctaPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(56,189,248,.4); } 50% { box-shadow: 0 0 0 8px rgba(56,189,248,0); } }
+
+      /* Right rail: theme navigator */
+      .theme-nav__eyebrow { font-size: 10.5px; letter-spacing: 2.4px; color: #64748b; font-weight: 700; }
+      .theme-nav__title { margin: 4px 0 14px; font-size: 20px; font-weight: 800; color: #fff; }
+      .theme-nav__thumb {
+        position: relative; border-radius: 16px; overflow: hidden; aspect-ratio: 16 / 10;
+        border: 1px solid rgba(148,163,184,.18); background: #05070c;
+      }
+      .theme-nav__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .theme-nav__thumb img.slide-next { animation: thumbInR .45s cubic-bezier(.2,.8,.2,1) both; }
+      .theme-nav__thumb img.slide-prev { animation: thumbInL .45s cubic-bezier(.2,.8,.2,1) both; }
+      @keyframes thumbInR { from { opacity: 0; transform: translateX(28px) scale(1.04); } to { opacity: 1; transform: none; } }
+      @keyframes thumbInL { from { opacity: 0; transform: translateX(-28px) scale(1.04); } to { opacity: 1; transform: none; } }
+      .theme-nav__badge {
+        position: absolute; left: 10px; bottom: 10px; padding: 3px 10px; border-radius: 999px;
+        font-size: 10.5px; font-weight: 700; color: #a7f3d0; background: rgba(2,6,23,.72);
+        border: 1px solid rgba(52,211,153,.45); backdrop-filter: blur(6px);
+      }
+      .theme-nav__badge.is-view { color: #cbd5e1; border-color: rgba(148,163,184,.4); }
+      .theme-nav__name { margin-top: 14px; font-size: 17px; font-weight: 800; color: #fff; }
+      .theme-nav__desc { margin: 6px 0 10px; font-size: 12.5px; line-height: 1.55; color: #94a3b8; }
+      .theme-nav__tags { display: flex; flex-wrap: wrap; gap: 6px; }
+      .theme-nav__tags span {
+        font-size: 10.5px; padding: 3px 9px; border-radius: 999px; color: #cbd5e1;
+        background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
+      }
+      .theme-nav__ctrl { margin-top: auto; padding-top: 18px; display: flex; align-items: center; justify-content: space-between; }
+      .theme-nav__arrow {
+        width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
+        color: #e2e8f0; background: rgba(255,255,255,.03); border: 1px solid rgba(148,163,184,.28);
+        transition: all .2s;
+      }
+      .theme-nav__arrow svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+      .theme-nav__arrow:hover { color: #fff; border-color: rgba(56,189,248,.7); box-shadow: 0 0 0 4px rgba(56,189,248,.12), 0 0 18px rgba(56,189,248,.3); }
+      .theme-nav__arrow:disabled { opacity: .4; cursor: wait; }
+      #themeNext { animation: arrowNudge 2.6s ease-in-out infinite; }
+      @keyframes arrowNudge { 0%, 70%, 100% { transform: none; } 80% { transform: translateX(4px); } 90% { transform: translateX(0); } }
+      .theme-nav__count { text-align: center; font-size: 13px; color: #64748b; font-variant-numeric: tabular-nums; }
+      .theme-nav__count b { color: #fff; font-size: 18px; }
+      .theme-nav__dots { display: flex; gap: 6px; justify-content: center; margin-top: 6px; }
+      .theme-nav__dots i { width: 6px; height: 6px; border-radius: 3px; background: rgba(148,163,184,.35); transition: all .3s; }
+      .theme-nav__dots i.is-on { width: 18px; background: #38bdf8; }
+      .theme-nav__tour { display: flex; align-items: center; gap: 10px; margin: 16px 0 0; font-size: 12.5px; color: #cbd5e1; cursor: pointer; }
+      .theme-nav__tour small { color: #64748b; }
+      .theme-nav__tour input { position: absolute; opacity: 0; pointer-events: none; }
+      .theme-nav__switch { position: relative; width: 34px; height: 20px; border-radius: 10px; background: rgba(148,163,184,.25); transition: background .2s; flex: 0 0 auto; }
+      .theme-nav__switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform .2s; }
+      .theme-nav__tour input:checked + .theme-nav__switch { background: #38bdf8; }
+      .theme-nav__tour input:checked + .theme-nav__switch::after { transform: translateX(14px); }
+      .theme-nav__tour input:focus-visible + .theme-nav__switch { outline: 2px solid #38bdf8; outline-offset: 2px; }
+      .theme-nav__hint { margin: 10px 0 0; font-size: 11px; color: #475569; }
+
+      /* Compact theme pill (< 1600px) */
+      .theme-pill {
+        display: inline-flex; align-items: center; height: 32px; border-radius: 999px; padding: 0 2px;
+        background: rgba(8, 11, 18, 0.82); border: 1px solid rgba(255,255,255,.14); backdrop-filter: blur(12px);
+        color: #e2e8f0; font-size: 11.5px; font-weight: 700;
+      }
+      .theme-pill span { padding: 0 6px; min-width: 64px; text-align: center; white-space: nowrap; }
+      .theme-pill button { width: 28px; height: 28px; border-radius: 50%; border: 0; background: transparent; color: #cbd5e1; display: grid; place-items: center; cursor: pointer; }
+      .theme-pill button:hover { color: #fff; background: rgba(255,255,255,.1); }
+      .theme-pill svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+      /* ===== Premium dock: matte black glass, thin line icons ===== */
+      .lab-dock {
+        position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 25;
+        display: flex; align-items: center; gap: 2px; padding: 5px;
+        border-radius: 16px; background: rgba(6, 8, 12, 0.78);
+        -webkit-backdrop-filter: blur(20px) saturate(130%); backdrop-filter: blur(20px) saturate(130%);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        max-width: calc(100% - 24px);
+      }
+      .lab-dock__sep { width: 1px; height: 18px; background: rgba(255,255,255,.08); flex: 0 0 auto; }
+      .lab-dock__btn {
+        position: relative; display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 13px;
+        border: 1px solid transparent; border-radius: 11px; background: transparent; cursor: pointer;
+        color: #a3acb9; font-size: 12px; font-weight: 600; letter-spacing: .2px; white-space: nowrap;
+        transition: color .2s, background .2s, border-color .2s, box-shadow .2s, opacity .2s;
+      }
+      .lab-dock__btn svg { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+      .lab-dock__btn::after {
+        content: ""; position: absolute; left: 50%; bottom: 3px; width: 0; height: 1px; transform: translateX(-50%);
+        background: linear-gradient(90deg, transparent, #38bdf8, transparent); transition: width .25s;
+      }
+      .lab-dock__btn:hover { color: #fff; background: rgba(255,255,255,.05); }
+      .lab-dock__btn:hover::after { width: 60%; }
+      .lab-dock__btn:focus-visible { outline: none; border-color: rgba(56,189,248,.7); }
+      .lab-dock__btn[aria-pressed="true"] { color: #e0f2fe; background: rgba(56,189,248,.08); border-color: rgba(56,189,248,.28); }
+      .lab-dock__btn[aria-pressed="true"] svg { color: #7dd3fc; }
+      .lab-dock__btn.is-running {
+        color: #fff; background: rgba(56,189,248,.14); border-color: rgba(56,189,248,.7);
+        box-shadow: 0 0 0 3px rgba(56,189,248,.14), 0 0 16px rgba(56,189,248,.35);
+      }
+      .lab-dock__btn.is-locked { opacity: .38; }
+      .lab-dock__btn[data-tip]::before {
+        content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + 12px);
+        transform: translate(-50%, 4px); padding: 6px 10px; border-radius: 8px; pointer-events: none;
+        font-size: 10.5px; font-weight: 600; letter-spacing: .4px; color: #e2e8f0; white-space: nowrap;
+        background: rgba(6,8,12,.94); border: 1px solid rgba(255,255,255,.1); opacity: 0; transition: opacity .18s, transform .18s;
+      }
+      .lab-dock__btn:hover::before, .lab-dock__btn:focus-visible::before { opacity: 1; transform: translate(-50%, 0); }
+      @media (max-width: 767px) {
+        .lab-dock { bottom: 12px; }
+        .lab-dock__btn { padding: 0 11px; }
+        .lab-dock__btn span { display: none; }
+        .lab-dock__btn[data-tip]::before { display: none; }
+        .theme-pill span { min-width: 0; max-width: 72px; overflow: hidden; text-overflow: ellipsis; }
+        .lab-topright .spatial-btn-pill { padding: 0 10px !important; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .drop-card__cta, .drop-card.is-idle .g-marker, .drop-card.is-idle .g-fill, #themeNext,
+        .theme-nav__thumb img { animation: none !important; }
+      }
       .telemetry-pill {
         background: rgba(14, 20, 32, 0.85);
         border: 1px solid rgba(56, 189, 248, 0.3);
@@ -1264,6 +1442,10 @@
                     </div>
                 </div>
 
+                <!-- Exhibition Stage: [left rail: 1m gravity] [3D viewport] [right rail: themes] (rails ≥1600px) -->
+                <div class="lab-stage" id="labStage">
+                <aside class="lab-rail lab-rail--left" id="labRailLeft" aria-label="1m 중력 실험"></aside>
+
                 <!-- 3D Viewport Container -->
                 <div class="spatial-viewport-card glow-border" style="position: relative; border-radius: 24px; overflow: hidden; background: #07090e; box-shadow: 0 25px 70px rgba(0, 0, 0, 0.8), 0 0 35px rgba(56, 189, 248, 0.15);">
                     
@@ -1349,13 +1531,24 @@
                                     <span>누적 충돌 <b id="dropResultCount">0</b>회</span>
                                     <button type="button" class="drop-card__retry" id="dropCardRetry">↻ 다시 실행</button>
                                 </div>
+
+                                <!-- Idle CTA (left rail) -->
+                                <button type="button" class="drop-card__cta" id="dropCardStart">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg>
+                                    실험 시작
+                                </button>
                             </div>
                             <span class="drop-card__bang" aria-hidden="true">쿵!</span>
                         </section>
                     </div>
 
                     <!-- Top Right Quick Controls -->
-                    <div style="position: absolute; top: 18px; right: 18px; z-index: 20; display: flex; gap: 8px;">
+                    <div class="lab-topright" style="position: absolute; top: 18px; right: 18px; z-index: 20; display: flex; gap: 8px;">
+                        <div class="theme-pill" id="themePill" role="group" aria-label="테마 전환">
+                            <button type="button" id="themePillPrev" aria-label="이전 테마"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg></button>
+                            <span id="themePillName">물류 창고</span>
+                            <button type="button" id="themePillNext" aria-label="다음 테마"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg></button>
+                        </div>
                         <button type="button" class="spatial-btn-pill" id="btnRestoreWarehouse" style="height: 32px; padding: 0 14px; font-size: 11px; display: none;">
                             RESET SCENE
                         </button>
@@ -1379,32 +1572,63 @@
                         </div>
                     </div>
 
-                    <!-- Floating Bottom Control Dock -->
-                    <div class="viewport-controls-dock" style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 25; width: 95%; max-width: 980px;">
-                        <div style="background: rgba(10, 15, 26, 0.92); backdrop-filter: blur(18px); border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 18px; padding: 10px 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center;">
-                            <button type="button" class="spatial-dock-btn" id="btnDropTest">
-                                <span class="btn-dot" style="background:#38bdf8;"></span>
-                                1M DROP TEST
-                            </button>
-                            <button type="button" class="spatial-dock-btn" id="btnTossTest">
-                                <span class="btn-dot" style="background:#fbbf24;"></span>
-                                2.5M/S TOSS TEST
-                            </button>
-                            <button type="button" class="spatial-dock-btn" id="btnToggleWire">
-                                <span class="btn-dot" style="background:#94a3b8;"></span>
-                                COLLISION WIREFRAME
-                            </button>
-                            <button type="button" class="spatial-dock-btn" id="btnTogglePartition">
-                                <span class="btn-dot" style="background:#94a3b8;"></span>
-                                7-PART OBB SECTORS
-                            </button>
-                            <button type="button" class="spatial-dock-btn" id="btnRunPicking">
-                                <span class="btn-dot" style="background:#94a3b8;"></span>
-                                60-PT RAYCAST PICKING
-                            </button>
-                        </div>
-                    </div>
+                    <!-- Floating Bottom Control Dock (premium line icons) -->
+                    <nav class="lab-dock" id="labDock" aria-label="물리 실험 도구">
+                        <button type="button" class="lab-dock__btn" id="btnDropTest" data-tip="1M DROP TEST · 1m 높이 자유낙하">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3.5h8v6H8z"/><path d="M12 12.5v6m-2.6-2.6L12 18.5l2.6-2.6"/><path d="M4.5 21h15"/></svg>
+                            <span>1m 낙하</span>
+                        </button>
+                        <i class="lab-dock__sep" aria-hidden="true"></i>
+                        <button type="button" class="lab-dock__btn" id="btnTossTest" data-tip="2.5 M/S TOSS TEST · 옆으로 던지기">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 14.5h5v5h-5z"/><path d="M7 11.5C9 6 15 4.5 20 9.5"/><path d="M20 5.8v3.7h-3.7"/></svg>
+                            <span>투척</span>
+                        </button>
+                        <i class="lab-dock__sep" aria-hidden="true"></i>
+                        <button type="button" class="lab-dock__btn" id="btnToggleWire" aria-pressed="true" data-tip="COLLISION WIREFRAME · 충돌 경계 보기">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9" stroke-dasharray="2 2"/></svg>
+                            <span>충돌 경계</span>
+                        </button>
+                        <i class="lab-dock__sep" aria-hidden="true"></i>
+                        <button type="button" class="lab-dock__btn" id="btnTogglePartition" aria-pressed="false" data-tip="7-PART OBB SECTORS · 공간 7구역 분할">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M12 3.5v17M3.5 12h17"/></svg>
+                            <span>공간 분할</span>
+                        </button>
+                        <i class="lab-dock__sep" aria-hidden="true"></i>
+                        <button type="button" class="lab-dock__btn" id="btnRunPicking" data-tip="60-PT RAYCAST PICKING · 정밀 지점 선택">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="1.4"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/></svg>
+                            <span>정밀 선택</span>
+                        </button>
+                    </nav>
 
+                </div>
+
+                <!-- Right rail: theme navigator -->
+                <aside class="lab-rail lab-rail--right theme-nav" id="themeNav" aria-label="전시 테마 선택">
+                    <div class="theme-nav__eyebrow">EXHIBIT THEMES</div>
+                    <h4 class="theme-nav__title">테마 선택</h4>
+                    <div class="theme-nav__thumb">
+                        <img id="themeThumb" src="assets/p3/marble/thumbs/warehouse.webp" alt="" width="480" height="300" loading="lazy">
+                        <span class="theme-nav__badge" id="themeBadge">물리 실험 가능</span>
+                    </div>
+                    <div class="theme-nav__name" id="themeName">스마트 물류 창고</div>
+                    <p class="theme-nav__desc" id="themeDesc">팔레트를 떨어뜨리고 던지며 실제 물리 법칙을 체험해요.</p>
+                    <div class="theme-nav__tags" id="themeTags"></div>
+                    <div class="theme-nav__ctrl">
+                        <button type="button" class="theme-nav__arrow" id="themePrev" aria-label="이전 테마">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg>
+                        </button>
+                        <div class="theme-nav__count"><b id="themeIdx">1</b> / <span id="themeTotal">2</span><div class="theme-nav__dots" id="themeDots"></div></div>
+                        <button type="button" class="theme-nav__arrow" id="themeNext" aria-label="다음 테마">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg>
+                        </button>
+                    </div>
+                    <label class="theme-nav__tour">
+                        <input type="checkbox" id="themeTour">
+                        <span class="theme-nav__switch" aria-hidden="true"></span>
+                        자동 투어 <small>(20초마다 전환)</small>
+                    </label>
+                    <p class="theme-nav__hint">← → 키로도 넘길 수 있어요</p>
+                </aside>
                 </div>
 
                 <!-- Telemetry Metrics Bar -->
@@ -3565,7 +3789,7 @@
         function start() {
           clearTimeout(collapseTimer);
           card.hidden = false;
-          card.classList.remove("is-collapsed", "is-done", "is-impact");
+          card.classList.remove("is-collapsed", "is-done", "is-impact", "is-idle");
           enterTimer = restartClass("is-enter", 400, enterTimer);
           setChip("running", "진행 중");
           setStep(1);
@@ -3596,7 +3820,9 @@
           card.classList.add("is-done");
           btnDrop.classList.remove("is-running");
           dropFx.hideSoon();
-          collapseTimer = setTimeout(() => card.classList.add("is-collapsed"), 8000);
+          collapseTimer = railMode
+            ? setTimeout(showIdle, 12000)
+            : setTimeout(() => card.classList.add("is-collapsed"), 8000);
         }
 
         function update(y, vy, speed) {
@@ -3631,12 +3857,49 @@
           }
         }
 
-        function close() {
+        // Idle "ready" state, used while the card sits in the left rail
+        function showIdle() {
           phase = "idle";
           clearTimeout(collapseTimer);
+          card.hidden = false;
+          card.classList.remove("is-collapsed", "is-done", "is-impact", "is-enter");
+          card.classList.add("is-idle");
+          setChip("ready", "대기");
+          setStep(0);
+          gaugeFill.style.height = "";
+          gaugeMarker.style.bottom = "";
+          statTime.textContent = DROP_T.toFixed(2);
+          statSpeed.textContent = DROP_V.toFixed(1);
+          statKmh.textContent = (DROP_V * 3.6).toFixed(0);
+          statEnergy.textContent = DROP_E.toFixed(1);
+          btnDrop.classList.remove("is-running");
+          dropFx.hide();
+        }
+
+        function close() {
+          clearTimeout(collapseTimer);
+          if (railMode) { showIdle(); return; }
+          phase = "idle";
           card.hidden = true;
           btnDrop.classList.remove("is-running");
           dropFx.hide();
+        }
+
+        // Move the card between the in-viewport overlay and the left exhibition rail
+        let railMode = false;
+        const overlayHost = card.parentElement;
+        const railHost = $("labRailLeft");
+        function setRailMode(on) {
+          if (!railHost) return;
+          railMode = !!on;
+          (railMode ? railHost : overlayHost).appendChild(card);
+          if (railMode) {
+            if (phase === "idle") showIdle();
+            else if (phase === "done") { clearTimeout(collapseTimer); card.classList.remove("is-collapsed"); collapseTimer = setTimeout(showIdle, 12000); }
+          } else {
+            card.classList.remove("is-idle");
+            if (phase === "idle") card.hidden = true;
+          }
         }
 
         $("dropCardClose").addEventListener("click", close);
@@ -3645,9 +3908,14 @@
           card.classList.remove("is-collapsed");
         });
         $("dropCardRetry").addEventListener("click", () => btnDrop.click());
+        $("dropCardStart")?.addEventListener("click", () => btnDrop.click());
 
-        return { start, update, close, tick: () => dropFx.tick() };
+        return { start, update, close, setRailMode, tick: () => dropFx.tick() };
       })();
+
+      const railMQ = window.matchMedia("(min-width: 1600px)");
+      dropCard.setRailMode(railMQ.matches);
+      railMQ.addEventListener?.("change", (e) => dropCard.setRailMode(e.matches));
 
       // 3. Setup 7-Part Spatial Partitioning Helpers
       const partitionGroup = new THREE.Group();
@@ -3779,11 +4047,13 @@
         floorWire.visible = !floorWire.visible;
         wireL1.visible = floorWire.visible;
         wireR1.visible = floorWire.visible;
+        btnWire.setAttribute("aria-pressed", String(floorWire.visible));
         showToast(floorWire.visible ? "[WIREFRAME] 와이어프레임 표시 활성화" : "[WIREFRAME] 와이어프레임 숨김");
       });
 
       btnPartition.addEventListener("click", () => {
         partitionGroup.visible = !partitionGroup.visible;
+        btnPartition.setAttribute("aria-pressed", String(partitionGroup.visible));
         showToast(partitionGroup.visible ? "[PARTITION] 7부품 공간 분할(Spatial Partitioning) 표시" : "[PARTITION] 7부품 공간 분할 숨김");
       });
 
@@ -3796,8 +4066,9 @@
         dropCard.close();
         showToast("[RESET] 물리 시뮬레이션 및 카메라 리셋");
         createRigidBodies(0);
-        camera.position.set(0, 2.5, 6.0);
-        controls.target.set(0, 0.4, 0);
+        const camT = themeIdx >= 0 ? THEMES[themeIdx] : null;
+        camera.position.set(...(camT ? camT.cam : [0, 2.5, 6.0]));
+        controls.target.set(...(camT ? camT.target : [0, 0.4, 0]));
         telemetryStatus.textContent = "STANDBY / READY";
         telemetryStatus.style.color = "#34d399";
         collisionCount = 0;
@@ -4027,11 +4298,7 @@
           loadingOverlay.style.opacity = "1";
           loadingText.textContent = `World Labs AI 공간 로딩 중... (${prompt.substring(0, 25)}...)`;
 
-          if (warehouseMesh) {
-            scene.remove(warehouseMesh);
-            warehouseMesh.dispose?.();
-            warehouseMesh = null;
-          }
+          detachCurrentMesh();
 
           const newMesh = new SplatMesh({
             url: spzUrl,
@@ -4045,6 +4312,12 @@
           scene.add(newMesh);
           await newMesh.initialized;
           warehouseMesh = newMesh;
+
+          // Theme UI: AI generated world (physics enabled)
+          themeIdx = -1;
+          renderThemeUI(0);
+          meshL1.visible = meshR1.visible = true;
+          floorWire.visible = wireOn();
 
           // Adjust floor wireframe / physics floor
           floorWire.position.set(0.0, groundOffset - 0.025, 0.0);
@@ -4111,49 +4384,224 @@
         }
       });
 
-      // Restore Default Warehouse Handler
-      btnRestoreWarehouse?.addEventListener("click", async () => {
-        showToast("[RESTORE] 기본 스마트 물류 창고(Marble Run01)로 복원 중...");
-        loadingOverlay.style.display = "flex";
-        loadingOverlay.style.opacity = "1";
-        loadingText.textContent = "기본 스마트 물류 창고 SPZ 복원 중...";
-
-        if (warehouseMesh) {
-          scene.remove(warehouseMesh);
-          warehouseMesh.dispose?.();
-          warehouseMesh = null;
+      // =================================================================
+      // EXHIBIT THEMES: warehouse (physics) ↔ car studio (view only)
+      // =================================================================
+      const THEMES = [
+        {
+          key: "warehouse", name: "스마트 물류 창고", short: "물류 창고",
+          desc: "팔레트를 떨어뜨리고 던지며 실제 물리 법칙(중력·충돌)을 체험해요.",
+          tags: ["500K 스플랫", "Rapier 물리", "1m 낙하 실험"],
+          thumb: "assets/p3/marble/thumbs/warehouse.webp",
+          url: "assets/p3/marble/run01_500k.spz", asset: "Marble run01_500k.spz",
+          scale: s, posY: h, physics: true,
+          cam: [0, 2.5, 6.0], target: [0, 0.4, 0]
+        },
+        {
+          key: "car", name: "자동차 쇼룸 스튜디오", short: "자동차 쇼룸",
+          desc: "실제 촬영 없이 AI가 만든 3D 전시 공간을 자유롭게 둘러보세요. (드래그로 회전 · 휠로 확대)",
+          tags: ["500K 스플랫", "Marble 1.1", "감상 모드"],
+          thumb: "assets/p3/marble/thumbs/car_studio.webp",
+          url: "assets/p3/marble/car_studio_v2_clean_500k.spz", asset: "Marble car_studio_v2_clean_500k.spz",
+          scale: 2.2508733, posY: 1.6300833, physics: false,
+          cam: [1.0, 2.5, 1.2], target: [0, 0.725, -1.5]
         }
+      ];
+      let themeIdx = 0;            // -1 = AI generated world
+      let themeLoading = null;     // Promise while a swap is in progress
+      const themeMeshCache = new Map();
+      if (warehouseMesh) themeMeshCache.set(THEMES[0].url, warehouseMesh);
 
-        const origMesh = new SplatMesh({
-          url: "assets/p3/marble/run01_500k.spz",
-          lod: false,
-          raycastable: true,
-          minRaycastOpacity: 0.05
+      const $t = (id) => document.getElementById(id);
+      const themeEls = {
+        thumb: $t("themeThumb"), badge: $t("themeBadge"), name: $t("themeName"), desc: $t("themeDesc"),
+        tags: $t("themeTags"), idx: $t("themeIdx"), total: $t("themeTotal"), dots: $t("themeDots"),
+        prev: $t("themePrev"), next: $t("themeNext"), pillName: $t("themePillName"),
+        pillPrev: $t("themePillPrev"), pillNext: $t("themePillNext"), tour: $t("themeTour")
+      };
+      const LOCKED_IN_VIEW = [btnDrop, btnToss, btnWire, btnPartition];
+      const wireOn = () => btnWire.getAttribute("aria-pressed") !== "false";
+
+      function renderThemeUI(dir = 0) {
+        const t = THEMES[themeIdx];
+        const isAI = themeIdx < 0;
+        const name = isAI ? "AI 생성 월드" : t.name;
+        if (themeEls.thumb && !isAI) {
+          themeEls.thumb.classList.remove("slide-next", "slide-prev");
+          themeEls.thumb.src = t.thumb;
+          if (dir) { void themeEls.thumb.offsetWidth; themeEls.thumb.classList.add(dir > 0 ? "slide-next" : "slide-prev"); }
+        }
+        if (themeEls.name) themeEls.name.textContent = name;
+        if (themeEls.desc) themeEls.desc.textContent = isAI
+          ? "프롬프트로 방금 생성한 3D 공간이에요. 물리 버튼으로 팔레트 실험도 해보세요."
+          : t.desc;
+        if (themeEls.tags) themeEls.tags.innerHTML = (isAI ? ["World Labs API", "텍스트 → 3D"] : t.tags)
+          .map((x) => `<span>${x}</span>`).join("");
+        if (themeEls.badge) {
+          const phys = isAI || t.physics;
+          themeEls.badge.textContent = isAI ? "AI 생성" : (phys ? "물리 실험 가능" : "감상 모드");
+          themeEls.badge.classList.toggle("is-view", !phys);
+        }
+        if (themeEls.idx) themeEls.idx.textContent = isAI ? "AI" : String(themeIdx + 1);
+        if (themeEls.total) themeEls.total.textContent = String(THEMES.length);
+        if (themeEls.dots) themeEls.dots.innerHTML = THEMES.map((_, i) => `<i class="${i === themeIdx ? "is-on" : ""}"></i>`).join("");
+        if (themeEls.pillName) themeEls.pillName.textContent = isAI ? "AI 월드" : t.short;
+        const locked = !isAI && !t.physics;
+        LOCKED_IN_VIEW.forEach((b) => {
+          b.classList.toggle("is-locked", locked);
+          if (locked) b.dataset.lockTip = "1"; else delete b.dataset.lockTip;
         });
-        origMesh.scale.set(s, s, s);
-        origMesh.rotation.set(Math.PI, 0, 0);
-        origMesh.position.set(0, h, 0);
-        scene.add(origMesh);
-        await origMesh.initialized;
-        warehouseMesh = origMesh;
+      }
 
-        floorWire.position.set(0.0, -0.025, 0.0);
-        createRigidBodies(0);
-        camera.position.set(0, 2.5, 6.0);
-        controls.target.set(0, 0.4, 0);
+      function detachCurrentMesh() {
+        if (!warehouseMesh) return;
+        scene.remove(warehouseMesh);
+        // Theme meshes are cached for instant switching; only AI-generated meshes are disposed.
+        const cached = Array.from(themeMeshCache.values()).includes(warehouseMesh);
+        if (!cached) warehouseMesh.dispose?.();
+        warehouseMesh = null;
+      }
 
-        if (telemetryAssetName) {
-          telemetryAssetName.textContent = "Marble run01_500k.spz";
-        }
-        if (btnRestoreWarehouse) btnRestoreWarehouse.style.display = "none";
-        if (promptStatusContainer) promptStatusContainer.style.display = "none";
-        showToast("[RESTORED] 기본 스마트 물류 창고가 복원되었습니다.");
+      function loadTheme(i, dir = 0) {
+        if (themeLoading) return themeLoading;
+        const n = THEMES.length;
+        const idx = ((i % n) + n) % n;
+        const t = THEMES[idx];
+        themeLoading = (async () => {
+          [themeEls.prev, themeEls.next, themeEls.pillPrev, themeEls.pillNext].forEach((b) => b && (b.disabled = true));
+          clearTimeout(dropWakeTimer);
+          dropCard.close();
+          pickingGroup.clear();
+          partitionGroup.visible = false;
+          btnPartition.setAttribute("aria-pressed", "false");
 
-        setTimeout(() => {
-          loadingOverlay.style.opacity = "0";
-          setTimeout(() => { loadingOverlay.style.display = "none"; }, 500);
-        }, 500);
+          themeIdx = idx;
+          renderThemeUI(dir);
+
+          const cached = themeMeshCache.get(t.url);
+          if (!cached) {
+            loadingOverlay.style.display = "flex";
+            loadingOverlay.style.opacity = "1";
+            loadingText.textContent = `${t.name} (500,000 Splats) 3DGS 로딩 중...`;
+          }
+          detachCurrentMesh();
+          let mesh = cached;
+          try {
+            if (!mesh) {
+              mesh = new SplatMesh({ url: t.url, lod: false, raycastable: true, minRaycastOpacity: 0.05 });
+              mesh.scale.set(t.scale, t.scale, t.scale);
+              mesh.rotation.set(Math.PI, 0, 0);
+              mesh.position.set(0, t.posY, 0);
+              themeMeshCache.set(t.url, mesh);
+              scene.add(mesh);
+              await mesh.initialized;
+            } else {
+              scene.add(mesh);
+            }
+            warehouseMesh = mesh;
+          } catch (err) {
+            console.warn("[Spark Davies] Theme load failed:", err);
+            themeMeshCache.delete(t.url);
+            if (mesh) scene.remove(mesh);
+            showToast(`[THEME] ${t.name} 로딩 실패 — 네트워크를 확인해주세요.`, 4000);
+          }
+
+          meshL1.visible = meshR1.visible = t.physics;
+          floorWire.visible = t.physics && wireOn();
+          floorWire.position.set(0.0, -0.025, 0.0);
+          createRigidBodies(0);
+          camera.position.set(...t.cam);
+          controls.target.set(...t.target);
+          controls.update?.();
+
+          if (telemetryAssetName) telemetryAssetName.textContent = t.asset;
+          if (btnRestoreWarehouse) btnRestoreWarehouse.style.display = "none";
+          if (promptStatusContainer && idx === 0) promptStatusContainer.style.display = "none";
+          telemetryStatus.textContent = t.physics ? "STANDBY / READY" : "VIEW MODE";
+          telemetryStatus.style.color = t.physics ? "#34d399" : "#94a3b8";
+          showToast(t.physics ? `[THEME] ${t.name} — 물리 실험을 시작해보세요!` : `[THEME] ${t.name} — 드래그해서 둘러보세요.`);
+
+          if (!cached) {
+            setTimeout(() => {
+              loadingOverlay.style.opacity = "0";
+              setTimeout(() => { loadingOverlay.style.display = "none"; }, 500);
+            }, 400);
+          }
+        })().finally(() => {
+          themeLoading = null;
+          [themeEls.prev, themeEls.next, themeEls.pillPrev, themeEls.pillNext].forEach((b) => b && (b.disabled = false));
+        });
+        return themeLoading;
+      }
+      const stepTheme = (d) => loadTheme((themeIdx < 0 ? (d > 0 ? -1 : 0) : themeIdx) + d, d);
+
+      themeEls.prev?.addEventListener("click", () => stepTheme(-1));
+      themeEls.next?.addEventListener("click", () => stepTheme(1));
+      themeEls.pillPrev?.addEventListener("click", () => stepTheme(-1));
+      themeEls.pillNext?.addEventListener("click", () => stepTheme(1));
+      renderThemeUI(0);
+
+      // Physics-only buttons in a view-only theme: jump back to the warehouse, then run.
+      document.getElementById("labDock")?.addEventListener("click", (e) => {
+        const btn = e.target.closest?.(".lab-dock__btn");
+        if (!btn || !btn.classList.contains("is-locked")) return;
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        showToast("[THEME] 물리 실험은 물류 창고에서 진행돼요 — 이동합니다...");
+        loadTheme(0, -1).then(() => btn.click());
+      }, true);
+
+      // Restore Default Warehouse Handler (after an AI-generated world)
+      btnRestoreWarehouse?.addEventListener("click", () => {
+        showToast("[RESTORE] 기본 스마트 물류 창고(Marble Run01)로 복원 중...");
+        loadTheme(0);
       });
+
+      // Section visibility (keyboard + auto-tour only act while the lab is on screen)
+      const labSection = document.getElementById("spatialLabSection");
+      let labVisible = true;
+      if (labSection && "IntersectionObserver" in window) {
+        new IntersectionObserver((ents) => { labVisible = ents[0].isIntersecting; }, { threshold: 0.25 }).observe(labSection);
+      }
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+        if (e.altKey || e.ctrlKey || e.metaKey || !labVisible) return;
+        const el = document.activeElement;
+        if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+        e.preventDefault();
+        stepTheme(e.key === "ArrowRight" ? 1 : -1);
+      });
+
+      // Auto-tour (kiosk): switch theme every 20 s, auto-run the drop test in the warehouse.
+      const TOUR_MS = 20000;
+      let tourPausedUntil = 0;
+      let tourTimer = null;
+      function tourTick() {
+        if (!themeEls.tour?.checked) return;
+        if (performance.now() < tourPausedUntil || !labVisible || themeLoading || document.hidden) return;
+        stepTheme(1).then(() => {
+          if (themeIdx === 0 && themeEls.tour?.checked) setTimeout(() => btnDrop.click(), 1500);
+        });
+      }
+      function setTour(on) {
+        clearInterval(tourTimer);
+        tourTimer = on ? setInterval(tourTick, TOUR_MS) : null;
+        tourPausedUntil = 0;
+      }
+      themeEls.tour?.addEventListener("change", () => {
+        setTour(themeEls.tour.checked);
+        showToast(themeEls.tour.checked ? "[TOUR] 자동 투어 시작 (20초마다 테마 전환)" : "[TOUR] 자동 투어 중지");
+      });
+      const stage = document.getElementById("labStage");
+      ["pointerdown", "wheel", "keydown"].forEach((ev) => stage?.addEventListener(ev, (e) => {
+        if (!e.isTrusted || e.target.closest?.(".theme-nav__tour")) return;
+        tourPausedUntil = performance.now() + 60000; // visitor is interacting: pause for 60 s
+      }, { passive: true }));
+      if (new URLSearchParams(location.search).get("kiosk") === "1" && themeEls.tour) {
+        themeEls.tour.checked = true;
+        setTour(true);
+      }
 
       // Hide loading overlay once ready
       setTimeout(() => {
