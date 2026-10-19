@@ -139,6 +139,205 @@
         background: #38bdf8;
         display: inline-block;
       }
+      /* Drop test running state on dock button */
+      .spatial-dock-btn.is-running {
+        background: rgba(56, 189, 248, 0.16);
+        border-color: rgba(56, 189, 248, 0.75);
+        color: #e0f2fe;
+        box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18), 0 0 18px rgba(56, 189, 248, 0.45);
+      }
+
+      /* ===== 1m Drop Test Explainer Card ===== */
+      .drop-card {
+        --dc-accent: #38bdf8;
+        --dc-ok: #34d399;
+        --dc-warn: #fbbf24;
+        position: relative;
+        width: 340px;
+        max-width: calc(100vw - 60px);
+        pointer-events: auto;
+        color: #e2e8f0;
+        font-family: inherit;
+        background: linear-gradient(160deg, rgba(14, 22, 38, 0.86), rgba(6, 10, 20, 0.82));
+        -webkit-backdrop-filter: blur(16px) saturate(140%);
+        backdrop-filter: blur(16px) saturate(140%);
+        border-radius: 20px;
+        padding: 14px 14px 12px;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        isolation: isolate;
+      }
+      .drop-card.is-enter { animation: dropSlideIn 0.35s cubic-bezier(.2, .9, .3, 1.2) both; }
+      .drop-card[hidden] { display: none; }
+      /* animated gradient border */
+      .drop-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        padding: 1px;
+        background: linear-gradient(120deg, rgba(56,189,248,.9), rgba(56,189,248,.08) 35%, rgba(52,211,153,.6) 65%, rgba(56,189,248,.9));
+        background-size: 250% 250%;
+        animation: borderFlow 5s linear infinite;
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+        z-index: -1;
+      }
+      .drop-card__close {
+        position: absolute; top: 10px; right: 10px;
+        width: 26px; height: 26px; border-radius: 50%;
+        border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.05);
+        color: #94a3b8; font-size: 16px; line-height: 1; cursor: pointer;
+        display: grid; place-items: center; transition: all .2s;
+      }
+      .drop-card__close:hover { color: #fff; background: rgba(255,255,255,.14); }
+      .drop-card__head { display: flex; align-items: center; gap: 12px; padding-right: 26px; }
+      .drop-card__icon {
+        flex: 0 0 52px; height: 52px; border-radius: 50%;
+        display: grid; place-items: center; color: var(--dc-accent);
+        background: radial-gradient(circle at 30% 30%, rgba(56,189,248,.35), rgba(56,189,248,.08));
+        box-shadow: 0 0 0 1px rgba(56,189,248,.45), 0 0 22px rgba(56,189,248,.35);
+      }
+      .drop-card__icon-box { animation: iconBob 1.6s ease-in-out infinite; transform-origin: center; }
+      .drop-card__icon-arrow { animation: iconArrow 1.6s ease-in-out infinite; }
+      .drop-card__title { margin: 0; font-size: 18px; font-weight: 800; color: #fff; letter-spacing: -0.3px; line-height: 1.2; }
+      .drop-card__subtitle { margin: 2px 0 0; font-size: 12px; color: #94a3b8; line-height: 1.35; }
+      .drop-card__chip {
+        display: inline-block; margin-left: 6px; vertical-align: 3px;
+        font-size: 10.5px; font-weight: 700; padding: 2px 9px; border-radius: 999px;
+        color: #cbd5e1; background: rgba(148,163,184,.14); border: 1px solid rgba(148,163,184,.3);
+      }
+      .drop-card__chip[data-state="running"] {
+        color: #e0f2fe; background: rgba(56,189,248,.18); border-color: rgba(56,189,248,.6);
+        animation: chipPulse 1.1s ease-in-out infinite;
+      }
+      .drop-card__chip[data-state="done"] { color: #052e1f; background: var(--dc-ok); border-color: var(--dc-ok); }
+
+      .drop-card__stepper { list-style: none; display: flex; margin: 12px 0 10px; padding: 0; position: relative; }
+      .drop-card__stepper li { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; }
+      .drop-card__stepper li:not(:last-child)::after {
+        content: ""; position: absolute; top: 11px; left: calc(50% + 14px); right: calc(-50% + 14px);
+        height: 2px; background: rgba(148,163,184,.25); border-radius: 2px; transition: background .3s;
+      }
+      .drop-card__stepper .dot {
+        width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+        font-size: 11px; font-weight: 800; color: #94a3b8;
+        border: 2px solid rgba(148,163,184,.35); background: rgba(15,23,42,.7); transition: all .3s;
+      }
+      .drop-card__stepper .lbl { font-size: 11px; color: #64748b; font-weight: 600; transition: color .3s; white-space: nowrap; }
+      .drop-card__stepper li.is-done .dot { color: #052e1f; background: var(--dc-ok); border-color: var(--dc-ok); }
+      .drop-card__stepper li.is-done:not(:last-child)::after { background: var(--dc-ok); }
+      .drop-card__stepper li.is-done .lbl { color: #a7f3d0; }
+      .drop-card__stepper li.is-active .dot {
+        color: #fff; background: var(--dc-accent); border-color: var(--dc-accent);
+        box-shadow: 0 0 0 4px rgba(56,189,248,.22), 0 0 14px rgba(56,189,248,.7);
+      }
+      .drop-card__stepper li.is-active .lbl { color: #fff; }
+
+      .drop-card__metrics { display: flex; gap: 10px; align-items: stretch; }
+      .drop-card__gauge { flex: 0 0 34px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+      .drop-card__gauge .g-label { font-size: 9.5px; color: #64748b; font-family: monospace; }
+      .drop-card__gauge .g-track {
+        position: relative; flex: 1; width: 8px; min-height: 60px; border-radius: 6px;
+        background: rgba(148,163,184,.16); overflow: visible;
+      }
+      .drop-card__gauge .g-fill {
+        position: absolute; left: 0; right: 0; bottom: 0; height: 100%; border-radius: 6px;
+        background: linear-gradient(to top, rgba(56,189,248,.25), var(--dc-accent));
+      }
+      .drop-card__gauge .g-marker {
+        position: absolute; left: 50%; bottom: 100%; width: 16px; height: 16px; border-radius: 50%;
+        transform: translate(-50%, 50%); background: #fff;
+        box-shadow: 0 0 0 3px var(--dc-accent), 0 0 14px var(--dc-accent);
+      }
+      .drop-card__stats { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+      .drop-card__stat {
+        border-radius: 12px; padding: 7px 4px 6px; text-align: center;
+        background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.09);
+        display: flex; flex-direction: column; justify-content: center;
+      }
+      .drop-card__stat .v { font-size: 18px; font-weight: 800; color: #fff; line-height: 1.1; font-variant-numeric: tabular-nums; }
+      .drop-card__stat .v small { font-size: 10.5px; font-weight: 600; color: #94a3b8; margin-left: 2px; }
+      .drop-card__stat .k { margin-top: 3px; font-size: 10.5px; color: #94a3b8; line-height: 1.3; }
+      .drop-card__stat .k em { display: block; font-style: normal; color: #7dd3fc; font-size: 10px; }
+      .drop-card__stat.is-accent { border-color: rgba(56,189,248,.35); background: rgba(56,189,248,.08); }
+      .drop-card__stat.is-accent .v { color: #7dd3fc; }
+      .drop-card__stat.is-warn { border-color: rgba(251,191,36,.3); background: rgba(251,191,36,.07); }
+      .drop-card__stat.is-warn .v { color: #fcd34d; }
+      .drop-card__live {
+        display: flex; justify-content: space-between; margin-top: 8px; padding: 6px 10px;
+        border-radius: 10px; background: rgba(2,6,23,.5); font-size: 11px; color: #94a3b8;
+      }
+      .drop-card__live b { color: #fff; font-variant-numeric: tabular-nums; font-family: monospace; }
+      .drop-card__tip {
+        display: flex; gap: 10px; margin-top: 8px; padding: 8px 12px; border-radius: 14px;
+        background: linear-gradient(135deg, rgba(56,189,248,.12), rgba(52,211,153,.08));
+        border: 1px solid rgba(56,189,248,.25);
+      }
+      .drop-card__tip .tip-ico { font-size: 18px; line-height: 1.2; }
+      .drop-card__tip b { color: #7dd3fc; font-size: 12px; }
+      .drop-card__tip p { margin: 2px 0 0; font-size: 11.5px; line-height: 1.5; color: #cbd5e1; }
+      .drop-card__tip strong { color: #fff; }
+      .drop-card__result {
+        display: none; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 10px;
+        font-size: 11px; color: #94a3b8;
+      }
+      .drop-card__result b { color: #fff; }
+      .drop-card.is-done .drop-card__result { display: flex; animation: dropSlideIn .3s ease both; }
+      .drop-card.is-done .drop-card__live { display: none; }
+      .drop-card__retry {
+        margin-left: auto; padding: 5px 12px; border-radius: 999px; font-size: 11px; font-weight: 700;
+        color: #0b1220; background: var(--dc-accent); border: 0; cursor: pointer; transition: transform .15s, box-shadow .15s;
+      }
+      .drop-card__retry:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(56,189,248,.45); }
+
+      /* impact */
+      .drop-card__bang {
+        position: absolute; top: 50%; right: -8px; transform: translateY(-50%) scale(0);
+        padding: 6px 12px; border-radius: 12px; font-weight: 900; font-size: 18px; color: #1a1200;
+        background: var(--dc-warn); box-shadow: 0 8px 24px rgba(251,191,36,.55); pointer-events: none;
+      }
+      .drop-card.is-impact { animation: cardShake .35s ease; }
+      .drop-card.is-impact .drop-card__bang { animation: bangPop .9s cubic-bezier(.2,1.6,.4,1) both; }
+
+      /* collapsed pill */
+      .drop-card__pill {
+        display: none; align-items: center; gap: 8px; border: 0; background: transparent;
+        color: #e2e8f0; font-size: 12px; cursor: pointer; padding: 0;
+      }
+      .drop-card__pill b { color: var(--dc-ok); }
+      .drop-card__pill-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dc-ok); box-shadow: 0 0 10px var(--dc-ok); }
+      .drop-card.is-collapsed { width: auto; padding: 9px 40px 9px 14px; border-radius: 999px; }
+      .drop-card.is-collapsed .drop-card__body,
+      .drop-card.is-collapsed .drop-card__bang { display: none; }
+      .drop-card.is-collapsed .drop-card__pill { display: inline-flex; }
+      .drop-card.is-collapsed .drop-card__close { top: 50%; transform: translateY(-50%); width: 22px; height: 22px; font-size: 14px; }
+
+      @keyframes dropSlideIn { from { opacity: 0; transform: translateX(-24px); } to { opacity: 1; transform: none; } }
+      @keyframes borderFlow { 0% { background-position: 0% 50%; } 100% { background-position: 250% 50%; } }
+      @keyframes iconBob { 0%, 100% { transform: translateY(-2px); } 50% { transform: translateY(3px); } }
+      @keyframes iconArrow { 0%, 100% { opacity: .35; transform: translateY(-2px); } 50% { opacity: 1; transform: translateY(2px); } }
+      @keyframes chipPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(56,189,248,.5); } 50% { box-shadow: 0 0 0 5px rgba(56,189,248,0); } }
+      @keyframes cardShake { 0%,100% { transform: none; } 20% { transform: translate(-3px, 2px); } 40% { transform: translate(3px, -2px); } 60% { transform: translate(-2px, 1px); } 80% { transform: translate(2px, 0); } }
+      @keyframes bangPop { 0% { transform: translateY(-50%) scale(0) rotate(-12deg); opacity: 0; } 25% { transform: translateY(-50%) scale(1.15) rotate(6deg); opacity: 1; } 70% { transform: translateY(-50%) scale(1) rotate(0); opacity: 1; } 100% { transform: translateY(-50%) scale(.9); opacity: 0; } }
+
+      @media (max-width: 767px) {
+        .spatial-overlay-left { top: 62px !important; left: 10px !important; right: 10px; }
+        .drop-card { width: auto; max-width: none; padding: 10px 12px; }
+        .drop-card__icon { flex-basis: 40px; height: 40px; }
+        .drop-card__icon svg { width: 26px; height: 26px; }
+        .drop-card__title { font-size: 16px; }
+        .drop-card__stepper { margin: 8px 0 6px; }
+        .drop-card__gauge { display: none; }
+        .drop-card__stat .v { font-size: 16px; }
+        .drop-card__live, .drop-card__tip { display: none; }
+        .drop-card__result { margin-top: 6px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .drop-card, .drop-card::before, .drop-card__icon-box, .drop-card__icon-arrow,
+        .drop-card__chip, .drop-card.is-impact, .drop-card.is-impact .drop-card__bang { animation: none !important; }
+      }
       .telemetry-pill {
         background: rgba(14, 20, 32, 0.85);
         border: 1px solid rgba(56, 189, 248, 0.3);
@@ -1068,18 +1267,91 @@
                 <!-- 3D Viewport Container -->
                 <div class="spatial-viewport-card glow-border" style="position: relative; border-radius: 24px; overflow: hidden; background: #07090e; box-shadow: 0 25px 70px rgba(0, 0, 0, 0.8), 0 0 35px rgba(56, 189, 248, 0.15);">
                     
-                    <!-- Top HUD Overlay -->
-                    <div style="position: absolute; top: 18px; left: 18px; z-index: 20; display: flex; flex-direction: column; gap: 8px; pointer-events: none;">
-                        <div style="background: rgba(10, 15, 26, 0.88); backdrop-filter: blur(14px); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; padding: 12px 18px; color: #e2e8f0; font-family: monospace; font-size: 12px; pointer-events: auto;">
-                            <div style="color: #fff; font-weight: bold; margin-bottom: 4px;">// SPATIAL RUNTIME HUD</div>
-                            <div>Asset: <span id="telemetryAssetName" style="color: #f1f5f9;">Marble run01_500k.spz</span></div>
-                            <div>Physics: <span id="telemetryPhysicsStatus" style="color: #34d399; font-weight: bold;">STANDBY / READY</span></div>
-                            <div>Collision Contacts: <span id="telemetryCollisions" style="color: #fbbf24; font-weight: bold;">0</span></div>
-                            <div>Spatial Partitions: <span id="telemetryPartitions" style="color: #cbd5e1;">7 Dissected Sectors</span></div>
-                            <div>Picking Accuracy: <span id="telemetryPicking" style="color: #fff;">100.0% (60/60)</span></div>
-                        </div>
+                    <!-- Top-Left Overlay (toast + 1m drop test explainer card) -->
+                    <div class="spatial-overlay-left" style="position: absolute; top: 18px; left: 18px; z-index: 20; display: flex; flex-direction: column; gap: 8px; pointer-events: none;">
                         <div id="spatialLogToast" style="background: rgba(15, 23, 42, 0.95); border-left: 3px solid #fff; border-radius: 8px; padding: 8px 14px; color: #94a3b8; font-size: 11px; font-family: monospace; max-width: 340px; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
                         </div>
+
+                        <!-- 1m Drop Test Explainer Card -->
+                        <section id="dropExplainCard" class="drop-card" aria-live="polite" aria-label="1m 낙하 테스트 설명" hidden>
+                            <button type="button" class="drop-card__close" id="dropCardClose" aria-label="설명 닫기">&times;</button>
+
+                            <!-- Collapsed pill -->
+                            <button type="button" class="drop-card__pill" id="dropCardPill">
+                                <span class="drop-card__pill-dot"></span>1m 낙하 테스트 · <b>완료 ✓</b>
+                            </button>
+
+                            <div class="drop-card__body">
+                                <!-- Header -->
+                                <header class="drop-card__head">
+                                    <div class="drop-card__icon" aria-hidden="true">
+                                        <svg viewBox="0 0 48 48" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                            <g class="drop-card__icon-box">
+                                                <path d="M14 10l10-5 10 5v11l-10 5-10-5z"/>
+                                                <path d="M14 10l10 5 10-5M24 15v11"/>
+                                            </g>
+                                            <path class="drop-card__icon-arrow" d="M24 31v11m-5-5l5 5 5-5"/>
+                                        </svg>
+                                    </div>
+                                    <div class="drop-card__titles">
+                                        <h4 class="drop-card__title">1m 낙하 테스트 <span class="drop-card__chip" id="dropCardChip" data-state="ready">준비</span></h4>
+                                        <p class="drop-card__subtitle">팔레트를 1m 높이에서 떨어뜨려 봐요</p>
+                                    </div>
+                                </header>
+
+                                <!-- 3-step stepper -->
+                                <ol class="drop-card__stepper" id="dropCardStepper">
+                                    <li data-step="1"><span class="dot">1</span><span class="lbl">들어올리기</span></li>
+                                    <li data-step="2"><span class="dot">2</span><span class="lbl">자유낙하</span></li>
+                                    <li data-step="3"><span class="dot">3</span><span class="lbl">쿵! 착지</span></li>
+                                </ol>
+
+                                <!-- Gauge + stats -->
+                                <div class="drop-card__metrics">
+                                    <div class="drop-card__gauge" aria-hidden="true">
+                                        <span class="g-label g-top">1.0m</span>
+                                        <div class="g-track"><div class="g-fill" id="dropGaugeFill"></div><div class="g-marker" id="dropGaugeMarker"></div></div>
+                                        <span class="g-label g-bottom">0m</span>
+                                    </div>
+                                    <div class="drop-card__stats">
+                                        <div class="drop-card__stat">
+                                            <div class="v"><span id="dropStatTime">0.00</span><small>초</small></div>
+                                            <div class="k">낙하 시간</div>
+                                        </div>
+                                        <div class="drop-card__stat is-accent">
+                                            <div class="v"><span id="dropStatSpeed">0.0</span><small>m/s</small></div>
+                                            <div class="k">충돌 속도 <em>≈ 시속 <span id="dropStatKmh">0</span>km</em></div>
+                                        </div>
+                                        <div class="drop-card__stat is-warn">
+                                            <div class="v"><span id="dropStatEnergy">0.0</span><small>kJ</small></div>
+                                            <div class="k">충격 에너지</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="drop-card__live">
+                                    <span>현재 높이 <b id="dropLiveHeight">1.00</b> m</span>
+                                    <span>현재 속도 <b id="dropLiveSpeed">0.00</b> m/s</span>
+                                </div>
+
+                                <!-- Easy explanation -->
+                                <div class="drop-card__tip">
+                                    <span class="tip-ico" aria-hidden="true">💡</span>
+                                    <div>
+                                        <b>쉽게 말하면</b>
+                                        <p>공을 떨어뜨리면 점점 빨라지죠? 1m 위의 팔레트는 <strong>0.45초</strong> 만에 <strong>자전거만큼(시속 16km)</strong> 빨라져 바닥에 부딪혀요. 이 충격을 미리 계산해 창고 로봇과 선반을 안전하게 설계합니다.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Result row -->
+                                <div class="drop-card__result" id="dropCardResult">
+                                    <span>반발 계수 <b>0.2</b></span>
+                                    <span>안정화 <b id="dropResultSettle">-</b>초</span>
+                                    <span>누적 충돌 <b id="dropResultCount">0</b>회</span>
+                                    <button type="button" class="drop-card__retry" id="dropCardRetry">↻ 다시 실행</button>
+                                </div>
+                            </div>
+                            <span class="drop-card__bang" aria-hidden="true">쿵!</span>
+                        </section>
                     </div>
 
                     <!-- Top Right Quick Controls -->
@@ -2985,10 +3257,12 @@
       const loadingOverlay = document.getElementById("sparkLoadingOverlay");
       const loadingText = document.getElementById("loadingText");
       const badgeFps = document.getElementById("badgeFps");
-      const telemetryStatus = document.getElementById("telemetryPhysicsStatus");
-      const telemetryCollisions = document.getElementById("telemetryCollisions");
-      const telemetryPartitions = document.getElementById("telemetryPartitions");
-      const telemetryPicking = document.getElementById("telemetryPicking");
+      // HUD box was removed from the layout; detached fallbacks keep telemetry writes harmless.
+      const hudEl = (id) => document.getElementById(id) || document.createElement("span");
+      const telemetryStatus = hudEl("telemetryPhysicsStatus");
+      const telemetryCollisions = hudEl("telemetryCollisions");
+      const telemetryPartitions = hudEl("telemetryPartitions");
+      const telemetryPicking = hudEl("telemetryPicking");
       const logToast = document.getElementById("spatialLogToast");
 
       const btnDrop = document.getElementById("btnDropTest");
@@ -3158,6 +3432,223 @@
 
       createRigidBodies(0);
 
+      // =================================================================
+      // 1m DROP TEST: beginner explainer card + 3D trajectory/impact FX
+      // =================================================================
+      const DROP_H = 1.0;
+      const GRAVITY = 9.81;
+      const PALLET_MASS = 300.0;
+      const DROP_T = Math.sqrt((2 * DROP_H) / GRAVITY);        // ≈ 0.45 s
+      const DROP_V = Math.sqrt(2 * GRAVITY * DROP_H);          // ≈ 4.43 m/s
+      const DROP_E = (PALLET_MASS * GRAVITY * DROP_H) / 1000;  // ≈ 2.94 kJ
+      const FLOOR_TOP = -0.075 + 0.05;                         // floor collider top surface
+      const REST_Y_L1 = FLOOR_TOP + hyL1;                      // L1 centre height when resting
+
+      const dropFx = (() => {
+        const group = new THREE.Group();
+        group.visible = false;
+        scene.add(group);
+
+        const line = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]),
+          new THREE.LineDashedMaterial({ color: 0x38bdf8, dashSize: 0.07, gapSize: 0.05, transparent: true, opacity: 0.9 })
+        );
+        group.add(line);
+
+        const ring = new THREE.Mesh(
+          new THREE.RingGeometry(0.42, 0.5, 64),
+          new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false })
+        );
+        ring.rotation.x = -Math.PI / 2;
+        group.add(ring);
+
+        let impactAt = 0;
+        let hideTimer = null;
+
+        return {
+          show() {
+            clearTimeout(hideTimer);
+            const x = initL1.x;
+            const z = initL1.z;
+            const top = FLOOR_TOP + DROP_H + (initL1.y - REST_Y_L1);
+            line.geometry.setFromPoints([new THREE.Vector3(x, top, z), new THREE.Vector3(x, FLOOR_TOP + 0.005, z)]);
+            line.computeLineDistances();
+            ring.position.set(x, FLOOR_TOP + 0.006, z);
+            ring.scale.setScalar(1);
+            ring.material.color.set(0x38bdf8);
+            ring.material.opacity = 0.35;
+            line.material.opacity = 0.9;
+            impactAt = 0;
+            group.visible = true;
+          },
+          impact() {
+            impactAt = performance.now();
+            ring.material.color.set(0xfbbf24);
+          },
+          tick() {
+            if (!group.visible || !impactAt) return;
+            const k = Math.min(1, (performance.now() - impactAt) / 1000);
+            ring.scale.setScalar(1 + k * 1.8);
+            ring.material.opacity = 0.95 * (1 - k);
+            line.material.opacity = 0.9 * (1 - k);
+          },
+          hideSoon() {
+            clearTimeout(hideTimer);
+            hideTimer = setTimeout(() => { group.visible = false; }, 1200);
+          },
+          hide() {
+            clearTimeout(hideTimer);
+            group.visible = false;
+          }
+        };
+      })();
+
+      const dropCard = (() => {
+        const $ = (id) => document.getElementById(id);
+        const card = $("dropExplainCard");
+        const noop = { start() {}, update() {}, close() {}, tick() {} };
+        if (!card) return noop;
+
+        const chip = $("dropCardChip");
+        const steps = Array.from(card.querySelectorAll(".drop-card__stepper li"));
+        const gaugeFill = $("dropGaugeFill");
+        const gaugeMarker = $("dropGaugeMarker");
+        const statTime = $("dropStatTime");
+        const statSpeed = $("dropStatSpeed");
+        const statKmh = $("dropStatKmh");
+        const statEnergy = $("dropStatEnergy");
+        const liveH = $("dropLiveHeight");
+        const liveV = $("dropLiveSpeed");
+        const settleEl = $("dropResultSettle");
+        const countEl = $("dropResultCount");
+
+        let phase = "idle"; // idle | lift | fall | impact | done
+        let t0 = 0;
+        let impactT = 0;
+        let calmSince = 0;
+        let collapseTimer = null;
+        let enterTimer = null;
+        let impactTimer = null;
+
+        const setStep = (n) => {
+          steps.forEach((li, i) => {
+            li.classList.toggle("is-done", i + 1 < n);
+            li.classList.toggle("is-active", i + 1 === n);
+          });
+        };
+        const setChip = (state, text) => {
+          chip.dataset.state = state;
+          chip.textContent = text;
+        };
+        const setGauge = (h) => {
+          const p = Math.max(0, Math.min(1, h / DROP_H)) * 100;
+          gaugeFill.style.height = `${p}%`;
+          gaugeMarker.style.bottom = `${p}%`;
+        };
+        const countUp = (el, target, digits, ms = 900) => {
+          const s = performance.now();
+          const tick = (now) => {
+            const k = Math.min(1, (now - s) / ms);
+            el.textContent = (target * (1 - Math.pow(1 - k, 3))).toFixed(digits);
+            if (k < 1) requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+        };
+        const restartClass = (cls, ms, timerRef) => {
+          card.classList.remove(cls);
+          void card.offsetWidth; // reflow so the animation replays
+          card.classList.add(cls);
+          clearTimeout(timerRef);
+          return setTimeout(() => card.classList.remove(cls), ms);
+        };
+
+        function start() {
+          clearTimeout(collapseTimer);
+          card.hidden = false;
+          card.classList.remove("is-collapsed", "is-done", "is-impact");
+          enterTimer = restartClass("is-enter", 400, enterTimer);
+          setChip("running", "진행 중");
+          setStep(1);
+          setGauge(DROP_H);
+          liveH.textContent = DROP_H.toFixed(2);
+          liveV.textContent = "0.00";
+          countUp(statTime, DROP_T, 2);
+          countUp(statSpeed, DROP_V, 1);
+          countUp(statKmh, DROP_V * 3.6, 0);
+          countUp(statEnergy, DROP_E, 1);
+          settleEl.textContent = "-";
+          countEl.textContent = String(collisionCount);
+          phase = "lift";
+          t0 = performance.now();
+          impactT = 0;
+          calmSince = 0;
+          btnDrop.classList.add("is-running");
+          dropFx.show();
+        }
+
+        function finish() {
+          phase = "done";
+          setStep(4);
+          setChip("done", "완료 ✓");
+          settleEl.textContent = ((performance.now() - t0) / 1000).toFixed(1);
+          countEl.textContent = String(collisionCount);
+          liveV.textContent = "0.00";
+          card.classList.add("is-done");
+          btnDrop.classList.remove("is-running");
+          dropFx.hideSoon();
+          collapseTimer = setTimeout(() => card.classList.add("is-collapsed"), 8000);
+        }
+
+        function update(y, vy, speed) {
+          if (phase === "idle" || phase === "done") return;
+          const h = Math.max(0, y - REST_Y_L1);
+          const now = performance.now();
+          setGauge(h);
+          liveH.textContent = Math.min(h, DROP_H).toFixed(2);
+          liveV.textContent = Math.abs(vy).toFixed(2);
+
+          if (phase === "lift" && vy < -0.3) {
+            phase = "fall";
+            setStep(2);
+          }
+          if ((phase === "lift" || phase === "fall") && h <= 0.015 && now - t0 > 150) {
+            phase = "impact";
+            impactT = now;
+            setStep(3);
+            impactTimer = restartClass("is-impact", 950, impactTimer);
+            dropFx.impact();
+          }
+          if (phase === "impact") {
+            if (speed < 0.05) {
+              if (!calmSince) calmSince = now;
+              if (now - calmSince > 300) finish();
+            } else {
+              calmSince = 0;
+            }
+            if (now - impactT > 4000) finish();
+          } else if (now - t0 > 10000) {
+            finish(); // safety net
+          }
+        }
+
+        function close() {
+          phase = "idle";
+          clearTimeout(collapseTimer);
+          card.hidden = true;
+          btnDrop.classList.remove("is-running");
+          dropFx.hide();
+        }
+
+        $("dropCardClose").addEventListener("click", close);
+        $("dropCardPill").addEventListener("click", () => {
+          clearTimeout(collapseTimer);
+          card.classList.remove("is-collapsed");
+        });
+        $("dropCardRetry").addEventListener("click", () => btnDrop.click());
+
+        return { start, update, close, tick: () => dropFx.tick() };
+      })();
+
       // 3. Setup 7-Part Spatial Partitioning Helpers
       const partitionGroup = new THREE.Group();
       partitionGroup.visible = false;
@@ -3258,16 +3749,24 @@
       }
 
       // Button Handlers
+      let dropWakeTimer = null;
       btnDrop.addEventListener("click", () => {
-        showToast("[DROP TEST] 1m 낙하 충돌 시뮬레이션 실행 (+1.0m 자유낙하)");
+        if (logToast) logToast.style.display = "none";
         telemetryStatus.textContent = "1M DROP SIMULATION RUNNING";
         telemetryStatus.style.color = "#0284c7";
         collisionCount++;
         telemetryCollisions.textContent = String(collisionCount);
         createRigidBodies(1.0);
+        // Hold the pallets at 1m for a moment so beginners can see step ① "lift" before the fall.
+        [bodyL1, bodyR1].forEach((b) => b?.sleep?.());
+        clearTimeout(dropWakeTimer);
+        dropWakeTimer = setTimeout(() => [bodyL1, bodyR1].forEach((b) => b?.wakeUp?.()), 650);
+        dropCard.start();
       });
 
       btnToss.addEventListener("click", () => {
+        clearTimeout(dropWakeTimer);
+        dropCard.close();
         showToast("[TOSS TEST] 2.5m/s 투척 충돌 시뮬레이션 실행 (통로 중심 충돌)");
         telemetryStatus.textContent = "2.5M/S TOSS COLLISION RUNNING";
         telemetryStatus.style.color = "#ea580c";
@@ -3293,6 +3792,8 @@
       });
 
       btnReset.addEventListener("click", () => {
+        clearTimeout(dropWakeTimer);
+        dropCard.close();
         showToast("[RESET] 물리 시뮬레이션 및 카메라 리셋");
         createRigidBodies(0);
         camera.position.set(0, 2.5, 6.0);
@@ -3678,7 +4179,10 @@
           const rL1 = bodyL1.rotation();
           meshL1.position.set(tL1.x, tL1.y, tL1.z);
           meshL1.quaternion.set(rL1.x, rL1.y, rL1.z, rL1.w);
+          const vL1 = bodyL1.linvel();
+          dropCard.update(tL1.y, vL1.y, Math.hypot(vL1.x, vL1.y, vL1.z));
         }
+        dropCard.tick();
 
         if (bodyR1) {
           const tR1 = bodyR1.translation();
