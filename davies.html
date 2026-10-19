@@ -154,6 +154,37 @@
       .tf-header .header-inner {
         width: 100%;
       }
+      /* Fixed header: SIMSREALITY logo always visible at top-left */
+      html {
+        scroll-padding-top: 80px;
+      }
+      .tf-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        margin-bottom: 0 !important;
+        z-index: 1030;
+        background: transparent;
+        transition: padding 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease, backdrop-filter 0.3s ease;
+      }
+      .tf-header.is-scrolled {
+        padding-top: 12px;
+        padding-bottom: 12px;
+        background: rgba(5, 8, 12, 0.72);
+        -webkit-backdrop-filter: blur(14px) saturate(140%);
+        backdrop-filter: blur(14px) saturate(140%);
+        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06), 0 8px 24px rgba(0, 0, 0, 0.35);
+      }
+      .tf-header.is-scrolled .simsreality-header-logo {
+        height: 32px;
+      }
+      @media (max-width: 575px) {
+        .tf-header.is-scrolled .simsreality-header-logo {
+          height: 22px;
+        }
+      }
       .header-navbar-flex {
         display: flex;
         align-items: center;
@@ -3696,6 +3727,28 @@
     </script>
     <!-- World Labs Nova AI Voice Assistant -->
     <script src="davies-assets/js/voice-assistant.js"></script>
+    <!-- Fixed header: compact + backdrop once scrolled -->
+    <script>
+      (function () {
+        var header = document.querySelector('.tf-header');
+        if (!header) return;
+        var getY = function (target) {
+          var t = target && target.nodeType === 1 ? target.scrollTop : 0;
+          return Math.max(
+            t,
+            window.scrollY || 0,
+            document.documentElement.scrollTop || 0,
+            document.body ? document.body.scrollTop : 0
+          );
+        };
+        var update = function (e) {
+          header.classList.toggle('is-scrolled', getY(e && e.target) > 40);
+        };
+        // capture=true also catches scroll events from inner scroll containers
+        document.addEventListener('scroll', update, { passive: true, capture: true });
+        update();
+      })();
+    </script>
 </body>
 
 </html>
