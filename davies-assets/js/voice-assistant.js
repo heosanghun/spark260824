@@ -1,38 +1,24 @@
 /**
  * World Labs Spark 3D - AI Voice Assistant (Nova)
- * Supports OpenAI Pipeline (Whisper STT -> GPT-4o-mini Tool Calling -> Nova TTS)
- * with graceful Browser Native fallback (Web Speech API + speechSynthesis).
+ * Primary: Gemini 3.8 Live real-time speech-to-speech (see gemini-live.js, token via /api/live-token).
+ * Fallback: Browser Native free mode (Web Speech API + speechSynthesis + local intent rules).
  */
 
 (function () {
   "use strict";
 
-  const DEFAULT_OPENAI_KEY = typeof atob === "function"
-    ? atob("c2stcHJvai1yWjJJMF95YkE4czIxNlpkZF9UR3M2Y0Zic2Q1MXJRaTZpcS1lVWFvUjRkcnRIeE1EVG9MWjA2ZkVlY3o3LVVMQm81YjVmQ1FNUFQzQmxia0ZKLTk3RkVFZ0tKSlktNGF3dEdDMk5Xc25NdHV1U2JUZ1U2NU4wNWNsTzZlc0Y0S1JVN1o4cmVRUmxxVHdzN2RaRUpockFuR2JTY0E=")
-    : "";
-
   // State Management
   const state = {
-    apiKey: localStorage.getItem("OPENAI_API_KEY") || DEFAULT_OPENAI_KEY,
     isListening: false,
     isProcessing: false,
     isSpeaking: false,
-    mediaRecorder: null,
-    audioChunks: [],
+    liveMode: false, // true while a Gemini Live session is active
     speechRecognition: null,
-    audioElement: null,
-    silenceTimer: null,
-    audioContext: null,
-    analyser: null,
-    maxRecordingTimer: null,
-    animFrameId: null,
-    speechDetected: false,
   };
 
+  // Purge the OpenAI key that older builds cached in localStorage (it was exposed publicly).
   try {
-    if (!localStorage.getItem("OPENAI_API_KEY")) {
-      localStorage.setItem("OPENAI_API_KEY", DEFAULT_OPENAI_KEY);
-    }
+    localStorage.removeItem("OPENAI_API_KEY");
   } catch (e) {}
 
   // Section Mapping
@@ -232,6 +218,21 @@
         break;
       }
 
+      case "switch_theme": {
+        const want = params.theme || "next";
+        const lab = window.spatialLab;
+        const labSec = document.querySelector("#spatialLabSection");
+        if (labSec) labSec.scrollIntoView({ behavior: "smooth" });
+        if (lab) {
+          if (want === "warehouse") lab.loadTheme(0, -1);
+          else if (want === "car") lab.loadTheme(1, 1);
+          else lab.stepTheme(want === "prev" ? -1 : 1);
+        }
+        desc = want === "car" ? "자동차 쇼룸 스튜디오 테마로 전환"
+          : want === "warehouse" ? "스마트 물류 창고 테마로 전환" : "다음 전시 테마로 전환";
+        break;
+      }
+
       default:
         console.warn("[Nova] Unknown action:", actionName);
     }
@@ -269,6 +270,14 @@
     if (t.includes("피킹") || t.includes("레이캐스팅") || t.includes("정확도") || t.includes("오딧") || t.includes("검사") || t.includes("60점")) {
       executeAction("run_picking_benchmark");
       return "60점 레이캐스팅 정확도 평가 벤치마크를 가동했습니다.";
+    }
+    if (t.includes("쇼룸") || t.includes("스튜디오") || (t.includes("자동차") && (t.includes("테마") || t.includes("보여")))) {
+      executeAction("switch_theme", { theme: "car" });
+      return "자동차 쇼룸 스튜디오로 바꿔 드렸어요. 드래그해서 둘러보세요.";
+    }
+    if (t.includes("다음테마") || t.includes("테마바꿔") || t.includes("테마넘겨") || t.includes("다른공간")) {
+      executeAction("switch_theme", { theme: "next" });
+      return "다음 전시 테마로 넘겨 드렸어요.";
     }
     if (t.includes("창고") || t.includes("시뮬레이터") || t.includes("연구실") || t.includes("랩") || t.includes("스마트창고") || t.includes("물류창고")) {
       executeAction("navigate_section", { section: "spatialLab" });
@@ -354,8 +363,8 @@
     return "말씀하신 요청을 접수했습니다. 화면 제어 명령을 실행하거나 적절한 섹션으로 안내해 드릴게요.";
   }
 
-  // OpenAI Tool Definitions for GPT-4o-mini
-  const openAITools = [
+  // Tool specs (function-calling schema) shared by Gemini Live; converted to functionDeclarations below.
+  const TOOL_SPECS = [
     {
       type: "function",
       function: {
@@ -500,131 +509,100 @@
     }
   ];
 
-  // OpenAI API Calls
-  async function callWhisperSTT(audioBlob) {
-    const formData = new FormData();
-    formData.append("file", audioBlob, "speech.webm");
-    formData.append("model", "whisper-1");
-    formData.append("language", "ko");
-    formData.append("prompt", "World Labs, Spark 3D, 3DGS, 가우시안 스플래팅, 래피어, Rapier, 물리 엔진, OBB, 레이캐스팅, 피킹, 스마트 창고, 디지털 트윈");
-
-    const resp = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${state.apiKey}`
-      },
-      body: formData
-    });
-
-    if (!resp.ok) {
-      const err = await resp.text();
-      throw new Error(`Whisper STT 실패 (${resp.status}): ${err}`);
-    }
-
-    const data = await resp.json();
-    return data.text || "";
-  }
-
-  async function callGPT4oMini(userText) {
-    const messages = [
-      {
-        role: "system",
-        content: `당신은 World Labs Spark 3D 공간 지능 포털의 공식 AI 음성 어시스턴트 'Nova(노바)'입니다.
-사용자의 한국어 음성 요청을 분석하여 웹사이트의 화면 제어 도구(tools)를 호출하고, 사용자를 친절하고 편안하게 이끌어주어야 합니다.
-- 상자 낙하/투척/초기화 요청 시: trigger_physics (drop, toss, reset) 호출.
-- 와이어프레임 요청 시: toggle_wireframe 호출.
-- 7부품 공간 분할 OBB 요청 시: toggle_partition 호출.
-- 60점 피킹 정확도 평가 요청 시: run_picking_benchmark 호출.
-- 전체화면 전환 요청 시: toggle_fullscreen 호출.
-- 3D 공간 생성 요청 시: generate_3d_world (prompt) 호출.
-- 섹션 이동 요청 시: navigate_section (hero, spatialLab, works, whitepapers, services, about, awards, faq, contact, footer) 호출.
-- 자동차 물리 시뮬레이터 요청 시: open_car_physics 호출.
-- 연구 칼럼 및 아티클 요청 시: open_research_article 호출.
-- FAQ 관련 질문이나 펼치기 요청 시: control_faq 호출.
-- 스크롤 요청 시: scroll_page (up, down) 호출.
-- 창 닫기 요청 시: close_assistant 호출.
-답변 어조 가이드:
-항상 부드럽고 다정하며 세련된 한국어 여성 목소리로 1~2문장의 자연스러운 구어체(해요체)로 대답하세요.
-도구(tools)를 호출하는 경우에도 사용자가 귀로 들을 수 있는 친절한 한 줄 답변을 반드시 메시지 본문(content)에 함께 작성하세요. (예: "네! 1미터 상자 낙하 시뮬레이션을 실행해 드릴게요.", "스마트 물류창고 연구실로 안내해 드렸어요.")`
-      },
-      {
-        role: "user",
-        content: userText
-      }
-    ];
-
-    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${state.apiKey}`
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: messages,
-        tools: openAITools,
-        tool_choice: "auto",
-        temperature: 0.7
-      })
-    });
-
-    if (!resp.ok) {
-      const err = await resp.text();
-      throw new Error(`GPT-4o-mini 호출 실패 (${resp.status}): ${err}`);
-    }
-
-    const data = await resp.json();
-    const choice = data.choices[0];
-    const message = choice.message;
-    let lastActionDesc = "";
-
-    // Check if tools were called
-    if (message.tool_calls && message.tool_calls.length > 0) {
-      for (const tc of message.tool_calls) {
-        const fnName = tc.function.name;
-        let fnArgs = {};
-        try {
-          fnArgs = JSON.parse(tc.function.arguments);
-        } catch (e) {
-          console.warn("[Nova] Failed to parse tool arguments:", e);
-        }
-        lastActionDesc = executeAction(fnName, fnArgs);
+  TOOL_SPECS.push({
+    type: "function",
+    function: {
+      name: "switch_theme",
+      description: "전시 테마를 전환합니다 (물류 창고 ↔ 자동차 쇼룸). 사용자가 다른 장면/쇼룸/자동차/창고를 보여달라고 할 때 호출합니다.",
+      parameters: {
+        type: "object",
+        properties: {
+          theme: { type: "string", enum: ["warehouse", "car", "next", "prev"], description: "warehouse=스마트 물류 창고, car=자동차 쇼룸, next/prev=다음/이전 테마" }
+        },
+        required: ["theme"]
       }
     }
+  });
 
-    if (message.content && message.content.trim()) {
-      return message.content.trim();
-    }
-    if (lastActionDesc) {
-      return `네! ${lastActionDesc}를 완료해 드렸어요.`;
-    }
-    return "네, 요청하신 작업을 화면에서 실행했습니다.";
+  // Gemini Live expects bare function declarations; omit empty parameter objects.
+  const GEMINI_TOOLS = TOOL_SPECS.map((t) => {
+    const f = t.function;
+    const d = { name: f.name, description: f.description };
+    if (f.parameters && Object.keys(f.parameters.properties || {}).length) d.parameters = f.parameters;
+    return d;
+  });
+
+  const SYSTEM_PROMPT = `당신은 SIMSREALITY 전시 부스의 3D 공간 지능 포털에서 관람객을 안내하는 AI 음성 도우미 '노바(Nova)'입니다.
+지금은 전시장이고, 관람객 대부분은 처음 보는 일반인이에요. 실제 사람 안내원처럼 따뜻하고 자연스럽게 대화하세요.
+
+[말하기 규칙]
+- 항상 한국어 해요체로, 한 번에 1~2문장만 짧게 말하세요. 목록·기호·이모지·영어 약어 나열은 피하세요.
+- 질문이 길어도 핵심만 쉽게 설명하고, 필요하면 "더 알려드릴까요?"처럼 짧게 이어가세요.
+- 관람객이 말을 끊으면 즉시 멈추고 새 말에 답하세요.
+
+[화면 제어 도구 — 요청이 있으면 바로 호출하고, 동시에 "네, 상자를 떨어뜨려 볼게요!"처럼 짧게 말해 주세요]
+- 상자 낙하/던지기/초기화: trigger_physics (drop, toss, reset)
+- 와이어프레임: toggle_wireframe / 7부품 공간 분할: toggle_partition
+- 60점 피킹 정확도 평가: run_picking_benchmark / 전체화면: toggle_fullscreen
+- 테마 전환(물류 창고 ↔ 자동차 쇼룸, 다음/이전): switch_theme
+- 3D 공간 생성: generate_3d_world (prompt)
+- 섹션 이동: navigate_section / 스크롤: scroll_page
+- 자동차 물리 시뮬레이터: open_car_physics / 연구 칼럼: open_research_article / FAQ: control_faq
+- 대화 종료나 창 닫기 요청: 짧게 작별 인사 후 close_assistant
+
+[전시 내용 요약]
+- 실사 공간을 3D 가우시안 스플래팅(3DGS)으로 복원하고, Rapier 물리 엔진으로 1미터 높이 낙하 같은 실제 중력 실험을 보여줘요.
+- 스마트 물류 창고 디지털 트윈, 자동차 쇼룸 테마, 로봇 피킹 정확도 평가, 텍스트로 3D 세상을 만드는 World Labs AI 기능이 있어요.
+- 모르는 내용은 지어내지 말고 부스 담당자에게 문의하시라고 안내하세요.`;
+
+  const LIVE_GREETING = "(시스템 안내: 관람객이 방금 마이크를 켰어요. 한 문장으로 짧고 반갑게 인사하고 무엇을 도와드릴지 물어보세요. 도구는 호출하지 마세요.)";
+
+  function setModeBadge(label) {
+    const b = document.getElementById("novaModeBadge");
+    if (b) b.textContent = label;
   }
 
-  async function callOpenAITTS(text) {
-    const resp = await fetch("https://api.openai.com/v1/audio/speech", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${state.apiKey}`
+  // Start a natural, full-duplex Gemini Live conversation (hands-free, barge-in).
+  async function startLive() {
+    state.liveMode = true;
+    state.isListening = true;
+    setModeBadge("Gemini Live");
+    updateTranscript("🎙️ 연결 중이에요... 편하게 말씀하세요");
+    startWaveAnimation();
+    await window.NovaLive.start({
+      systemInstruction: SYSTEM_PROMPT,
+      tools: GEMINI_TOOLS,
+      voice: "Kore",
+      greeting: LIVE_GREETING,
+      idleMs: 15000,
+      maxMs: 180000,
+      on: {
+        status: (type, label) => {
+          state.isSpeaking = type === "speaking";
+          updateStatus(type, label);
+        },
+        user: (text) => { if (text) updateTranscript(text); },
+        ai: (text) => { if (text) updateResponse(text); },
+        tool: (name, args) => {
+          if (name === "close_assistant") {
+            // Let Nova finish the goodbye line before closing.
+            setTimeout(() => executeAction("close_assistant"), 2500);
+            return "어시스턴트 창을 닫습니다";
+          }
+          const desc = executeAction(name, args || {});
+          return desc ? `${desc} 실행 완료` : "실행 완료";
+        },
+        end: (reason) => {
+          state.liveMode = false;
+          state.isListening = false;
+          state.isSpeaking = false;
+          stopWaveAnimation();
+          updateStatus("idle", reason === "idle" ? "조용해서 대화를 마쳤어요 · 마이크를 다시 눌러주세요" : "대기 중");
+        },
+        error: (err) => console.warn("[Nova Live]", err),
       },
-      body: JSON.stringify({
-        model: "tts-1",
-        voice: "nova",
-        input: text,
-        speed: 1.05
-      })
     });
-
-    if (!resp.ok) {
-      const err = await resp.text();
-      throw new Error(`OpenAI TTS 실패 (${resp.status}): ${err}`);
-    }
-
-    const audioBlob = await resp.blob();
-    return URL.createObjectURL(audioBlob);
   }
-
   // Pre-load and cache voices for Web Speech API
   let cachedVoices = [];
   function populateVoices() {
@@ -711,124 +689,16 @@
     return koVoices[0];
   }
 
-  // VAD (Voice Activity Detection) Helpers
-  function setupAudioVAD(stream) {
-    try {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtx) return;
-      state.audioContext = new AudioCtx();
-      if (state.audioContext.state === "suspended") {
-        state.audioContext.resume();
-      }
-      const source = state.audioContext.createMediaStreamSource(stream);
-      state.analyser = state.audioContext.createAnalyser();
-      state.analyser.fftSize = 512;
-      source.connect(state.analyser);
 
-      const bufferLength = state.analyser.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
-      state.speechDetected = false;
-      let silenceStartTime = null;
-
-      const SILENCE_THRESHOLD_MS = 1400; // 1.4s silence after user talks
-      const VOLUME_THRESHOLD = 15; // volume threshold to register active speaking
-      const MAX_RECORDING_MS = 12000; // max 12s safety timeout
-
-      // Max safety timeout
-      state.maxRecordingTimer = setTimeout(() => {
-        console.log("[Nova VAD] Max recording duration reached.");
-        stopListening();
-      }, MAX_RECORDING_MS);
-
-      function checkAudio() {
-        if (!state.isListening || !state.analyser) return;
-        state.analyser.getByteFrequencyData(dataArray);
-
-        let sum = 0;
-        for (let i = 0; i < bufferLength; i++) {
-          sum += dataArray[i];
-        }
-        const average = sum / bufferLength;
-
-        if (average > VOLUME_THRESHOLD) {
-          state.speechDetected = true;
-          silenceStartTime = null; // reset silence counter
-        } else if (state.speechDetected) {
-          // User spoke, and now it's quiet
-          if (!silenceStartTime) {
-            silenceStartTime = performance.now();
-          } else if (performance.now() - silenceStartTime > SILENCE_THRESHOLD_MS) {
-            console.log("[Nova VAD] Silence detected after speech. Auto-stopping listening.");
-            stopListening();
-            return;
-          }
-        }
-
-        state.animFrameId = requestAnimationFrame(checkAudio);
-      }
-
-      state.animFrameId = requestAnimationFrame(checkAudio);
-    } catch (e) {
-      console.warn("[Nova VAD] Web Audio VAD initialization skipped:", e);
-    }
-  }
-
-  function cleanupAudioVAD() {
-    if (state.animFrameId) {
-      cancelAnimationFrame(state.animFrameId);
-      state.animFrameId = null;
-    }
-    if (state.maxRecordingTimer) {
-      clearTimeout(state.maxRecordingTimer);
-      state.maxRecordingTimer = null;
-    }
-    if (state.audioContext) {
-      try {
-        state.audioContext.close();
-      } catch (e) {}
-      state.audioContext = null;
-      state.analyser = null;
-    }
-    state.speechDetected = false;
-  }
-
-  // Speech Output Helper (Dedicated OpenAI Nova Female Voice with Web Speech fallback)
-  async function speakResponse(text, audioUrl = null) {
+  // Speech Output Helper (browser speechSynthesis — used only in free fallback mode;
+  // Gemini Live streams its own native voice)
+  async function speakResponse(text) {
     if (!text || !text.trim()) return;
     state.isSpeaking = true;
     startWaveAnimation();
-    updateStatus("speaking", "Nova 답변 중 (여성 보이스)...");
+    updateStatus("speaking", "Nova 답변 중...");
 
-    // If audioUrl is not provided and we have OpenAI API key, fetch OpenAI TTS
-    if (!audioUrl && state.apiKey) {
-      try {
-        audioUrl = await callOpenAITTS(text);
-      } catch (ttsErr) {
-        console.warn("[Nova] OpenAI TTS fetch failed, falling back to browser speech:", ttsErr);
-      }
-    }
-
-    if (audioUrl) {
-      if (state.audioElement) {
-        try {
-          state.audioElement.pause();
-        } catch (e) {}
-      }
-      state.audioElement = new Audio(audioUrl);
-      const finishSpeaking = () => {
-        state.isSpeaking = false;
-        stopWaveAnimation();
-        updateStatus("idle", "대기 중");
-      };
-      state.audioElement.onended = finishSpeaking;
-      state.audioElement.onerror = finishSpeaking;
-      try {
-        await state.audioElement.play();
-      } catch (e) {
-        console.warn("[Nova] Audio play error:", e);
-        finishSpeaking();
-      }
-    } else if ("speechSynthesis" in window) {
+    if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = "ko-KR";
@@ -866,40 +736,6 @@
     }
   }
 
-  // Processing pipeline
-  async function handleAudioProcessing(audioBlob) {
-    state.isProcessing = true;
-    updateStatus("processing", "AI 분석 및 화면 제어 중...");
-
-    try {
-      if (state.apiKey) {
-        // OpenAI Pipeline: Whisper -> GPT-4o-mini -> Nova TTS
-        updateTranscript("음성을 텍스트로 변환하는 중...");
-        const userText = await callWhisperSTT(audioBlob);
-        if (!userText || !userText.trim()) {
-          updateTranscript("음성이 감지되지 않았습니다. 다시 말씀해 주세요.");
-          updateStatus("idle", "대기 중");
-          return;
-        }
-        updateTranscript(userText);
-
-        updateResponse("Nova가 화면 제어 명령을 생성하는 중...");
-        const replyText = await callGPT4oMini(userText);
-        updateResponse(replyText);
-
-        await speakResponse(replyText);
-      } else {
-        console.log("[Nova] In browser free mode");
-      }
-    } catch (err) {
-      console.error("[Nova] Processing error:", err);
-      updateResponse(`오류가 발생했습니다: ${err.message}`);
-      updateStatus("idle", "오류 발생 (다시 시도해 주세요)");
-    } finally {
-      state.isProcessing = false;
-    }
-  }
-
   // Permission & Error Guide Helper (Graceful in-modal banner, no blocking alert)
   function showPermissionGuide(err) {
     const guide = document.getElementById("novaPermGuide");
@@ -930,119 +766,98 @@
 
   // Voice Recognition Controls
   async function startListening() {
-    if (state.isListening || state.isProcessing) return;
+    if (state.isListening || state.isProcessing || state.liveMode) return;
 
     // Reset previous permission guide
     const guide = document.getElementById("novaPermGuide");
     if (guide) guide.style.display = "none";
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
 
-    if (state.apiKey) {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        showPermissionGuide({ name: "NotSupportedError" });
-        return;
-      }
-
-      // Use MediaRecorder for Whisper STT
+    if (window.NovaLive) {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        state.audioChunks = [];
-        state.mediaRecorder = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "" });
-
-        state.mediaRecorder.ondataavailable = (e) => {
-          if (e.data.size > 0) state.audioChunks.push(e.data);
-        };
-
-        state.mediaRecorder.onstop = () => {
-          const audioBlob = new Blob(state.audioChunks, { type: "audio/webm" });
-          stream.getTracks().forEach((track) => track.stop());
-          cleanupAudioVAD();
-          if (state.audioChunks.length > 0) {
-            handleAudioProcessing(audioBlob);
-          }
-        };
-
-        state.mediaRecorder.start();
-        state.isListening = true;
-        updateStatus("listening", "말씀하세요... (음성 듣는 중)");
-        updateTranscript("🎙️ 음성을 듣고 있습니다... (말씀이 끝나면 자동으로 인식됩니다)");
-        startWaveAnimation();
-
-        // Start VAD silence detection
-        setupAudioVAD(stream);
+        await startLive();
+        return;
       } catch (err) {
-        console.error("[Nova] Mic access denied:", err);
+        console.warn("[Nova] Gemini Live unavailable, using browser mode:", err);
+        state.liveMode = false;
         state.isListening = false;
         stopWaveAnimation();
-        updateStatus("idle", "대기 중");
-        showPermissionGuide(err);
-      }
-    } else {
-      // Free Browser SpeechRecognition Fallback
-      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRec) {
-        showPermissionGuide({ name: "NotSupportedError" });
-        return;
-      }
-
-      state.speechRecognition = new SpeechRec();
-      state.speechRecognition.lang = "ko-KR";
-      state.speechRecognition.continuous = false;
-      state.speechRecognition.interimResults = false;
-
-      state.speechRecognition.onstart = () => {
-        state.isListening = true;
-        updateStatus("listening", "말씀하세요... (무료 모드)");
-        updateTranscript("🎙️ 말씀하세요... (예: '1m 상자 떨어뜨려 줘')");
-        startWaveAnimation();
-      };
-
-      state.speechRecognition.onresult = async (e) => {
-        const text = e.results[0][0].transcript;
-        updateTranscript(text);
-        stopWaveAnimation();
-        updateStatus("processing", "명령 분석 및 화면 제어 중...");
-
-        const reply = parseLocalIntent(text);
-        updateResponse(reply);
-        await speakResponse(reply);
-      };
-
-      state.speechRecognition.onerror = (e) => {
-        console.warn("[Nova] SpeechRecognition error:", e);
-        stopWaveAnimation();
-        state.isListening = false;
-        updateStatus("idle", "대기 중");
-        if (e.error === "not-allowed" || e.error === "service-not-allowed") {
-          showPermissionGuide({ name: "NotAllowedError" });
-        }
-      };
-
-      state.speechRecognition.onend = () => {
-        stopWaveAnimation();
-        state.isListening = false;
-        if (!state.isSpeaking && !state.isProcessing) {
+        if (err && /NotAllowed|PermissionDenied|NotFound|DevicesNotFound|NotReadable|TrackStart/.test(err.name || "")) {
           updateStatus("idle", "대기 중");
+          showPermissionGuide(err);
+          return;
         }
-      };
-
-      try {
-        state.speechRecognition.start();
-      } catch (e) {
-        console.warn("[Nova] SpeechRec start err:", e);
-        showPermissionGuide(e);
       }
+    }
+    setModeBadge("브라우저 무료 모드");
+    startBrowserRecognition();
+  }
+
+  // Free Browser SpeechRecognition Fallback
+  function startBrowserRecognition() {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec) {
+      showPermissionGuide({ name: "NotSupportedError" });
+      return;
+    }
+
+    state.speechRecognition = new SpeechRec();
+    state.speechRecognition.lang = "ko-KR";
+    state.speechRecognition.continuous = false;
+    state.speechRecognition.interimResults = false;
+
+    state.speechRecognition.onstart = () => {
+      state.isListening = true;
+      updateStatus("listening", "말씀하세요... (무료 모드)");
+      updateTranscript("🎙️ 말씀하세요... (예: '1m 상자 떨어뜨려 줘')");
+      startWaveAnimation();
+    };
+
+    state.speechRecognition.onresult = async (e) => {
+      const text = e.results[0][0].transcript;
+      updateTranscript(text);
+      stopWaveAnimation();
+      updateStatus("processing", "명령 분석 및 화면 제어 중...");
+
+      const reply = parseLocalIntent(text);
+      updateResponse(reply);
+      await speakResponse(reply);
+    };
+
+    state.speechRecognition.onerror = (e) => {
+      console.warn("[Nova] SpeechRecognition error:", e);
+      stopWaveAnimation();
+      state.isListening = false;
+      updateStatus("idle", "대기 중");
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        showPermissionGuide({ name: "NotAllowedError" });
+      }
+    };
+
+    state.speechRecognition.onend = () => {
+      stopWaveAnimation();
+      state.isListening = false;
+      if (!state.isSpeaking && !state.isProcessing) {
+        updateStatus("idle", "대기 중");
+      }
+    };
+
+    try {
+      state.speechRecognition.start();
+    } catch (e) {
+      console.warn("[Nova] SpeechRec start err:", e);
+      showPermissionGuide(e);
     }
   }
 
   function stopListening() {
+    if (state.liveMode && window.NovaLive) {
+      window.NovaLive.stop("user");
+      return;
+    }
     if (!state.isListening) return;
     state.isListening = false;
     stopWaveAnimation();
-    cleanupAudioVAD();
-
-    if (state.mediaRecorder && state.mediaRecorder.state !== "inactive") {
-      state.mediaRecorder.stop();
-    }
     if (state.speechRecognition) {
       try {
         state.speechRecognition.stop();
@@ -1541,10 +1356,9 @@
         <div class="nova-title-wrap">
           <div class="nova-status-dot" id="novaStatusDot"></div>
           <span class="nova-title">NOVA SPATIAL AI</span>
-          <span class="nova-badge-mode" id="novaModeBadge">${state.apiKey ? "OpenAI Nova" : "브라우저 무료 모드"}</span>
+          <span class="nova-badge-mode" id="novaModeBadge">${window.NovaLive ? "Gemini Live" : "브라우저 무료 모드"}</span>
         </div>
         <div class="nova-actions">
-          <button class="nova-btn-icon" id="novaBtnSettings" title="OpenAI API Key 설정">⚙️</button>
           <button class="nova-btn-icon" id="novaBtnClose" title="닫기">✕</button>
         </div>
       </div>
@@ -1560,17 +1374,6 @@
           </div>
         </div>
 
-        <div class="nova-settings-drawer" id="novaSettingsDrawer">
-          <span style="font-size: 11px; color: #cbd5e1; font-weight: 700;">OpenAI API Key 설정 (선택 사항)</span>
-          <input type="password" id="novaApiKeyInput" placeholder="sk-..." value="${state.apiKey}">
-          <p style="font-size: 10px; color: #94a3b8; margin: 0; line-height: 1.4;">
-            키를 저장하시면 Whisper 고정밀 STT와 한국어 여성 음성(nova)이 가동됩니다. 미입력 시 브라우저 내장 무료 모드로 즉시 작동합니다.
-          </p>
-          <div class="nova-settings-btn-row">
-            <button class="nova-btn-sub primary" id="novaBtnSaveKey">키 저장</button>
-            <button class="nova-btn-sub" id="novaBtnRemoveKey">삭제 (무료 전환)</button>
-          </div>
-        </div>
 
         <div class="nova-chat-box">
           <div class="nova-bubble-user" id="novaUserBubble">
@@ -1730,35 +1533,11 @@
       stopListening();
     });
 
-    const settingsDrawer = document.getElementById("novaSettingsDrawer");
-    document.getElementById("novaBtnSettings").addEventListener("click", () => {
-      settingsDrawer.style.display = settingsDrawer.style.display === "flex" ? "none" : "flex";
-    });
-
-    document.getElementById("novaBtnSaveKey").addEventListener("click", () => {
-      const key = document.getElementById("novaApiKeyInput").value.trim();
-      if (key) {
-        state.apiKey = key;
-        localStorage.setItem("OPENAI_API_KEY", key);
-        document.getElementById("novaModeBadge").textContent = "OpenAI Nova";
-        settingsDrawer.style.display = "none";
-        alert("OpenAI API Key가 저장되었습니다! 이제 고정밀 Whisper STT 및 한국어 여성 음성(nova)으로 작동합니다.");
-      }
-    });
-
-    document.getElementById("novaBtnRemoveKey").addEventListener("click", () => {
-      state.apiKey = "";
-      localStorage.removeItem("OPENAI_API_KEY");
-      document.getElementById("novaApiKeyInput").value = "";
-      document.getElementById("novaModeBadge").textContent = "브라우저 무료 모드";
-      settingsDrawer.style.display = "none";
-      alert("OpenAI API Key가 삭제되었습니다. 브라우저 내장 무료 모드로 전환되었습니다.");
-    });
 
     // Talk Button Toggle
     const btnTalk = document.getElementById("novaBtnTalk");
     btnTalk.addEventListener("click", () => {
-      if (state.isListening) {
+      if (state.isListening || state.liveMode) {
         stopListening();
       } else {
         startListening();
@@ -1791,6 +1570,10 @@
         updateStatus("processing", "명령 실행 및 화면 이동 중...");
 
         const desc = executeAction(action, param);
+        if (action !== "close_assistant" && window.NovaLive && window.NovaLive.isActive) {
+          window.NovaLive.sendText(`(시스템 안내: 사용자가 버튼으로 '${label}'을(를) 실행했어요. 한 문장으로 짧게 안내해 주세요. 도구는 호출하지 마세요.)`);
+          return;
+        }
         const reply = `네! ${desc}를 완료하고 화면을 이동해 드렸어요.`;
         updateResponse(reply);
         await speakResponse(reply);
@@ -1824,17 +1607,8 @@
         updateTranscript(cmd);
         updateStatus("processing", "명령 분석 및 화면 제어 중...");
 
-        if (state.apiKey) {
-          try {
-            const reply = await callGPT4oMini(cmd);
-            updateResponse(reply);
-            await speakResponse(reply);
-          } catch (err) {
-            console.warn("[Nova] GPT call failed on text submit:", err);
-            const fallbackReply = parseLocalIntent(cmd);
-            updateResponse(fallbackReply);
-            await speakResponse(fallbackReply);
-          }
+        if (window.NovaLive && window.NovaLive.isActive) {
+          window.NovaLive.sendText(cmd);
         } else {
           const reply = parseLocalIntent(cmd);
           updateResponse(reply);
@@ -1863,7 +1637,10 @@
     if (text) text.textContent = label;
 
     if (btn && btnText) {
-      if (type === "listening") {
+      if (state.liveMode && type !== "idle") {
+        btn.classList.add("recording");
+        btnText.textContent = "대화 중 · 탭하면 대화를 마쳐요";
+      } else if (type === "listening") {
         btn.classList.add("recording");
         btnText.textContent = "말씀이 끝나면 탭하세요";
       } else {

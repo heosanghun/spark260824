@@ -4534,6 +4534,7 @@
         return themeLoading;
       }
       const stepTheme = (d) => loadTheme((themeIdx < 0 ? (d > 0 ? -1 : 0) : themeIdx) + d, d);
+      window.spatialLab = { loadTheme, stepTheme };
 
       themeEls.prev?.addEventListener("click", () => stepTheme(-1));
       themeEls.next?.addEventListener("click", () => stepTheme(1));
@@ -4678,6 +4679,7 @@
       });
     </script>
     <!-- World Labs Nova AI Voice Assistant -->
+    <script src="davies-assets/js/gemini-live.js"></script>
     <script src="davies-assets/js/voice-assistant.js"></script>
     <!-- Fixed header: compact + backdrop once scrolled -->
     <script>

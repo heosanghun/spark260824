@@ -10,6 +10,9 @@ export async function onRequest(context) {
   const url = new URL(context.request.url);
   const isRoot = url.pathname === "/" || url.pathname === "/index.html";
 
+  // API endpoints (e.g. /api/live-token) are served as-is on every host.
+  if (url.pathname.startsWith("/api/")) return context.next();
+
   // Old pages.dev production address: move to the brand domain.
   if (url.hostname === LEGACY_HOST) {
     const target = isRoot
