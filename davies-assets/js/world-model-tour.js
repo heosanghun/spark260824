@@ -253,16 +253,16 @@
     <svg class="wmt-glass" viewBox="0 0 560 300" aria-hidden="true">
       <defs>
         <radialGradient id="wmtHandFade" cx="50%" cy="50%" r="50%">
-          <stop offset="62%" stop-color="#fff"/>
+          <stop offset="74%" stop-color="#fff"/>
           <stop offset="100%" stop-color="#000"/>
         </radialGradient>
-        <mask id="wmtHandMask"><rect x="0" y="14" width="262" height="281" fill="url(#wmtHandFade)"/></mask>
+        <mask id="wmtHandMask"><rect x="4" y="34" width="256" height="240" fill="url(#wmtHandFade)"/></mask>
       </defs>
       <g class="wmt-real">
-        <image class="wmt-hand-photo" href="davies-assets/images/world-model/hand-glass.webp" x="0" y="14" width="262" height="281"
+        <image class="wmt-hand-photo" href="davies-assets/images/world-model/hand-glass.webp?v=2" x="4" y="34" width="256" height="240"
                preserveAspectRatio="xMidYMid slice" mask="url(#wmtHandMask)"/>
-        <text x="110" y="34" text-anchor="middle" class="wmt-svg-cap">지금 내 손</text>
-        <text x="110" y="284" text-anchor="middle" class="wmt-svg-note">아직 놓지 않았어요</text>
+        <text x="120" y="22" text-anchor="middle" class="wmt-svg-cap">지금 내 손</text>
+        <text x="120" y="290" text-anchor="middle" class="wmt-svg-note">아직 놓지 않았어요</text>
       </g>
       <g class="wmt-think">
         <circle cx="222" cy="104" r="4"/><circle cx="240" cy="82" r="6"/><circle cx="262" cy="60" r="8"/>
