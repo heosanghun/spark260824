@@ -567,8 +567,8 @@
     state.liveMode = true;
     state.isListening = true;
     setModeBadge("Gemini Live");
-    updateTranscript("🎙️ 연결 중이에요... 편하게 말씀하세요");
-    startWaveAnimation();
+    updateTranscript("");
+    updateStatus("connecting", "연결 중...");
     await window.NovaLive.start({
       systemInstruction: SYSTEM_PROMPT,
       tools: GEMINI_TOOLS,
@@ -583,6 +583,7 @@
         },
         user: (text) => { if (text) updateTranscript(text); },
         ai: (text) => { if (text) updateResponse(text); },
+        level: (v) => setLevel(v),
         tool: (name, args) => {
           if (name === "close_assistant") {
             // Let Nova finish the goodbye line before closing.
@@ -597,7 +598,7 @@
           state.isListening = false;
           state.isSpeaking = false;
           stopWaveAnimation();
-          updateStatus("idle", reason === "idle" ? "조용해서 대화를 마쳤어요 · 마이크를 다시 눌러주세요" : "대기 중");
+          updateStatus("idle", reason === "idle" ? "조용해서 대화를 마쳤어요 · 다시 탭하세요" : IDLE_LABEL);
         },
         error: (err) => console.warn("[Nova Live]", err),
       },
@@ -696,7 +697,7 @@
     if (!text || !text.trim()) return;
     state.isSpeaking = true;
     startWaveAnimation();
-    updateStatus("speaking", "Nova 답변 중...");
+    updateStatus("speaking", "말하는 중");
 
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
@@ -745,7 +746,7 @@
 
     if (err && (err.name === "NotAllowedError" || err.name === "PermissionDeniedError")) {
       errorTitle = "마이크 사용 권한이 차단되어 있습니다";
-      userMsg = "브라우저 보안 설정으로 인해 마이크가 차단되었습니다. 상단 주소창 왼쪽의 설정(🔒/🎚️) 아이콘을 클릭하여 '마이크'를 '허용'으로 변경해 주세요.";
+      userMsg = "주소창 왼쪽의 사이트 설정 아이콘을 눌러 '마이크'를 '허용'으로 바꿔 주세요.";
     } else if (err && (err.name === "NotFoundError" || err.name === "DevicesNotFoundError")) {
       errorTitle = "마이크 장치를 찾을 수 없습니다";
       userMsg = "PC에 연결된 마이크 장치가 없습니다. 마이크 연결 또는 Windows 사운드 설정을 확인해 주세요.";
@@ -757,11 +758,11 @@
       userMsg = "Chrome 또는 Edge 최신 브라우저를 이용하시거나, 아래 직접 텍스트 입력창을 이용해 주세요.";
     }
 
-    if (titleEl) titleEl.textContent = `🎙️ ${errorTitle}`;
-    if (guide) guide.style.display = "block";
-
-    updateTranscript("⚠️ " + errorTitle);
-    updateResponse(userMsg);
+    if (titleEl) titleEl.textContent = errorTitle;
+    const msgEl = document.getElementById("novaGuideMsg");
+    if (msgEl) msgEl.textContent = userMsg;
+    if (guide) guide.classList.add("is-show");
+    updateStatus("idle", "아래 입력창으로도 명령할 수 있어요");
   }
 
   // Voice Recognition Controls
@@ -769,8 +770,7 @@
     if (state.isListening || state.isProcessing || state.liveMode) return;
 
     // Reset previous permission guide
-    const guide = document.getElementById("novaPermGuide");
-    if (guide) guide.style.display = "none";
+    document.getElementById("novaPermGuide")?.classList.remove("is-show");
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
 
     if (window.NovaLive) {
@@ -789,7 +789,7 @@
         }
       }
     }
-    setModeBadge("브라우저 무료 모드");
+    setModeBadge("기본 음성 모드");
     startBrowserRecognition();
   }
 
@@ -808,8 +808,8 @@
 
     state.speechRecognition.onstart = () => {
       state.isListening = true;
-      updateStatus("listening", "말씀하세요... (무료 모드)");
-      updateTranscript("🎙️ 말씀하세요... (예: '1m 상자 떨어뜨려 줘')");
+      updateStatus("listening", "듣고 있어요");
+      updateTranscript("");
       startWaveAnimation();
     };
 
@@ -817,7 +817,7 @@
       const text = e.results[0][0].transcript;
       updateTranscript(text);
       stopWaveAnimation();
-      updateStatus("processing", "명령 분석 및 화면 제어 중...");
+      updateStatus("processing", "생각하는 중...");
 
       const reply = parseLocalIntent(text);
       updateResponse(reply);
@@ -865,657 +865,116 @@
     }
   }
 
-  // UI Construction & DOM Elements
+  // UI Construction & DOM Elements (styles: davies-assets/css/nova-assistant.css)
+  const ICON = {
+    mic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>',
+    min: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg>',
+    close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg>',
+    send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  };
+  const QUICK = [
+    { action: "trigger_physics", param: { action: "drop" }, label: "1m 낙하", say: "1미터 상자 낙하 실험",
+      icon: '<path d="M8 3.5h8v6H8z"/><path d="M12 12.5v6m-2.6-2.6L12 18.5l2.6-2.6"/><path d="M4.5 21h15"/>' },
+    { action: "trigger_physics", param: { action: "toss" }, label: "투척", say: "투척 실험",
+      icon: '<path d="M3.5 14.5h5v5h-5z"/><path d="M7 11.5C9 6 15 4.5 20 9.5"/><path d="M20 5.8v3.7h-3.7"/>' },
+    { action: "switch_theme", param: { theme: "next" }, label: "테마 전환", say: "다음 전시 테마로 전환",
+      icon: '<rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M10 9.5l3 2.5-3 2.5"/>' },
+    { action: "toggle_partition", param: {}, label: "공간 분할", say: "7구역 공간 분할 보기",
+      icon: '<rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M12 3.5v17M3.5 12h17"/>' },
+    { action: "run_picking_benchmark", param: {}, label: "정밀 선택", say: "60점 정밀 선택 평가",
+      icon: '<circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="1.4"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/>' },
+    { action: "focus_world_prompt", param: {}, label: "AI 공간", say: "AI 3D 공간 만들기 입력창 열기",
+      icon: '<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z"/>' },
+  ];
+
   function createVoiceAssistantUI() {
-    // Inject Styles
-    const style = document.createElement("style");
-    style.id = "nova-voice-styles";
-    style.textContent = `
-      #voiceAssistantFab {
-        position: fixed;
-        bottom: 28px;
-        right: 28px;
-        width: 56px;
-        height: 56px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
-        box-shadow: 0 4px 25px rgba(56, 189, 248, 0.6), 0 0 20px rgba(56, 189, 248, 0.4);
-        color: #ffffff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        z-index: 99999;
-        border: 2px solid rgba(255, 255, 255, 0.4);
-        transition: transform 0.25s ease, box-shadow 0.25s ease;
-      }
-      #voiceAssistantFab:hover {
-        transform: scale(1.1);
-        box-shadow: 0 6px 32px rgba(56, 189, 248, 0.8), 0 0 25px rgba(56, 189, 248, 0.5);
-      }
-      #voiceAssistantFab .pulse-ring {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        border: 2px solid #38bdf8;
-        animation: novaPulse 2s infinite cubic-bezier(0.4, 0, 0.2, 1);
-        pointer-events: none;
-      }
-      @keyframes novaPulse {
-        0% { transform: scale(1); opacity: 0.8; }
-        100% { transform: scale(1.6); opacity: 0; }
-      }
-      #voiceAssistantModal {
-        position: fixed;
-        bottom: 96px;
-        right: 28px;
-        width: 390px;
-        max-width: calc(100vw - 32px);
-        max-height: calc(100vh - 120px);
-        background: rgba(10, 15, 26, 0.96);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(56, 189, 248, 0.35);
-        border-radius: 20px;
-        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85), 0 0 35px rgba(56, 189, 248, 0.2);
-        z-index: 100000;
-        display: none;
-        flex-direction: column;
-        overflow: hidden;
-        animation: novaSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      }
-      @keyframes novaSlideUp {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      .nova-head {
-        padding: 14px 18px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        background: rgba(255, 255, 255, 0.03);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      }
-      .nova-title-wrap {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .nova-status-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #38bdf8;
-        box-shadow: 0 0 8px #38bdf8;
-      }
-      .nova-status-dot.listening {
-        background: #22c55e;
-        box-shadow: 0 0 10px #22c55e;
-        animation: blinkDot 0.8s infinite alternate;
-      }
-      .nova-status-dot.processing {
-        background: #a855f7;
-        box-shadow: 0 0 10px #a855f7;
-      }
-      .nova-status-dot.speaking {
-        background: #f59e0b;
-        box-shadow: 0 0 10px #f59e0b;
-      }
-      @keyframes blinkDot {
-        from { opacity: 0.3; }
-        to { opacity: 1; }
-      }
-      .nova-title {
-        font-size: 13px;
-        font-weight: 800;
-        letter-spacing: 1px;
-        color: #ffffff;
-      }
-      .nova-badge-mode {
-        font-size: 10px;
-        padding: 2px 7px;
-        border-radius: 12px;
-        background: rgba(56, 189, 248, 0.15);
-        color: #38bdf8;
-        border: 1px solid rgba(56, 189, 248, 0.3);
-        font-weight: 700;
-      }
-      .nova-actions {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-      .nova-btn-icon {
-        background: transparent;
-        border: none;
-        color: rgba(255, 255, 255, 0.6);
-        cursor: pointer;
-        padding: 4px;
-        font-size: 14px;
-        border-radius: 6px;
-        transition: color 0.2s, background 0.2s;
-      }
-      .nova-btn-icon:hover {
-        color: #ffffff;
-        background: rgba(255, 255, 255, 0.1);
-      }
-      .nova-body {
-        padding: 14px 16px 16px 16px;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        overflow-y: auto;
-        max-height: calc(100vh - 180px);
-      }
-      .nova-body::-webkit-scrollbar {
-        width: 4px;
-      }
-      .nova-body::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      .nova-body::-webkit-scrollbar-thumb {
-        background: rgba(56, 189, 248, 0.3);
-        border-radius: 4px;
-      }
-      .nova-status-text {
-        font-size: 11px;
-        color: #94a3b8;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-      }
-      .nova-visualizer {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 4px;
-        height: 28px;
-      }
-      .nova-wave-bar {
-        width: 3px;
-        height: 6px;
-        background: #38bdf8;
-        border-radius: 3px;
-        transition: height 0.15s ease;
-      }
-      .nova-visualizer.active .nova-wave-bar:nth-child(1) { animation: wave 0.8s infinite 0.1s; }
-      .nova-visualizer.active .nova-wave-bar:nth-child(2) { animation: wave 0.8s infinite 0.25s; }
-      .nova-visualizer.active .nova-wave-bar:nth-child(3) { animation: wave 0.8s infinite 0.4s; }
-      .nova-visualizer.active .nova-wave-bar:nth-child(4) { animation: wave 0.8s infinite 0.25s; }
-      .nova-visualizer.active .nova-wave-bar:nth-child(5) { animation: wave 0.8s infinite 0.1s; }
-      @keyframes wave {
-        0%, 100% { height: 6px; }
-        50% { height: 26px; }
-      }
-      .nova-chat-box {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        max-height: 160px;
-        overflow-y: auto;
-      }
-      .nova-bubble-user {
-        font-size: 12px;
-        line-height: 1.4;
-        color: #cbd5e1;
-        background: rgba(255, 255, 255, 0.05);
-        padding: 8px 12px;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-      }
-      .nova-bubble-ai {
-        font-size: 12px;
-        line-height: 1.45;
-        color: #ffffff;
-        background: rgba(56, 189, 248, 0.12);
-        padding: 8px 12px;
-        border-radius: 12px;
-        border: 1px solid rgba(56, 189, 248, 0.3);
-      }
-      .nova-action-badge {
-        font-size: 11px;
-        font-weight: 700;
-        color: #38bdf8;
-        background: rgba(56, 189, 248, 0.15);
-        border: 1px dashed #38bdf8;
-        padding: 6px 10px;
-        border-radius: 8px;
-        display: none;
-        align-items: center;
-        gap: 6px;
-      }
-      .nova-btn-talk {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        width: 100%;
-        padding: 11px 16px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
-        color: #ffffff;
-        font-size: 13px;
-        font-weight: 700;
-        border: none;
-        cursor: pointer;
-        box-shadow: 0 4px 16px rgba(56, 189, 248, 0.35);
-        transition: transform 0.2s, box-shadow 0.2s;
-      }
-      .nova-btn-talk:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 6px 22px rgba(56, 189, 248, 0.55);
-      }
-      .nova-btn-talk.recording {
-        background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
-        box-shadow: 0 4px 16px rgba(239, 68, 68, 0.45);
-        animation: pulseRed 1.2s infinite alternate;
-      }
-      @keyframes pulseRed {
-        from { transform: scale(1); }
-        to { transform: scale(1.02); }
-      }
-      .nova-quick-chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        padding-top: 4px;
-      }
-      .nova-chip {
-        font-size: 10px;
-        color: #94a3b8;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 4px 8px;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: all 0.2s;
-      }
-      .nova-chip:hover {
-        color: #ffffff;
-        background: rgba(56, 189, 248, 0.2);
-        border-color: #38bdf8;
-      }
-      .nova-settings-drawer {
-        display: none;
-        flex-direction: column;
-        gap: 8px;
-        padding: 12px;
-        background: rgba(0, 0, 0, 0.3);
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-      }
-      .nova-settings-drawer input {
-        width: 100%;
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 8px;
-        padding: 6px 10px;
-        font-size: 11px;
-        color: #ffffff;
-        outline: none;
-      }
-      .nova-settings-drawer input:focus {
-        border-color: #38bdf8;
-      }
-      .nova-settings-btn-row {
-        display: flex;
-        gap: 6px;
-      }
-      .nova-btn-sub {
-        flex: 1;
-        padding: 5px 8px;
-        font-size: 11px;
-        font-weight: 600;
-        border-radius: 6px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        background: rgba(255, 255, 255, 0.08);
-        color: #ffffff;
-        cursor: pointer;
-      }
-      .nova-btn-sub:hover {
-        background: rgba(255, 255, 255, 0.15);
-      }
-      .nova-btn-sub.primary {
-        background: #0284c7;
-        border-color: #38bdf8;
-      }
-      .nova-text-form {
-        display: flex;
-        gap: 6px;
-        margin: 2px 0 4px 0;
-      }
-      .nova-text-input {
-        flex: 1;
-        min-width: 0;
-        background: rgba(255, 255, 255, 0.07);
-        border: 1px solid rgba(255, 255, 255, 0.16);
-        border-radius: 8px;
-        padding: 7px 10px;
-        font-size: 11px;
-        color: #ffffff;
-        outline: none;
-        transition: border-color 0.2s, background 0.2s;
-      }
-      .nova-text-input:focus {
-        border-color: #38bdf8;
-        background: rgba(255, 255, 255, 0.12);
-      }
-      .nova-btn-send {
-        padding: 0 12px;
-        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-        border: 1px solid rgba(56, 189, 248, 0.5);
-        border-radius: 8px;
-        color: #ffffff;
-        font-size: 11px;
-        font-weight: 600;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        transition: opacity 0.2s;
-      }
-      .nova-btn-send:hover {
-        opacity: 0.9;
-      }
-      .nova-perm-guide {
-        background: rgba(239, 68, 68, 0.12);
-        border: 1px solid rgba(239, 68, 68, 0.35);
-        border-radius: 10px;
-        padding: 10px 12px;
-        margin: 4px 0;
-        font-size: 11px;
-        line-height: 1.5;
-      }
-      .nova-perm-guide ol {
-        margin: 4px 0 6px 0;
-        padding-left: 16px;
-        font-size: 10.5px;
-        color: #f1f5f9;
-      }
-      .nova-perm-guide li {
-        margin-bottom: 2px;
-      }
+    // Stylesheet (fallback injection if the page did not link it)
+    if (!document.querySelector('link[href*="nova-assistant.css"]')) {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = "davies-assets/css/nova-assistant.css";
+      document.head.appendChild(link);
+    }
 
-      /* Category Tabs (대분류) */
-      .nova-cat-tabs {
-        display: flex;
-        gap: 4px;
-        background: rgba(255, 255, 255, 0.04);
-        padding: 4px;
-        border-radius: 10px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-      }
-      .nova-cat-tab {
-        flex: 1;
-        padding: 6px 3px;
-        font-size: 10.5px;
-        font-weight: 700;
-        color: #94a3b8;
-        background: transparent;
-        border: none;
-        border-radius: 7px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        text-align: center;
-        white-space: nowrap;
-      }
-      .nova-cat-tab:hover {
-        color: #ffffff;
-        background: rgba(255, 255, 255, 0.06);
-      }
-      .nova-cat-tab.active {
-        color: #ffffff;
-        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-        box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
-      }
-
-      /* Category Panes */
-      .nova-cat-pane {
-        display: none;
-        flex-direction: column;
-        gap: 7px;
-        animation: novaFadeIn 0.2s ease;
-      }
-      .nova-cat-pane.active {
-        display: flex;
-      }
-      @keyframes novaFadeIn {
-        from { opacity: 0; transform: translateY(4px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-
-      /* Group Title (중분류) */
-      .nova-group-title {
-        font-size: 10px;
-        font-weight: 700;
-        color: #38bdf8;
-        letter-spacing: 0.5px;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        margin-top: 2px;
-      }
-
-      /* Action Chips (소분류) */
-      .nova-chip-grid {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 5px;
-      }
-      .nova-chip-btn {
-        font-size: 10px;
-        font-weight: 600;
-        color: #e2e8f0;
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        padding: 5px 8px;
-        border-radius: 7px;
-        cursor: pointer;
-        transition: all 0.18s ease;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-      }
-      .nova-chip-btn:hover {
-        color: #ffffff;
-        background: rgba(56, 189, 248, 0.25);
-        border-color: #38bdf8;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(56, 189, 248, 0.25);
-      }
-      .nova-chip-btn:active {
-        transform: translateY(0);
-      }
-      .nova-chip-btn.highlight {
-        color: #38bdf8;
-        background: rgba(56, 189, 248, 0.12);
-        border-color: rgba(56, 189, 248, 0.4);
-      }
-    `;
-    document.head.appendChild(style);
-
-    // Floating FAB Button
-    const fab = document.createElement("div");
+    // Floating launcher
+    const fab = document.createElement("button");
+    fab.type = "button";
     fab.id = "voiceAssistantFab";
-    fab.title = "AI 음성 제어 어시스턴트 (Nova)";
-    fab.innerHTML = `
-      <div class="pulse-ring"></div>
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
-        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-        <line x1="12" y1="19" x2="12" y2="22"></line>
-      </svg>
-    `;
+    fab.title = "Nova 음성 도우미";
+    fab.setAttribute("aria-label", "Nova 음성 도우미 열기");
+    fab.innerHTML = ICON.mic;
     document.body.appendChild(fab);
 
-    // Modal HUD
-    const modal = document.createElement("div");
+    // Panel
+    const modal = document.createElement("section");
     modal.id = "voiceAssistantModal";
+    modal.className = "nova";
+    modal.dataset.state = "idle";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-label", "Nova 음성 도우미");
     modal.innerHTML = `
-      <div class="nova-head">
-        <div class="nova-title-wrap">
-          <div class="nova-status-dot" id="novaStatusDot"></div>
-          <span class="nova-title">NOVA SPATIAL AI</span>
-          <span class="nova-badge-mode" id="novaModeBadge">${window.NovaLive ? "Gemini Live" : "브라우저 무료 모드"}</span>
+      <header class="nova-head">
+        <div class="nova-brand">NOVA <small>SPATIAL AI</small></div>
+        <div class="nova-head__actions">
+          <button type="button" class="nova-icon-btn" id="novaBtnMin" aria-label="최소화">${ICON.min}</button>
+          <button type="button" class="nova-icon-btn" id="novaBtnClose" aria-label="닫기">${ICON.close}</button>
         </div>
-        <div class="nova-actions">
-          <button class="nova-btn-icon" id="novaBtnClose" title="닫기">✕</button>
-        </div>
-      </div>
-      <div class="nova-body">
-        <div class="d-flex justify-content-between align-items-center">
-          <span class="nova-status-text" id="novaStatusText">대기 중</span>
-          <div class="nova-visualizer" id="novaVisualizer">
-            <span class="nova-wave-bar"></span>
-            <span class="nova-wave-bar"></span>
-            <span class="nova-wave-bar"></span>
-            <span class="nova-wave-bar"></span>
-            <span class="nova-wave-bar"></span>
-          </div>
-        </div>
+      </header>
 
-
-        <div class="nova-chat-box">
-          <div class="nova-bubble-user" id="novaUserBubble">
-            🗣️ "상자 떨어뜨려 줘", "와이어프레임 켜줘" 등 음성으로 명령해 보세요.
-          </div>
-          <div class="nova-bubble-ai" id="novaAiBubble">
-            ✨ 안녕하세요! 무엇을 도와드릴까요?
-          </div>
-        </div>
-
-        <div class="nova-action-badge" id="novaActionBadge">
-          <span>⚡</span>
-          <span id="novaActionText"></span>
-        </div>
-
-        <button class="nova-btn-talk" id="novaBtnTalk">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-            <line x1="12" y1="19" x2="12" y2="22"></line>
-          </svg>
-          <span id="novaBtnTalkText">마이크를 탭하고 말씀하세요</span>
+      <div class="nova-stage">
+        <button type="button" class="nova-orb" id="novaBtnTalk" aria-label="대화 시작 또는 종료">
+          <span class="nova-orb__halo"></span>
+          <span class="nova-orb__ring r1"></span>
+          <span class="nova-orb__ring r2"></span>
+          <span class="nova-orb__ring r3"></span>
+          <span class="nova-orb__sweep"></span>
+          <span class="nova-orb__core"></span>
         </button>
-
-        <form class="nova-text-form" id="novaTextForm">
-          <input type="text" class="nova-text-input" id="novaTextInput" placeholder="직접 명령어 입력 (예: 상자 떨어뜨려 줘)" autocomplete="off">
-          <button type="submit" class="nova-btn-send" id="novaBtnSendText">전송</button>
-        </form>
-
-        <div class="nova-perm-guide" id="novaPermGuide" style="display: none;">
-          <div style="display: flex; align-items: center; justify-content: space-between; font-weight: 700; color: #fca5a5; margin-bottom: 4px;">
-            <span id="novaGuideTitle">🎙️ 마이크 권한 허용 3단계</span>
-            <button id="novaBtnCloseGuide" type="button" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 13px; padding: 0 4px;">✕</button>
-          </div>
-          <ol>
-            <li>브라우저 맨 위 <strong>주소창 왼쪽의 설정 아이콘(🎚️ 또는 🔒)</strong>을 클릭합니다.</li>
-            <li><strong>'마이크'</strong> 설정을 <strong>'허용(Allow)'</strong>으로 켭니다.</li>
-            <li>키보드의 <strong>F5(새로고침)</strong>를 누르면 마이크가 즉시 연결됩니다!</li>
-          </ol>
-          <div style="margin-top: 4px; font-size: 10px; color: #38bdf8;">
-            💡 마이크 없이도 바로 위 <strong>텍스트 입력창</strong>이나 아래 <strong>버튼</strong>을 누르시면 Nova의 부드러운 여성 목소리로 모든 기능을 이용하실 수 있습니다.
-          </div>
-        </div>
-
-        <!-- Category Navigation Tabs (대분류) -->
-        <div class="nova-cat-tabs" id="novaCatTabs">
-          <button type="button" class="nova-cat-tab active" data-target="panePhysics">🎮 3D 물리/시각화</button>
-          <button type="button" class="nova-cat-tab" data-target="paneLab">🌐 AI 공간 생성</button>
-          <button type="button" class="nova-cat-tab" data-target="paneNav">🏢 사이트 탐색</button>
-          <button type="button" class="nova-cat-tab" data-target="paneFaq">❓ FAQ/음성</button>
-        </div>
-
-        <!-- [대분류 1] 3D 물리 & 시각화 -->
-        <div class="nova-cat-pane active" id="panePhysics">
-          <div class="nova-group-title">📦 스마트 창고 물리 엔진 (Warehouse Physics)</div>
-          <div class="nova-chip-grid">
-            <button type="button" class="nova-chip-btn" data-action="trigger_physics" data-param='{"action":"drop"}' data-label="1m 상자 낙하 시뮬레이션">💥 1m 상자 낙하</button>
-            <button type="button" class="nova-chip-btn" data-action="trigger_physics" data-param='{"action":"toss"}' data-label="2.5m 투척 시뮬레이션">🚀 2.5m 투척</button>
-            <button type="button" class="nova-chip-btn" data-action="trigger_physics" data-param='{"action":"reset"}' data-label="물리 시뮬레이션 리셋">🔄 물리 리셋</button>
-          </div>
-
-          <div class="nova-group-title">🔬 3D 정밀 공간 시각화 (Spatial Vision)</div>
-          <div class="nova-chip-grid">
-            <button type="button" class="nova-chip-btn" data-action="toggle_wireframe" data-param='{}' data-label="와이어프레임 렌더링 토글">🕸️ 와이어프레임</button>
-            <button type="button" class="nova-chip-btn" data-action="toggle_partition" data-param='{}' data-label="7부품 공간 분할 OBB 보여줘">📐 7부품 OBB 분할</button>
-            <button type="button" class="nova-chip-btn" data-action="run_picking_benchmark" data-param='{}' data-label="60점 레이캐스팅 정확도 평가">🎯 60점 피킹 벤치마크</button>
-            <button type="button" class="nova-chip-btn" data-action="toggle_fullscreen" data-param='{}' data-label="전체화면 전환">🖥️ 3D 전체화면</button>
-          </div>
-
-          <div class="nova-group-title">🏎️ 특수 시뮬레이터 (Simulator)</div>
-          <div class="nova-chip-grid">
-            <button type="button" class="nova-chip-btn highlight" data-action="open_car_physics" data-param='{}' data-label="자동차 물리 시뮬레이터 열어줘">🏎️ 자동차 3D 물리 ↗</button>
-          </div>
-        </div>
-
-        <!-- [대분류 2] AI 공간 생성 & 연구 -->
-        <div class="nova-cat-pane" id="paneLab">
-          <div class="nova-group-title">✨ 3D 월드 자동 생성 (World Generator)</div>
-          <div class="nova-chip-grid">
-            <button type="button" class="nova-chip-btn" data-action="generate_3d_world" data-param='{"prompt":"반도체 클린룸 로봇 연구실"}' data-label="반도체 클린룸 생성">🔬 반도체 클린룸</button>
-            <button type="button" class="nova-chip-btn" data-action="generate_3d_world" data-param='{"prompt":"사이버펑크 산업용 격납고"}' data-label="사이버펑크 격납고 생성">🤖 사이버펑크 격납고</button>
-            <button type="button" class="nova-chip-btn" data-action="generate_3d_world" data-param='{"prompt":"스마트 자동화 물류센터"}' data-label="스마트 물류창고 생성">📦 스마트 풀필먼트</button>
-            <button type="button" class="nova-chip-btn" data-action="generate_3d_world" data-param='{"prompt":"초저온 백신 콜드체인 창고"}' data-label="콜드체인 냉동창고 생성">❄️ 초저온 콜드체인</button>
-          </div>
-
-          <div class="nova-group-title">📄 물리 AI & 강화학습 연구 (Research Papers)</div>
-          <div class="nova-chip-grid">
-            <button type="button" class="nova-chip-btn highlight" data-action="open_lingbot_world" data-param='{}' data-label="링봇 월드 2.0 시뮬레이터 열어줘" style="border-color: #ff6f00 !important; color: #ffb74d !important;">🎮 LingBot-World 2.0 ↗</button>
-            <button type="button" class="nova-chip-btn highlight" data-action="open_research_article" data-param='{}' data-label="강화학습 칼럼 아티클 열어줘">📚 AI시티빌더스 칼럼 ↗</button>
-            <button type="button" class="nova-chip-btn" data-action="navigate_section" data-param='{"section":"whitepapers"}' data-label="화이트페이퍼 섹션 보여줘">📑 리서치 페이퍼</button>
-          </div>
-        </div>
-
-        <!-- [대분류 3] 사이트 탐색 & 엔터프라이즈 -->
-        <div class="nova-cat-pane" id="paneNav">
-          <div class="nova-group-title">🚀 주요 섹션 바로가기 (Quick Jump)</div>
-          <div class="nova-chip-grid">
-            <button type="button" class="nova-chip-btn" data-action="navigate_section" data-param='{"section":"hero"}' data-label="홈 맨 위로 이동">🏠 홈 (맨 위로)</button>
-            <button type="button" class="nova-chip-btn" data-action="navigate_section" data-param='{"section":"spatialLab"}' data-label="3D 스마트 창고 섹션으로 가줘">🏭 3D 스마트 창고</button>
-            <button type="button" class="nova-chip-btn" data-action="navigate_section" data-param='{"section":"works"}' data-label="포트폴리오 쇼케이스 보여줘">💼 작품 쇼케이스</button>
-            <button type="button" class="nova-chip-btn" data-action="navigate_section" data-param='{"section":"services"}' data-label="서비스 안내로 가줘">🛠️ 기술 솔루션</button>
-            <button type="button" class="nova-chip-btn highlight" data-action="navigate_section" data-param='{"section":"pricing"}' data-label="요금 정책 및 원화 가격 확인">💰 요금 정책 (KRW)</button>
-            <button type="button" class="nova-chip-btn" data-action="navigate_section" data-param='{"section":"about"}' data-label="회사 소개 보여줘">🏢 회사 소개</button>
-            <button type="button" class="nova-chip-btn" data-action="navigate_section" data-param='{"section":"awards"}' data-label="표준 인증 내역 보여줘">🏆 표준 인증 6종</button>
-            <button type="button" class="nova-chip-btn" data-action="navigate_section" data-param='{"section":"contact"}' data-label="문의하기 섹션으로 가줘">✉️ 프로젝트 문의</button>
-            <button type="button" class="nova-chip-btn" data-action="navigate_section" data-param='{"section":"footer"}' data-label="푸터 사이트맵으로 이동">🗺️ 푸터 사이트맵</button>
-          </div>
-        </div>
-
-        <!-- [대분류 4] FAQ & 보이스 제어 -->
-        <div class="nova-cat-pane" id="paneFaq">
-          <div class="nova-group-title">❓ 자주 묻는 질문 즉시 펼치기 (FAQ Accordions)</div>
-          <div class="nova-chip-grid">
-            <button type="button" class="nova-chip-btn" data-action="control_faq" data-param='{"item":1}' data-label="3DGS 가우시안 스플래팅 질문 펼쳐줘">💡 01. 3DGS vs 메시</button>
-            <button type="button" class="nova-chip-btn" data-action="control_faq" data-param='{"item":2}' data-label="100Hz Wasm 물리 엔진 질문 펼쳐줘">⚙️ 02. 100Hz 물리</button>
-            <button type="button" class="nova-chip-btn" data-action="control_faq" data-param='{"item":3}' data-label="ROS2 로봇 연동 질문 펼쳐줘">🤖 03. ROS2 로봇 연동</button>
-            <button type="button" class="nova-chip-btn" data-action="control_faq" data-param='{"item":4}' data-label="공간 센서 포맷 지원 질문 펼쳐줘">📡 04. 3D 센서 정합</button>
-            <button type="button" class="nova-chip-btn" data-action="control_faq" data-param='{"item":5}' data-label="60점 피킹 정확도 질문 펼쳐줘">🎯 05. 레이캐스팅 피킹</button>
-            <button type="button" class="nova-chip-btn" data-action="control_faq" data-param='{"item":6}' data-label="물리 AI 강화학습 질문 펼쳐줘">🧠 06. 물리 AI 강화학습</button>
-          </div>
-
-          <div class="nova-group-title">🔊 음성 & 화면 컨트롤 (Voice & Controls)</div>
-          <div class="nova-chip-grid">
-            <button type="button" class="nova-chip-btn highlight" id="novaBtnVoiceTest">🔊 여성 목소리 테스트</button>
-            <button type="button" class="nova-chip-btn" id="novaBtnToggleGuide">🔒 마이크 권한 안내</button>
-            <button type="button" class="nova-chip-btn" data-action="scroll_page" data-param='{"direction":"up"}' data-label="화면 위로 스크롤">⬆️ 화면 위로</button>
-            <button type="button" class="nova-chip-btn" data-action="scroll_page" data-param='{"direction":"down"}' data-label="화면 아래로 스크롤">⬇️ 화면 아래로</button>
-            <button type="button" class="nova-chip-btn" data-action="close_assistant" data-param='{}' data-label="어시스턴트 창 닫아줘">✕ 창 닫기</button>
-          </div>
-        </div>
+        <div class="nova-status" id="novaStatusText">탭하여 대화 시작</div>
       </div>
+
+      <div class="nova-captions" aria-live="polite">
+        <p class="nova-cap nova-cap--user" id="novaUserBubble"></p>
+        <p class="nova-cap nova-cap--ai" id="novaAiBubble">안녕하세요, 노바예요. 무엇을 보여드릴까요?</p>
+      </div>
+
+      <div class="nova-toast" id="novaActionBadge">${ICON.check}<span id="novaActionText"></span></div>
+
+      <div class="nova-notice" id="novaPermGuide" role="alert">
+        <b id="novaGuideTitle"></b>
+        <p id="novaGuideMsg"></p>
+        <button type="button" id="novaBtnCloseGuide">닫기</button>
+      </div>
+
+      <div class="nova-chips" role="group" aria-label="빠른 명령">
+        ${QUICK.map((q, i) => `<button type="button" class="nova-chip" data-quick="${i}"><svg viewBox="0 0 24 24" aria-hidden="true">${q.icon}</svg>${q.label}</button>`).join("")}
+      </div>
+
+      <form class="nova-input" id="novaTextForm" autocomplete="off">
+        <input type="text" id="novaTextInput" placeholder="말하거나 입력하세요 · 예) 상자 떨어뜨려줘" aria-label="명령 입력">
+        <button type="submit" aria-label="보내기">${ICON.send}</button>
+      </form>
+
+      <footer class="nova-foot">
+        <span class="nova-foot__dot"></span>
+        <span id="novaModeBadge">${window.NovaLive ? "Gemini Live" : "기본 음성 모드"}</span>
+        <span class="nova-foot__hint">말을 끊어도 돼요</span>
+      </footer>
     `;
     document.body.appendChild(modal);
 
-    // Event Bindings
+    const isOpen = () => modal.style.display === "flex";
+    const open = () => { modal.style.display = "flex"; };
+    const hide = () => { modal.style.display = "none"; };
+
+    // Launcher: open (and start talking) / close (and stop)
     fab.addEventListener("click", () => {
-      const isHidden = modal.style.display === "none" || modal.style.display === "";
-      if (isHidden) {
-        modal.style.display = "flex";
-        startListening();
+      if (!isOpen()) {
+        open();
+        if (!state.liveMode && !state.isListening) startListening();
       } else {
-        modal.style.display = "none";
+        hide();
         stopListening();
       }
     });
@@ -1523,164 +982,138 @@
     const promptMic = document.getElementById("btnPromptMic");
     if (promptMic) {
       promptMic.addEventListener("click", () => {
-        modal.style.display = "flex";
-        startListening();
+        open();
+        if (!state.liveMode && !state.isListening) startListening();
       });
     }
 
     document.getElementById("novaBtnClose").addEventListener("click", () => {
-      modal.style.display = "none";
+      hide();
       stopListening();
     });
+    // Minimize keeps the conversation running; the launcher keeps glowing.
+    document.getElementById("novaBtnMin").addEventListener("click", hide);
 
-
-    // Talk Button Toggle
-    const btnTalk = document.getElementById("novaBtnTalk");
-    btnTalk.addEventListener("click", () => {
-      if (state.isListening || state.liveMode) {
-        stopListening();
-      } else {
-        startListening();
-      }
+    // Orb = talk toggle
+    document.getElementById("novaBtnTalk").addEventListener("click", () => {
+      if (state.isListening || state.liveMode) stopListening();
+      else startListening();
     });
 
-    // Category Tabs Switching (대분류 탭 전환)
-    document.querySelectorAll(".nova-cat-tab").forEach((tab) => {
-      tab.addEventListener("click", () => {
-        document.querySelectorAll(".nova-cat-tab").forEach((t) => t.classList.remove("active"));
-        document.querySelectorAll(".nova-cat-pane").forEach((p) => p.classList.remove("active"));
-        tab.classList.add("active");
-        const targetId = tab.dataset.target;
-        const targetPane = document.getElementById(targetId);
-        if (targetPane) targetPane.classList.add("active");
-      });
-    });
-
-    // Chip Button Actions (소분류 버튼 클릭 -> 즉시 화면 이동 & 기능 실행 & Nova 음성 안내)
-    document.querySelectorAll(".nova-chip-btn[data-action]").forEach((btn) => {
+    // Quick commands
+    modal.querySelectorAll(".nova-chip[data-quick]").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        const action = btn.dataset.action;
-        let param = {};
-        try {
-          param = JSON.parse(btn.dataset.param || "{}");
-        } catch (e) {}
-        const label = btn.dataset.label || btn.textContent.trim();
-
-        updateTranscript(label);
-        updateStatus("processing", "명령 실행 및 화면 이동 중...");
-
-        const desc = executeAction(action, param);
-        if (action !== "close_assistant" && window.NovaLive && window.NovaLive.isActive) {
-          window.NovaLive.sendText(`(시스템 안내: 사용자가 버튼으로 '${label}'을(를) 실행했어요. 한 문장으로 짧게 안내해 주세요. 도구는 호출하지 마세요.)`);
+        const q = QUICK[Number(btn.dataset.quick)];
+        updateTranscript(q.label);
+        let desc;
+        if (q.action === "focus_world_prompt") {
+          const sec = document.querySelector("#spatialLabSection");
+          if (sec) sec.scrollIntoView({ behavior: "smooth" });
+          setTimeout(() => document.getElementById("inputWorldPrompt")?.focus({ preventScroll: true }), 600);
+          desc = "AI 3D 공간 만들기 입력창 열기";
+          updateActionBadge(desc);
+        } else {
+          desc = executeAction(q.action, q.param);
+        }
+        if (window.NovaLive && window.NovaLive.isActive) {
+          window.NovaLive.sendText(`(시스템 안내: 사용자가 버튼으로 '${q.say}'을(를) 실행했어요. 한 문장으로 짧게 안내해 주세요. 도구는 호출하지 마세요.)`);
           return;
         }
-        const reply = `네! ${desc}를 완료하고 화면을 이동해 드렸어요.`;
+        const reply = q.action === "focus_world_prompt"
+          ? "위 입력창에 만들고 싶은 공간을 적어 주세요. 예를 들면 반도체 클린룸처럼요."
+          : `네, ${desc || q.say}을 실행했어요.`;
         updateResponse(reply);
         await speakResponse(reply);
       });
     });
 
-    // Voice Test Button
-    document.getElementById("novaBtnVoiceTest")?.addEventListener("click", async () => {
-      const greeting = "안녕하세요! World Labs Nova 음성 어시스턴트입니다. 카테고리별 버튼을 누르시면 해당 웹사이트 화면으로 즉시 이동하며 모든 기능이 실행됩니다.";
-      updateResponse(greeting);
-      await speakResponse(greeting);
-    });
-
-    // Toggle Guide Button
-    document.getElementById("novaBtnToggleGuide")?.addEventListener("click", () => {
-      const guide = document.getElementById("novaPermGuide");
-      if (guide) {
-        guide.style.display = guide.style.display === "none" || guide.style.display === "" ? "block" : "none";
+    // Text command
+    const textForm = document.getElementById("novaTextForm");
+    const textInput = document.getElementById("novaTextInput");
+    textForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const cmd = textInput.value.trim();
+      if (!cmd) return;
+      textInput.value = "";
+      updateTranscript(cmd);
+      if (window.NovaLive && window.NovaLive.isActive) {
+        window.NovaLive.sendText(cmd);
+      } else {
+        updateStatus("processing", "생각하는 중...");
+        const reply = parseLocalIntent(cmd);
+        updateResponse(reply);
+        await speakResponse(reply);
       }
     });
 
-    // Direct Text Command Form Submit
-    const textForm = document.getElementById("novaTextForm");
-    const textInput = document.getElementById("novaTextInput");
-    if (textForm && textInput) {
-      textForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const cmd = textInput.value.trim();
-        if (!cmd) return;
-        textInput.value = "";
-        updateTranscript(cmd);
-        updateStatus("processing", "명령 분석 및 화면 제어 중...");
+    document.getElementById("novaBtnCloseGuide").addEventListener("click", () => {
+      document.getElementById("novaPermGuide").classList.remove("is-show");
+    });
 
-        if (window.NovaLive && window.NovaLive.isActive) {
-          window.NovaLive.sendText(cmd);
-        } else {
-          const reply = parseLocalIntent(cmd);
-          updateResponse(reply);
-          await speakResponse(reply);
-        }
-      });
-    }
-
-    document.getElementById("novaBtnCloseGuide")?.addEventListener("click", () => {
-      const guide = document.getElementById("novaPermGuide");
-      if (guide) guide.style.display = "none";
+    // Esc closes the panel
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && isOpen() && !e.target.closest?.("input, textarea")) hide();
     });
   }
 
   // UI State Updaters
+  const IDLE_LABEL = "탭하여 대화 시작";
   function updateStatus(type, label) {
-    const dot = document.getElementById("novaStatusDot");
+    const panel = document.getElementById("voiceAssistantModal");
     const text = document.getElementById("novaStatusText");
-    const btnText = document.getElementById("novaBtnTalkText");
-    const btn = document.getElementById("novaBtnTalk");
+    const fab = document.getElementById("voiceAssistantFab");
+    if (panel) panel.dataset.state = type || "idle";
+    if (text) text.textContent = type === "idle" && (!label || label === "대기 중") ? IDLE_LABEL : label;
+    const live = type !== "idle" && (state.liveMode || state.isListening || state.isSpeaking);
+    if (fab) fab.classList.toggle("is-live", live);
+    if (type === "idle") setLevel(0);
+  }
 
-    if (dot) {
-      dot.className = "nova-status-dot";
-      if (type !== "idle") dot.classList.add(type);
-    }
-    if (text) text.textContent = label;
-
-    if (btn && btnText) {
-      if (state.liveMode && type !== "idle") {
-        btn.classList.add("recording");
-        btnText.textContent = "대화 중 · 탭하면 대화를 마쳐요";
-      } else if (type === "listening") {
-        btn.classList.add("recording");
-        btnText.textContent = "말씀이 끝나면 탭하세요";
-      } else {
-        btn.classList.remove("recording");
-        btnText.textContent = "마이크를 탭하고 말씀하세요";
-      }
-    }
+  // Audio level (0‥1) drives the orb and launcher glow
+  let levelSmooth = 0;
+  function setLevel(v) {
+    const target = Math.max(0, Math.min(1, (v || 0) * 2.2));
+    levelSmooth = target > levelSmooth ? target : levelSmooth * 0.82 + target * 0.18;
+    const val = levelSmooth.toFixed(3);
+    document.getElementById("voiceAssistantModal")?.style.setProperty("--lvl", val);
+    document.getElementById("voiceAssistantFab")?.style.setProperty("--lvl", val);
   }
 
   function updateTranscript(text) {
     const el = document.getElementById("novaUserBubble");
-    if (el) el.textContent = `🗣️ "${text}"`;
+    if (el) el.textContent = text || "";
   }
 
   function updateResponse(text) {
     const el = document.getElementById("novaAiBubble");
-    if (el) el.textContent = `✨ Nova: ${text}`;
+    if (!el) return;
+    el.textContent = text || "";
+    el.scrollTop = el.scrollHeight;
   }
 
+  let toastTimer = null;
   function updateActionBadge(text) {
     const badge = document.getElementById("novaActionBadge");
     const textEl = document.getElementById("novaActionText");
-    if (badge && textEl) {
-      textEl.textContent = `[액션 완료] ${text}`;
-      badge.style.display = "flex";
-      setTimeout(() => {
-        badge.style.display = "none";
-      }, 5000);
+    const panel = document.getElementById("voiceAssistantModal");
+    if (!badge || !textEl) return;
+    textEl.textContent = `${text} 실행됨`;
+    badge.classList.remove("is-show");
+    void badge.offsetWidth;
+    badge.classList.add("is-show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => badge.classList.remove("is-show"), 3200);
+    if (panel) {
+      panel.classList.remove("is-action");
+      void panel.offsetWidth;
+      panel.classList.add("is-action");
+      setTimeout(() => panel.classList.remove("is-action"), 800);
     }
   }
 
-  function startWaveAnimation() {
-    const viz = document.getElementById("novaVisualizer");
-    if (viz) viz.classList.add("active");
-  }
-
-  function stopWaveAnimation() {
-    const viz = document.getElementById("novaVisualizer");
-    if (viz) viz.classList.remove("active");
-  }
+  // Kept for the existing call sites; the orb state now carries the animation.
+  function startWaveAnimation() {}
+  function stopWaveAnimation() {}
 
   // Auto-initialize when DOM is ready
   if (document.readyState === "loading") {

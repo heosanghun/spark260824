@@ -187,7 +187,7 @@
         if (m.type === "state") {
           s.aiPlaying = m.playing;
           s.lastActivity = performance.now();
-          if (m.playing) on.status?.("speaking", "Nova 말하는 중 · 끼어들어도 돼요");
+          if (m.playing) on.status?.("speaking", "말하는 중 · 언제든 끼어들어도 돼요");
           else if (s.ready) on.status?.("listening", "듣고 있어요 · 편하게 말씀하세요");
         } else if (m.type === "level") on.level?.(m.level);
       };
