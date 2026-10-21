@@ -4958,6 +4958,7 @@
           themeIdx = -1;
           renderThemeUI(0);
           meshL1.visible = meshR1.visible = true;
+          carShowcase.show(false);
           floorWire.visible = wireOn();
 
           // Adjust floor wireframe / physics floor
@@ -5103,6 +5104,92 @@
         warehouseMesh = null;
       }
 
+      // Car showroom: the studio splat is the "clean" capture (pedestal only), so the
+      // Audi R8 is placed on the pedestal exactly like car-physics.html (lazy-loaded).
+      const carShowcase = (() => {
+        const group = new THREE.Group();
+        group.visible = false;
+        group.position.set(0.0, 0.725 + 0.19 + 0.005, -1.30); // table top + half height + clearance
+        scene.add(group);
+        const key = new THREE.SpotLight(0xffffff, 4.5, 0, Math.PI / 4, 0.6);
+        key.position.set(2, 6, 3);
+        key.target = group;
+        const cyan = new THREE.PointLight(0x38bdf8, 3.0, 15);
+        cyan.position.set(-3, 3, -1);
+        const blue = new THREE.PointLight(0x6366f1, 2.5, 15);
+        blue.position.set(3, 1.5, -3);
+        const lights = [key, cyan, blue];
+        lights.forEach((l) => { l.visible = false; scene.add(l); });
+        let loading = null;
+
+        function materials(fbx) {
+          const M = {
+            paint: new THREE.MeshPhysicalMaterial({ color: 0xd1d5db, metalness: 0.88, roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.04 }),
+            carbon: new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.3 }),
+            chrome: new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.95, roughness: 0.08 }),
+            rim: new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.85, roughness: 0.22 }),
+            tire: new THREE.MeshStandardMaterial({ color: 0x111827, metalness: 0.08, roughness: 0.88 }),
+            glass: new THREE.MeshPhysicalMaterial({ color: 0x0f172a, metalness: 0.1, roughness: 0.05, transmission: 0.82, transparent: true, opacity: 0.55, ior: 1.52, clearcoat: 1 }),
+            tail: new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xdc2626, emissiveIntensity: 2.5, roughness: 0.15 }),
+            head: new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x38bdf8, emissiveIntensity: 2.0, roughness: 0.1 }),
+            interior: new THREE.MeshStandardMaterial({ color: 0x1e2430, metalness: 0.35, roughness: 0.75 }),
+            trim: new THREE.MeshStandardMaterial({ color: 0x09090b, metalness: 0.2, roughness: 0.65 }),
+            caliper: new THREE.MeshStandardMaterial({ color: 0x0284c7, emissive: 0x0369a1, emissiveIntensity: 0.4, metalness: 0.6, roughness: 0.25 }),
+            mirror: new THREE.MeshStandardMaterial({ color: 0xf1f5f9, metalness: 0.98, roughness: 0.02 })
+          };
+          const remap = (m) => {
+            const n = ((m && m.name) || "").toLowerCase();
+            if (n === "phong1") return M.carbon;
+            if (n === "chrome") return M.chrome;
+            if (n === "wheel") return M.rim;
+            if (n.includes("wheel1a") || n === "phong15") return M.tire;
+            if (n === "glass") return M.glass;
+            if (n === "red_glass") return M.tail;
+            if (n === "color_glass" || n === "phong14") return M.head;
+            if (n === "glass_surr") return M.trim;
+            if (n === "mirror") return M.mirror;
+            if (["phong6", "phong10", "phong12", "phong3"].includes(n)) return M.interior;
+            return M.paint;
+          };
+          fbx.traverse((c) => {
+            if (!c.isMesh) return;
+            if (c.name.includes("WheelBrake")) { c.material = M.caliper; return; }
+            c.material = Array.isArray(c.material) ? c.material.map(remap) : remap(c.material);
+          });
+        }
+
+        function load() {
+          if (loading) return loading;
+          loading = (async () => {
+            const { FBXLoader } = await import("three/addons/loaders/FBXLoader.js");
+            const fbx = await new FBXLoader().loadAsync("3D_FBX/audi.fbx");
+            const box = new THREE.Box3().setFromObject(fbx);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+            fbx.position.set(-center.x, -center.y, -center.z);
+            const holder = new THREE.Group();
+            holder.add(fbx);
+            holder.scale.setScalar(1.35 / size.z); // L = 1.35 m, same as car-physics.html
+            materials(fbx);
+            const glow = (c, x, y, z, i, d) => { const p = new THREE.PointLight(c, i, d); p.position.set(x, y, z); group.add(p); };
+            glow(0x38bdf8, -0.25, 0.02, 0.66, 1.2, 2.5); glow(0x38bdf8, 0.25, 0.02, 0.66, 1.2, 2.5);
+            glow(0xef4444, -0.24, 0.05, -0.66, 0.9, 1.8); glow(0xef4444, 0.24, 0.05, -0.66, 0.9, 1.8);
+            group.add(holder);
+          })().catch((err) => {
+            console.warn("[Spark Davies] Audi model load failed:", err);
+            loading = null;
+          });
+          return loading;
+        }
+
+        function show(on) {
+          group.visible = on;
+          lights.forEach((l) => { l.visible = on; });
+          if (on) load();
+        }
+        return { show, load };
+      })();
+
       function loadTheme(i, dir = 0) {
         if (themeLoading) return themeLoading;
         const n = THEMES.length;
@@ -5150,6 +5237,7 @@
           }
 
           meshL1.visible = meshR1.visible = t.physics;
+          carShowcase.show(t.key === "car");
           floorWire.visible = t.physics && wireOn();
           floorWire.position.set(0.0, -0.025, 0.0);
           createRigidBodies(0);
