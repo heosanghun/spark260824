@@ -233,6 +233,13 @@
         break;
       }
 
+      case "play_world_model_tour": {
+        // Give Nova a beat to say "시작할게요", then the show takes over (it ends the Live session).
+        setTimeout(() => window.WorldModelTour?.play(), 900);
+        desc = "월드 모델 60초 설명 쇼 재생";
+        break;
+      }
+
       default:
         console.warn("[Nova] Unknown action:", actionName);
     }
@@ -246,6 +253,14 @@
   // Local Intent Rule Parser (Fallback or fast matching)
   function parseLocalIntent(text) {
     const t = text.toLowerCase().replace(/\s+/g, "");
+
+    if (t.includes("월드모델") || t.includes("worldmodel") || t.includes("세계모델")) {
+      if (/보여|틀어|재생|투어|영상|60초|쇼|설명해줘|알려줘/.test(t)) {
+        executeAction("play_world_model_tour");
+        return "좋아요! 월드 모델을 60초 만에 보여 드릴게요.";
+      }
+      return "월드 모델은 AI가 현실 세계의 물리 법칙과 인과관계를 배워서, 행동하기 전에 머릿속으로 미래를 미리 그려보는 시뮬레이션 엔진이에요. 60초 설명을 보시려면 '월드 모델 보여줘'라고 말씀해 주세요.";
+    }
 
     if (t.includes("낙하") || t.includes("떨어") || t.includes("1미터") || t.includes("1m") || t.includes("상자낙하") || t.includes("박스낙하")) {
       executeAction("trigger_physics", { action: "drop" });
@@ -524,6 +539,15 @@
     }
   });
 
+  TOOL_SPECS.push({
+    type: "function",
+    function: {
+      name: "play_world_model_tour",
+      description: "월드 모델(World Model)을 60초 동안 자막·나레이션·실제 3D 실험으로 자동 설명하는 쇼를 재생합니다. 사용자가 월드 모델 설명/영상/투어를 보여달라고 하거나, 짧은 설명 뒤 더 보고 싶어할 때 호출합니다.",
+      parameters: { type: "object", properties: {} }
+    }
+  });
+
   // Gemini Live expects bare function declarations; omit empty parameter objects.
   const GEMINI_TOOLS = TOOL_SPECS.map((t) => {
     const f = t.function;
@@ -545,6 +569,7 @@
 - 와이어프레임: toggle_wireframe / 7부품 공간 분할: toggle_partition
 - 60점 피킹 정확도 평가: run_picking_benchmark / 전체화면: toggle_fullscreen
 - 테마 전환(물류 창고 ↔ 자동차 쇼룸, 다음/이전): switch_theme
+- 월드 모델 60초 자동 설명 쇼: play_world_model_tour (호출 시 "네, 60초 설명을 시작할게요!"라고만 짧게 말하세요. 쇼가 시작되면 대화는 잠시 끝나요)
 - 3D 공간 생성: generate_3d_world (prompt)
 - 섹션 이동: navigate_section / 스크롤: scroll_page
 - 자동차 물리 시뮬레이터: open_car_physics / 연구 칼럼: open_research_article / FAQ: control_faq
@@ -553,7 +578,14 @@
 [전시 내용 요약]
 - 실사 공간을 3D 가우시안 스플래팅(3DGS)으로 복원하고, Rapier 물리 엔진으로 1미터 높이 낙하 같은 실제 중력 실험을 보여줘요.
 - 스마트 물류 창고 디지털 트윈, 자동차 쇼룸 테마, 로봇 피킹 정확도 평가, 텍스트로 3D 세상을 만드는 World Labs AI 기능이 있어요.
-- 모르는 내용은 지어내지 말고 부스 담당자에게 문의하시라고 안내하세요.`;
+- 모르는 내용은 지어내지 말고 부스 담당자에게 문의하시라고 안내하세요.
+
+[월드 모델(World Model) 설명 — 상대에 맞춰 골라 쓰세요]
+- 한 줄 요약: 월드 모델은 AI가 현실 세계의 물리 법칙과 인과관계를 학습해, 실제로 행동하기 전에 머릿속으로 미래의 결과를 미리 그려보는 '내부 시뮬레이션 엔진'이에요.
+- 표준 정의(전문가용): 지능형 에이전트가 현실 환경을 이해하고, 자신의 행동에 따라 미래가 어떻게 변할지 예측해 최선의 결정을 내리도록 돕는 '내부 가상 세계 모델'이에요. 기존 AI가 데이터를 외워 흉내 냈다면, 월드 모델은 시간의 흐름, 3차원 공간 구조, 물리적 상식을 종합해 행동의 결과를 미리 상상하고 계획하는 추론 능력을 줘요.
+- 쉬운 비유(일반인·아이): 손에 든 유리잔을 놓으면 깨질 거라는 걸 깨뜨려 보지 않아도 알잖아요? 우리 뇌에 '세상이 돌아가는 규칙'이 있어서예요. 월드 모델은 그 '머릿속 물리 엔진'을 AI에게 심어준 거예요. 현실에서 사고를 내며 배우지 않고, 머릿속으로 수만 번 시뮬레이션해서 가장 안전한 행동을 고르게 해요.
+- 핵심 키워드: 인과관계 예측(이 행동을 하면 다음에 무슨 일이?), 시행착오 최소화(로봇·자율주행차가 사고 없이 학습), AGI의 필수 조건(글자만 다루는 LLM을 넘어 물리 세계를 이해하는 열쇠).
+- 처음엔 한 줄 요약이나 비유로 짧게 답하고, "60초 설명을 보여드릴까요?"라고 제안하세요. 원하면 play_world_model_tour를 호출하세요.`;
 
   const LIVE_GREETING = "(시스템 안내: 관람객이 방금 마이크를 켰어요. 한 문장으로 짧고 반갑게 인사하고 무엇을 도와드릴지 물어보세요. 도구는 호출하지 마세요.)";
 
@@ -884,8 +916,8 @@
       icon: '<rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M12 3.5v17M3.5 12h17"/>' },
     { action: "run_picking_benchmark", param: {}, label: "정밀 선택", say: "60점 정밀 선택 평가",
       icon: '<circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="1.4"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/>' },
-    { action: "focus_world_prompt", param: {}, label: "AI 공간", say: "AI 3D 공간 만들기 입력창 열기",
-      icon: '<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z"/>' },
+    { action: "play_world_model_tour", param: {}, label: "월드 모델", say: "월드 모델 60초 설명",
+      icon: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.6 2.4 3.8 5.3 3.8 8.5s-1.2 6.1-3.8 8.5c-2.6-2.4-3.8-5.3-3.8-8.5S9.4 5.9 12 3.5z"/>' },
   ];
 
   function createVoiceAssistantUI() {
@@ -1005,6 +1037,12 @@
       btn.addEventListener("click", async () => {
         const q = QUICK[Number(btn.dataset.quick)];
         updateTranscript(q.label);
+        if (q.action === "play_world_model_tour") {
+          // The show narrates itself; no extra Nova speech on top of it.
+          stopListening?.();
+          executeAction(q.action, q.param);
+          return;
+        }
         let desc;
         if (q.action === "focus_world_prompt") {
           const sec = document.querySelector("#spatialLabSection");

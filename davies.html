@@ -21,6 +21,7 @@
     <link rel="stylesheet" href="davies-assets/css/swiper-bundle.min.css">
     <link rel="stylesheet" href="davies-assets/css/animate.css">
     <link rel="stylesheet" href="davies-assets/css/nova-assistant.css">
+    <link rel="stylesheet" href="davies-assets/css/world-model-tour.css">
     <link rel="stylesheet" href="davies-assets/css/odometer.min.css">
     <link rel="stylesheet" href="davies-assets/css/slick.css">
     <link rel="stylesheet" href="davies-assets/css/slick.theme.css">
@@ -1223,6 +1224,10 @@
                                         실시간 500,000개 3D Gaussian Splatting 스마트 물류 창고(Marble Run01) 디지털 트윈, 서브밀리미터 기하 공간 분할, 그리고 100Hz Wasm Rapier 강체 물리 충돌 엔진을 직접 조작해 보세요.
                                     </p>
                                     <div class="effectFade fadeRight view-visible d-flex flex-wrap gap-3 align-items-center">
+                                        <button type="button" class="wmt-cta" data-wm-tour aria-label="월드 모델 60초 만에 이해하기 (자동 설명 재생)">
+                                            <span class="wmt-cta__play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></svg></span>
+                                            <span class="wmt-cta__txt"><b>월드 모델, 60초 만에 이해하기</b><small>클릭 한 번 · 자동 설명</small></span>
+                                        </button>
                                         <a href="#spatialLabSection" class="tf-btn style-fill-white animate-btn animate-dark">
                                             <span class="text-caption fw-medium">LAUNCH 3D WAREHOUSE</span>
                                             <i class="icon icon-arrow-long-right"></i>
@@ -1477,6 +1482,9 @@
                     </div>
                     <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
                         <div class="d-inline-flex flex-wrap gap-2 justify-content-lg-end">
+                            <button type="button" class="wmt-chip" data-wm-tour aria-label="월드 모델 60초 설명 보기">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg> 60초 설명 보기
+                            </button>
                             <span class="spatial-btn-pill" style="height: 34px; pointer-events: none; border-color: rgba(255,255,255,0.18);">
                                 <span style="width: 6px; height: 6px; border-radius: 50%; background: #38bdf8; display: inline-block;"></span> 500,000 SPLATS
                             </span>
@@ -3870,6 +3878,118 @@
         };
       })();
 
+      // World Model tour: translucent "AI imagination" box that falls on the analytic
+      // trajectory y = y0 − ½·g·t² (slow motion), leaving afterimages + a landing ring.
+      const ghostFx = (() => {
+        const CYAN = 0x67e8f9;
+        const group = new THREE.Group();
+        group.visible = false;
+        scene.add(group);
+        const geo = new THREE.BoxGeometry(hxL1 * 2, hyL1 * 2, hzL1 * 2);
+        const edges = new THREE.EdgesGeometry(geo);
+        const bodyMat = new THREE.MeshBasicMaterial({ color: CYAN, transparent: true, opacity: 0.22, depthWrite: false });
+        const edgeMat = new THREE.LineBasicMaterial({ color: CYAN, transparent: true, opacity: 1 });
+        const ghost = new THREE.Mesh(geo, bodyMat);
+        ghost.add(new THREE.LineSegments(edges, edgeMat));
+        ghost.renderOrder = 5;
+        group.add(ghost);
+        const trail = Array.from({ length: 6 }, () => {
+          const s = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: CYAN, transparent: true, opacity: 0 }));
+          s.visible = false;
+          group.add(s);
+          return s;
+        });
+        const path = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]),
+          new THREE.LineDashedMaterial({ color: CYAN, dashSize: 0.05, gapSize: 0.04, transparent: true, opacity: 0.85 })
+        );
+        group.add(path);
+        const ring = new THREE.Mesh(
+          new THREE.RingGeometry(0.42, 0.5, 64),
+          new THREE.MeshBasicMaterial({ color: CYAN, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false })
+        );
+        ring.rotation.x = -Math.PI / 2;
+        group.add(ring);
+
+        const x = initL1.x, z = initL1.z;
+        const yTop = initL1.y + DROP_H;          // same start height as the real drop
+        const yEnd = REST_Y_L1;
+        const fallT = Math.sqrt((2 * (yTop - yEnd)) / GRAVITY);
+        const predict = { t: fallT, v: GRAVITY * fallT, h: yTop - yEnd };
+        const HOLD = 900;
+        const mats = [bodyMat, edgeMat, path.material, ring.material, ...trail.map((s) => s.material)];
+        let anim = null;
+        let fade = null;
+
+        function hide() {
+          if (anim) anim.resolve(null);
+          anim = null;
+          fade = null;
+          group.visible = false;
+        }
+        function drop({ slow = 3 } = {}) {
+          if (anim) anim.resolve(null);
+          return new Promise((resolve) => {
+            fade = null;
+            group.visible = true;
+            trail.forEach((s) => { s.visible = false; s.material.opacity = 0; });
+            ghost.position.set(x, yTop, z);
+            bodyMat.opacity = 0.22;
+            edgeMat.opacity = 1;
+            path.material.opacity = 0.85;
+            path.geometry.setFromPoints([new THREE.Vector3(x, yTop, z), new THREE.Vector3(x, yTop, z)]);
+            ring.position.set(x, FLOOR_TOP + 0.007, z);
+            ring.scale.setScalar(1);
+            ring.material.opacity = 0;
+            anim = { t0: performance.now(), slow, resolve, stamped: 0, hitAt: 0 };
+          });
+        }
+        function clear(ms = 600) {
+          if (!group.visible) return;
+          fade = { t0: performance.now(), ms, base: mats.map((m) => m.opacity) };
+        }
+        function tick() {
+          if (!group.visible) return;
+          const now = performance.now();
+          if (fade) {
+            const k = Math.min(1, (now - fade.t0) / fade.ms);
+            mats.forEach((m, i) => { m.opacity = fade.base[i] * (1 - k); });
+            if (k >= 1) hide();
+            return;
+          }
+          if (!anim) return;
+          const el = now - anim.t0;
+          if (el < HOLD) { // "thinking" pulse at the start height
+            bodyMat.opacity = 0.16 + 0.12 * (0.5 + 0.5 * Math.sin(el / 90));
+            return;
+          }
+          bodyMat.opacity = 0.22;
+          const simT = Math.min(fallT, (el - HOLD) / 1000 / anim.slow);
+          const y = yTop - 0.5 * GRAVITY * simT * simT;
+          ghost.position.y = y;
+          path.geometry.setFromPoints([new THREE.Vector3(x, yTop, z), new THREE.Vector3(x, y, z)]);
+          path.computeLineDistances();
+          while (anim.stamped < trail.length && simT >= ((anim.stamped + 1) * fallT) / (trail.length + 1)) {
+            const s = trail[anim.stamped++];
+            s.position.set(x, y, z);
+            s.material.opacity = 0.5;
+            s.visible = true;
+          }
+          if (simT >= fallT && !anim.hitAt) anim.hitAt = now;
+          if (anim.hitAt) {
+            const k = Math.min(1, (now - anim.hitAt) / 900);
+            ring.scale.setScalar(1 + k * 1.6);
+            ring.material.opacity = 0.9 * (1 - k);
+            if (k >= 1) {
+              const done = anim.resolve;
+              anim = null;
+              done({ ...predict });
+            }
+          }
+        }
+        return { drop, clear, hide, tick, predict };
+      })();
+
       const dropCard = (() => {
         const $ = (id) => document.getElementById(id);
         const card = $("dropExplainCard");
@@ -3896,6 +4016,11 @@
         let collapseTimer = null;
         let enterTimer = null;
         let impactTimer = null;
+        // Measured result for the World Model tour (physics steps × timestep, peak |vy|)
+        let fallSteps = 0;
+        let peakV = 0;
+        let lastResult = null;
+        let doneWaiters = [];
 
         const setStep = (n) => {
           steps.forEach((li, i) => {
@@ -3949,6 +4074,9 @@
           t0 = performance.now();
           impactT = 0;
           calmSince = 0;
+          fallSteps = 0;
+          peakV = 0;
+          lastResult = null;
           btnDrop.classList.add("is-running");
           dropFx.show();
         }
@@ -3966,6 +4094,8 @@
           collapseTimer = railMode
             ? setTimeout(showIdle, 12000)
             : setTimeout(() => card.classList.add("is-collapsed"), 8000);
+          const res = lastResult || { t: fallSteps / 60, v: peakV };
+          doneWaiters.splice(0).forEach((fn) => fn(res));
         }
 
         function update(y, vy, speed) {
@@ -3975,6 +4105,10 @@
           setGauge(h);
           liveH.textContent = Math.min(h, DROP_H).toFixed(2);
           liveV.textContent = Math.abs(vy).toFixed(2);
+          if ((phase === "lift" || phase === "fall") && vy < -0.01) {
+            fallSteps++;
+            peakV = Math.max(peakV, -vy);
+          }
 
           if (phase === "lift" && vy < -0.3) {
             phase = "fall";
@@ -3983,6 +4117,7 @@
           if ((phase === "lift" || phase === "fall") && h <= 0.015 && now - t0 > 150) {
             phase = "impact";
             impactT = now;
+            lastResult = { t: fallSteps / 60, v: peakV };
             setStep(3);
             impactTimer = restartClass("is-impact", 950, impactTimer);
             dropFx.impact();
@@ -4053,7 +4188,8 @@
         $("dropCardRetry").addEventListener("click", () => btnDrop.click());
         $("dropCardStart")?.addEventListener("click", () => btnDrop.click());
 
-        return { start, update, close, setRailMode, tick: () => dropFx.tick() };
+        return { start, update, close, setRailMode, tick: () => dropFx.tick(),
+                 whenDone: () => new Promise((r) => doneWaiters.push(r)) };
       })();
 
       const railMQ = window.matchMedia("(min-width: 1600px)");
@@ -4976,6 +5112,7 @@
           [themeEls.prev, themeEls.next, themeEls.pillPrev, themeEls.pillNext].forEach((b) => b && (b.disabled = true));
           clearTimeout(dropWakeTimer);
           dropCard.close();
+          ghostFx.hide();
           expCard.abort();
           pickingGroup.clear();
           partitionGroup.visible = false;
@@ -5040,7 +5177,27 @@
         return themeLoading;
       }
       const stepTheme = (d) => loadTheme((themeIdx < 0 ? (d > 0 ? -1 : 0) : themeIdx) + d, d);
-      window.spatialLab = { loadTheme, stepTheme };
+      window.spatialLab = {
+        loadTheme,
+        stepTheme,
+        get themeIndex() { return themeIdx; },
+        // World Model tour hooks
+        prediction: ghostFx.predict,
+        ghostDrop: (opts) => ghostFx.drop(opts),
+        ghostClear: (ms) => ghostFx.clear(ms),
+        realDrop() {
+          const done = dropCard.whenDone();
+          btnDrop.click();
+          return Promise.race([done, new Promise((r) => setTimeout(() => r(null), 8000))]);
+        },
+        resetScene() {
+          ghostFx.hide();
+          clearTimeout(dropWakeTimer);
+          dropCard.close();
+          expCard.abort();
+          createRigidBodies(0);
+        }
+      };
 
       themeEls.prev?.addEventListener("click", () => stepTheme(-1));
       themeEls.next?.addEventListener("click", () => stepTheme(1));
@@ -5087,6 +5244,7 @@
       function tourTick() {
         if (!themeEls.tour?.checked) return;
         if (performance.now() < tourPausedUntil || !labVisible || themeLoading || document.hidden) return;
+        if (document.documentElement.classList.contains("wmt-active")) return; // World Model show is playing
         stepTheme(1).then(() => {
           if (themeIdx === 0 && themeEls.tour?.checked) setTimeout(() => btnDrop.click(), 1500);
         });
@@ -5138,6 +5296,7 @@
           dropCard.update(tL1.y, vL1.y, Math.hypot(vL1.x, vL1.y, vL1.z));
         }
         dropCard.tick();
+        ghostFx.tick();
         expCard.tick();
 
         if (bodyR1) {
@@ -5188,6 +5347,7 @@
     <!-- World Labs Nova AI Voice Assistant -->
     <script src="davies-assets/js/gemini-live.js"></script>
     <script src="davies-assets/js/voice-assistant.js"></script>
+    <script src="davies-assets/js/world-model-tour.js"></script>
     <!-- Fixed header: compact + backdrop once scrolled -->
     <script>
       (function () {
