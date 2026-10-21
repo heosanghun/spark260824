@@ -3776,9 +3776,41 @@
       meshR1.add(wireR1);
       scene.add(meshR1);
 
+      // Physics subject: "pallet" (warehouse) or "car" (showroom: Audi R8 on the pedestal,
+      // same collider/pose as car-physics.html). The pedestal collider only exists in car mode.
+      let physicsSubject = "pallet";
+      const CAR_HALF = { x: 0.309, y: 0.19, z: 0.675 };
+      const CAR_TABLE_TOP = 0.725;
+      const CAR_INIT = { x: 0.0, y: CAR_TABLE_TOP + CAR_HALF.y + 0.005, z: -1.30 };
+      const CAR_MASS = 1600.0; // real Audi R8 ≈ 1.6 t (used for the energy readout)
+      let carBody = null;
+      let carTableBody = null;
+
       function createRigidBodies(offsetY = 0, velL1 = { x: 0, y: 0, z: 0 }, velR1 = { x: 0, y: 0, z: 0 }) {
         if (bodyL1) physicsWorld.removeRigidBody(bodyL1);
         if (bodyR1) physicsWorld.removeRigidBody(bodyR1);
+        bodyL1 = bodyR1 = null;
+        if (carBody) { physicsWorld.removeRigidBody(carBody); carBody = null; }
+
+        if (physicsSubject === "car") {
+          if (!carTableBody) {
+            carTableBody = physicsWorld.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0.02, CAR_TABLE_TOP - 0.025, -1.810));
+            physicsWorld.createCollider(RAPIER.ColliderDesc.cuboid(1.89, 0.025, 1.14).setFriction(0.6).setRestitution(0.2), carTableBody);
+          }
+          carBody = physicsWorld.createRigidBody(
+            RAPIER.RigidBodyDesc.dynamic()
+              .setTranslation(CAR_INIT.x, CAR_INIT.y + offsetY, CAR_INIT.z)
+              .setLinvel(velL1.x, velL1.y, velL1.z)
+              .setLinearDamping(0.05)
+              .setAngularDamping(0.05)
+          );
+          physicsWorld.createCollider(
+            RAPIER.ColliderDesc.cuboid(CAR_HALF.x, CAR_HALF.y, CAR_HALF.z).setMass(CAR_MASS).setFriction(0.6).setRestitution(0.2),
+            carBody
+          );
+          return;
+        }
+        if (carTableBody) { physicsWorld.removeRigidBody(carTableBody); carTableBody = null; }
 
         bodyL1 = physicsWorld.createRigidBody(
           RAPIER.RigidBodyDesc.dynamic()
@@ -3818,6 +3850,10 @@
       const DROP_E = (PALLET_MASS * GRAVITY * DROP_H) / 1000;  // ≈ 2.94 kJ
       const FLOOR_TOP = -0.075 + 0.05;                         // floor collider top surface
       const REST_Y_L1 = FLOOR_TOP + hyL1;                      // L1 centre height when resting
+      // What the drop test is acting on in the current theme
+      const subjectInfo = () => physicsSubject === "car"
+        ? { kind: "car", x: CAR_INIT.x, z: CAR_INIT.z, startY: CAR_INIT.y, restY: CAR_TABLE_TOP + CAR_HALF.y, floorY: CAR_TABLE_TOP, mass: CAR_MASS, ring: 1.7 }
+        : { kind: "pallet", x: initL1.x, z: initL1.z, startY: initL1.y, restY: REST_Y_L1, floorY: FLOOR_TOP, mass: PALLET_MASS, ring: 1 };
 
       const dropFx = (() => {
         const group = new THREE.Group();
@@ -3839,17 +3875,20 @@
 
         let impactAt = 0;
         let hideTimer = null;
+        let ringBase = 1;
 
         return {
           show() {
             clearTimeout(hideTimer);
-            const x = initL1.x;
-            const z = initL1.z;
-            const top = FLOOR_TOP + DROP_H + (initL1.y - REST_Y_L1);
-            line.geometry.setFromPoints([new THREE.Vector3(x, top, z), new THREE.Vector3(x, FLOOR_TOP + 0.005, z)]);
+            const S = subjectInfo();
+            const x = S.x;
+            const z = S.z;
+            const top = S.floorY + DROP_H + (S.startY - S.restY);
+            line.geometry.setFromPoints([new THREE.Vector3(x, top, z), new THREE.Vector3(x, S.floorY + 0.005, z)]);
             line.computeLineDistances();
-            ring.position.set(x, FLOOR_TOP + 0.006, z);
-            ring.scale.setScalar(1);
+            ring.position.set(x, S.floorY + 0.006, z);
+            ringBase = S.ring;
+            ring.scale.setScalar(ringBase);
             ring.material.color.set(0x38bdf8);
             ring.material.opacity = 0.35;
             line.material.opacity = 0.9;
@@ -3863,7 +3902,7 @@
           tick() {
             if (!group.visible || !impactAt) return;
             const k = Math.min(1, (performance.now() - impactAt) / 1000);
-            ring.scale.setScalar(1 + k * 1.8);
+            ring.scale.setScalar(ringBase * (1 + k * 1.8));
             ring.material.opacity = 0.95 * (1 - k);
             line.material.opacity = 0.9 * (1 - k);
           },
@@ -4010,6 +4049,26 @@
         const countEl = $("dropResultCount");
 
         let phase = "idle"; // idle | lift | fall | impact | done
+        let S = subjectInfo();
+        const subtitleEl = card.querySelector(".drop-card__subtitle");
+        const tipEl = card.querySelector(".drop-card__tip p");
+        const TEXT = {
+          pallet: {
+            sub: "팔레트를 1m 높이에서 떨어뜨려 봐요",
+            tip: tipEl ? tipEl.innerHTML : ""
+          },
+          car: {
+            sub: "자동차를 단상 위 1m에서 떨어뜨려 봐요",
+            tip: "무거운 자동차도 팔레트와 똑같이 <strong>0.45초</strong> 만에 <strong>시속 16km</strong>로 떨어져요. 낙하 속도는 무게와 상관없거든요! 대신 1.6톤이라 <strong>충격은 5배 이상</strong> — 이 계산으로 정비 리프트와 전시 단상을 안전하게 설계해요."
+          }
+        };
+        const dropE = () => (S.mass * GRAVITY * DROP_H) / 1000;
+        function applySubject() {
+          S = subjectInfo();
+          const t = TEXT[S.kind];
+          if (subtitleEl) subtitleEl.textContent = t.sub;
+          if (tipEl) tipEl.innerHTML = t.tip;
+        }
         let t0 = 0;
         let impactT = 0;
         let calmSince = 0;
@@ -4056,6 +4115,7 @@
 
         function start() {
           clearTimeout(collapseTimer);
+          applySubject();
           card.hidden = false;
           card.classList.remove("is-collapsed", "is-done", "is-impact", "is-idle");
           enterTimer = restartClass("is-enter", 400, enterTimer);
@@ -4067,7 +4127,7 @@
           countUp(statTime, DROP_T, 2);
           countUp(statSpeed, DROP_V, 1);
           countUp(statKmh, DROP_V * 3.6, 0);
-          countUp(statEnergy, DROP_E, 1);
+          countUp(statEnergy, dropE(), 1);
           settleEl.textContent = "-";
           countEl.textContent = String(collisionCount);
           phase = "lift";
@@ -4100,7 +4160,7 @@
 
         function update(y, vy, speed) {
           if (phase === "idle" || phase === "done") return;
-          const h = Math.max(0, y - REST_Y_L1);
+          const h = Math.max(0, y - S.restY);
           const now = performance.now();
           setGauge(h);
           liveH.textContent = Math.min(h, DROP_H).toFixed(2);
@@ -4138,6 +4198,7 @@
         // Idle "ready" state, used while the card sits in the left rail
         function showIdle() {
           phase = "idle";
+          applySubject();
           clearTimeout(collapseTimer);
           card.hidden = false;
           card.classList.remove("is-collapsed", "is-done", "is-impact", "is-enter");
@@ -4149,7 +4210,7 @@
           statTime.textContent = DROP_T.toFixed(2);
           statSpeed.textContent = DROP_V.toFixed(1);
           statKmh.textContent = (DROP_V * 3.6).toFixed(0);
-          statEnergy.textContent = DROP_E.toFixed(1);
+          statEnergy.textContent = dropE().toFixed(1);
           btnDrop.classList.remove("is-running");
           dropFx.hide();
         }
@@ -4188,7 +4249,7 @@
         $("dropCardRetry").addEventListener("click", () => btnDrop.click());
         $("dropCardStart")?.addEventListener("click", () => btnDrop.click());
 
-        return { start, update, close, setRailMode, tick: () => dropFx.tick(),
+        return { start, update, close, setRailMode, applySubject, tick: () => dropFx.tick(),
                  whenDone: () => new Promise((r) => doneWaiters.push(r)) };
       })();
 
@@ -4661,9 +4722,9 @@
         telemetryCollisions.textContent = String(collisionCount);
         createRigidBodies(1.0);
         // Hold the pallets at 1m for a moment so beginners can see step ① "lift" before the fall.
-        [bodyL1, bodyR1].forEach((b) => b?.sleep?.());
+        [bodyL1, bodyR1, carBody].forEach((b) => b?.sleep?.());
         clearTimeout(dropWakeTimer);
-        dropWakeTimer = setTimeout(() => [bodyL1, bodyR1].forEach((b) => b?.wakeUp?.()), 650);
+        dropWakeTimer = setTimeout(() => [bodyL1, bodyR1, carBody].forEach((b) => b?.wakeUp?.()), 650);
         expCard.abort();
         expCard.focus("drop");
         dropCard.start();
@@ -4958,6 +5019,7 @@
           themeIdx = -1;
           renderThemeUI(0);
           meshL1.visible = meshR1.visible = true;
+          physicsSubject = "pallet";
           carShowcase.show(false);
           floorWire.visible = wireOn();
 
@@ -5041,8 +5103,8 @@
         },
         {
           key: "car", name: "자동차 쇼룸 스튜디오", short: "자동차 쇼룸",
-          desc: "실제 촬영 없이 AI가 만든 3D 전시 공간을 자유롭게 둘러보세요. (드래그로 회전 · 휠로 확대)",
-          tags: ["500K 스플랫", "Marble 1.1", "감상 모드"],
+          desc: "아우디 R8을 단상 위 1m에서 떨어뜨려 보고, AI가 만든 3D 쇼룸을 자유롭게 둘러보세요. (드래그로 회전 · 휠로 확대)",
+          tags: ["500K 스플랫", "Audi R8", "1m 낙하 실험"], lab: "car",
           thumb: "assets/p3/marble/thumbs/car_studio.webp",
           url: "assets/p3/marble/car_studio_v2_clean_500k.spz", asset: "Marble car_studio_v2_clean_500k.spz",
           scale: 2.2508733, posY: 1.6300833, physics: false,
@@ -5080,16 +5142,17 @@
         if (themeEls.tags) themeEls.tags.innerHTML = (isAI ? ["World Labs API", "텍스트 → 3D"] : t.tags)
           .map((x) => `<span>${x}</span>`).join("");
         if (themeEls.badge) {
-          const phys = isAI || t.physics;
-          themeEls.badge.textContent = isAI ? "AI 생성" : (phys ? "물리 실험 가능" : "감상 모드");
+          const phys = isAI || t.physics || t.lab === "car";
+          themeEls.badge.textContent = isAI ? "AI 생성" : (t.lab === "car" ? "낙하 실험 가능" : (phys ? "물리 실험 가능" : "감상 모드"));
           themeEls.badge.classList.toggle("is-view", !phys);
         }
         if (themeEls.idx) themeEls.idx.textContent = isAI ? "AI" : String(themeIdx + 1);
         if (themeEls.total) themeEls.total.textContent = String(THEMES.length);
         if (themeEls.dots) themeEls.dots.innerHTML = THEMES.map((_, i) => `<i class="${i === themeIdx ? "is-on" : ""}"></i>`).join("");
         if (themeEls.pillName) themeEls.pillName.textContent = isAI ? "AI 월드" : t.short;
-        const locked = !isAI && !t.physics;
+        const carLab = !isAI && t.lab === "car";
         LOCKED_IN_VIEW.forEach((b) => {
+          const locked = !isAI && !t.physics && !(carLab && b === btnDrop); // car showroom: drop test works on the car
           b.classList.toggle("is-locked", locked);
           if (locked) b.dataset.lockTip = "1"; else delete b.dataset.lockTip;
         });
@@ -5187,7 +5250,7 @@
           lights.forEach((l) => { l.visible = on; });
           if (on) load();
         }
-        return { show, load };
+        return { show, load, group };
       })();
 
       function loadTheme(i, dir = 0) {
@@ -5237,6 +5300,7 @@
           }
 
           meshL1.visible = meshR1.visible = t.physics;
+          physicsSubject = t.lab === "car" ? "car" : "pallet";
           carShowcase.show(t.key === "car");
           floorWire.visible = t.physics && wireOn();
           floorWire.position.set(0.0, -0.025, 0.0);
@@ -5248,9 +5312,12 @@
           if (telemetryAssetName) telemetryAssetName.textContent = t.asset;
           if (btnRestoreWarehouse) btnRestoreWarehouse.style.display = "none";
           if (promptStatusContainer && idx === 0) promptStatusContainer.style.display = "none";
-          telemetryStatus.textContent = t.physics ? "STANDBY / READY" : "VIEW MODE";
-          telemetryStatus.style.color = t.physics ? "#34d399" : "#94a3b8";
-          showToast(t.physics ? `[THEME] ${t.name} — 물리 실험을 시작해보세요!` : `[THEME] ${t.name} — 드래그해서 둘러보세요.`);
+          const carLab = t.lab === "car";
+          telemetryStatus.textContent = t.physics || carLab ? "STANDBY / READY" : "VIEW MODE";
+          telemetryStatus.style.color = t.physics || carLab ? "#34d399" : "#94a3b8";
+          showToast(t.physics ? `[THEME] ${t.name} — 물리 실험을 시작해보세요!`
+            : carLab ? `[THEME] ${t.name} — [1m 낙하]로 자동차를 떨어뜨려 보세요!` : `[THEME] ${t.name} — 드래그해서 둘러보세요.`);
+          dropCard.applySubject();
 
           if (!cached) {
             setTimeout(() => {
@@ -5334,7 +5401,7 @@
         if (performance.now() < tourPausedUntil || !labVisible || themeLoading || document.hidden) return;
         if (document.documentElement.classList.contains("wmt-active")) return; // World Model show is playing
         stepTheme(1).then(() => {
-          if (themeIdx === 0 && themeEls.tour?.checked) setTimeout(() => btnDrop.click(), 1500);
+          if ((themeIdx === 0 || THEMES[themeIdx]?.lab === "car") && themeEls.tour?.checked) setTimeout(() => btnDrop.click(), 1500);
         });
       }
       function setTour(on) {
@@ -5382,6 +5449,14 @@
           meshL1.quaternion.set(rL1.x, rL1.y, rL1.z, rL1.w);
           const vL1 = bodyL1.linvel();
           dropCard.update(tL1.y, vL1.y, Math.hypot(vL1.x, vL1.y, vL1.z));
+        }
+        if (carBody) {
+          const tc = carBody.translation();
+          const rc = carBody.rotation();
+          carShowcase.group.position.set(tc.x, tc.y, tc.z);
+          carShowcase.group.quaternion.set(rc.x, rc.y, rc.z, rc.w);
+          const vc = carBody.linvel();
+          dropCard.update(tc.y, vc.y, Math.hypot(vc.x, vc.y, vc.z));
         }
         dropCard.tick();
         ghostFx.tick();
