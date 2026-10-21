@@ -298,3 +298,8 @@
   .wmt-cta, .wmt-fall, .wmt-shards path, .wmt-bang, .wmt-bubble { animation: none; }
   .wmt-shards path, .wmt-bang { opacity: 1; }
 }
+
+/* Photoreal hand (scene 2) — gentle hover so it reads as "about to let go" */
+.wmt-hand-photo { transform-box: fill-box; transform-origin: center; animation: wmt-hold 3.2s ease-in-out infinite; }
+@keyframes wmt-hold { 50% { transform: translateY(-3px); } }
+.wmt-real .wmt-svg-cap, .wmt-real .wmt-svg-note { paint-order: stroke; stroke: rgba(0, 0, 0, 0.75); stroke-width: 3px; }

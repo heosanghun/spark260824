@@ -251,19 +251,18 @@
   // ------------------------------------------------------------------ scenes
   const GLASS_SVG = `
     <svg class="wmt-glass" viewBox="0 0 560 300" aria-hidden="true">
+      <defs>
+        <radialGradient id="wmtHandFade" cx="50%" cy="50%" r="50%">
+          <stop offset="62%" stop-color="#fff"/>
+          <stop offset="100%" stop-color="#000"/>
+        </radialGradient>
+        <mask id="wmtHandMask"><rect x="0" y="14" width="262" height="281" fill="url(#wmtHandFade)"/></mask>
+      </defs>
       <g class="wmt-real">
+        <image class="wmt-hand-photo" href="davies-assets/images/world-model/hand-glass.webp" x="0" y="14" width="262" height="281"
+               preserveAspectRatio="xMidYMid slice" mask="url(#wmtHandMask)"/>
         <text x="110" y="34" text-anchor="middle" class="wmt-svg-cap">지금 내 손</text>
-        <path class="wmt-glass__cup" d="M78 96h64l-9 104H87z"/>
-        <path class="wmt-glass__water" d="M83 140h54l-5 56H88z"/>
-        <rect class="wmt-hand" x="132" y="112" width="58" height="92" rx="24"/>
-        <rect class="wmt-finger" x="120" y="116" width="40" height="14" rx="7"/>
-        <rect class="wmt-finger" x="118" y="134" width="44" height="14" rx="7"/>
-        <rect class="wmt-finger" x="119" y="152" width="42" height="14" rx="7"/>
-        <rect class="wmt-finger" x="122" y="170" width="36" height="14" rx="7"/>
-        <rect class="wmt-finger" x="58" y="130" width="34" height="13" rx="6.5"/>
-        <path class="wmt-arm" d="M190 140c18 4 30 14 40 30M184 196c16 6 30 18 38 34"/>
-        <path class="wmt-floor" d="M30 252h170"/>
-        <text x="110" y="280" text-anchor="middle" class="wmt-svg-note">아직 놓지 않았어요</text>
+        <text x="110" y="284" text-anchor="middle" class="wmt-svg-note">아직 놓지 않았어요</text>
       </g>
       <g class="wmt-think">
         <circle cx="222" cy="104" r="4"/><circle cx="240" cy="82" r="6"/><circle cx="262" cy="60" r="8"/>
