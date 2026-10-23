@@ -28,10 +28,10 @@
   const svg = (k) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICON[k]}</svg>`;
 
   const CHAPTERS = [
-    { label: "질문", est: 6000 },
-    { label: "비유", est: 16000 },
-    { label: "AI의 상상", est: 16000 },
-    { label: "현실", est: 8000 },
+    { label: "질문", est: 5200 },
+    { label: "비유", est: 16500 },
+    { label: "AI의 상상", est: 15000 },
+    { label: "현실", est: 5500 },
     { label: "비교", est: 10000 },
     { label: "정리", est: 15000 }
   ];
@@ -188,7 +188,7 @@
     if (audioSrc && !muted) {
       const audioP = playRecordedAudio(audioSrc);
       if (audioP) {
-        const res = await until(audioP, tk);
+        const [res] = await Promise.all([until(audioP, tk), wait(minMs, tk)]);
         if (res === true) played = true;
       }
     }
@@ -200,8 +200,6 @@
       } else {
         await wait(est, tk);
       }
-    } else {
-      if (minMs > 0) await wait(minMs, tk);
     }
   }
 
@@ -372,13 +370,13 @@
       <p class="wmt-lead">아직 일어나지 않은 일을, AI는 어떻게 미리 알 수 있을까요?</p>`, "wmt-card--q");
     const out = el.card.querySelector("#wmtType");
     const q = "AI는 어떻게 미래를 알 수 있을까요?";
-    const talk = say("AI는 어떻게, 아직 일어나지 않은 미래를 알 수 있을까요?", tk, 4200, "0");
+    const talk = say("AI는 어떻게, 아직 일어나지 않은 미래를 알 수 있을까요?", tk, 0, "0");
     for (let i = 1; i <= q.length; i++) {
       out.textContent = q.slice(0, i);
-      await wait(55, tk);
+      await wait(45, tk);
     }
     await talk;
-    await wait(500, tk);
+    await wait(200, tk);
   };
 
   // 2 — Glass analogy
@@ -391,10 +389,11 @@
       ${GLASS_SVG}
       <ol class="wmt-steps"><li>① 손을 놓으면</li><li>② 아래로 떨어지고</li><li>③ 바닥에 부딪혀 깨진다</li></ol>
       <p class="wmt-reveal">이 <b>‘머릿속 물리 엔진’</b>을 AI에게 심어준 것 = <b class="wmt-hl">월드 모델</b></p>`, "wmt-card--glass");
-    await say("손에 든 유리잔을 놓으면 깨진다는 것, 우리는 직접 깨뜨려 보지 않아도 압니다.", tk, 5200, "1a");
+    await say("손에 든 유리잔을 놓으면 깨진다는 것, 우리는 직접 깨뜨려 보지 않아도 압니다.", tk, 0, "1a");
     el.card.classList.add("is-reveal");
-    await say("머릿속에 세상이 돌아가는 규칙이 있기 때문이죠. 월드 모델은 바로 이 머릿속 물리 엔진을 AI에게 심어준 것입니다.", tk, 6500, "1b");
-    await wait(400, tk);
+    await wait(180, tk);
+    await say("머릿속에 세상이 돌아가는 규칙이 있기 때문이죠. 월드 모델은 바로 이 머릿속 물리 엔진을 AI에게 심어준 것입니다.", tk, 0, "1b");
+    await wait(250, tk);
   };
 
   async function enterLab(tk) {
@@ -404,11 +403,11 @@
     hideCard();
     setSub("");
     stage.scrollIntoView({ behavior: "smooth", block: "center" });
-    await wait(700, tk);
+    await wait(350, tk);
     setMode("lab");
     if (lab.themeIndex !== 0) {
       setTag("ai", "물류 창고로 이동 중…", "");
-      await until(Promise.race([lab.loadTheme(0, -1), new Promise((r) => setTimeout(r, 9000))]), tk);
+      await until(Promise.race([lab.loadTheme(0, -1), new Promise((r) => setTimeout(r, 4000))]), tk);
     }
     return true;
   }
@@ -421,14 +420,16 @@
     predicted = lab.prediction;
     measured = null;
     setTag("ai", "AI의 상상", "아직 아무것도 떨어뜨리지 않았어요");
-    const talk = say("직접 볼까요? 먼저 AI가 상상합니다. 1미터 위에서 상자를 놓으면, 언제, 얼마나 빠르게 떨어질까?", tk, 4500, "2a");
-    await wait(1600, tk);
+    const talk = say("직접 볼까요? 먼저 AI가 상상합니다. 1미터 위에서 상자를 놓으면, 언제, 얼마나 빠르게 떨어질까?", tk, 0, "2a");
+    await wait(800, tk);
     setTag("ai", "AI의 상상 · 슬로모션 ×3", "물리 법칙으로 미래를 계산하는 중…");
     const res = await until(lab.ghostDrop({ slow: 3 }), tk);
     if (res) predicted = res;
     await talk;
+    await wait(150, tk);
     setTag("ai", "AI의 예측", `${predicted.t.toFixed(2)}초 뒤 착지 · 초속 ${predicted.v.toFixed(1)} m`);
-    await say("AI의 예측: 0.45초 뒤 바닥에 닿고, 속도는 초속 4.4미터.", tk, 3000, "2b");
+    await say("AI의 예측: 0.45초 뒤 바닥에 닿고, 속도는 초속 4.4미터.", tk, 0, "2b");
+    await wait(250, tk);
   };
 
   // 4 — Reality (real Rapier drop)
@@ -437,12 +438,12 @@
     if (mode === "full" && !(await enterLab(tk))) return jump(5);
     predicted = predicted || lab.prediction;
     setTag("real", "현실 · 실제 물리 엔진", "AI의 상상(하늘색 윤곽)과 비교해 보세요");
-    const talk = say("이제 현실에서 진짜로 떨어뜨려 봅니다.", tk, 2200, "3");
-    await wait(900, tk);
+    const talk = say("이제 현실에서 진짜로 떨어뜨려 봅니다.", tk, 0, "3");
+    await wait(350, tk);
     measured = await until(lab.realDrop(), tk);
     await talk;
     if (measured) setTag("real", "현실의 결과", `${measured.t.toFixed(2)}초 · 초속 ${measured.v.toFixed(1)} m`);
-    await wait(900, tk);
+    await wait(250, tk);
   };
 
   // 5 — Comparison
@@ -483,7 +484,8 @@
       if (k < 1 && accEl.isConnected) requestAnimationFrame(count);
     };
     requestAnimationFrame(count);
-    await say("결과를 비교해 볼까요? AI의 상상과 현실이 거의 똑같습니다. 직접 부딪혀 보지 않고도, 결과를 미리 알 수 있는 거죠.", tk, 6500, "4");
+    await say("결과를 비교해 볼까요? AI의 상상과 현실이 거의 똑같습니다. 직접 부딪혀 보지 않고도, 결과를 미리 알 수 있는 거죠.", tk, 0, "4");
+    await wait(300, tk);
   };
 
   // 6 — Summary
@@ -504,7 +506,7 @@
         <button type="button" class="wmt-act wmt-act--primary" data-act="try">직접 실험해 보기${svg("arrow")}</button>
       </div>
       <p class="wmt-hint">더 궁금하면 오른쪽 아래 <b>NOVA</b>에게 “월드 모델이 뭐야?”라고 물어보세요</p>`, "wmt-card--sum");
-    await say("정리하면, 월드 모델은 AI가 현실 세계의 물리 법칙과 인과관계를 학습해, 행동하기 전에 머릿속으로 미래를 미리 그려보는 내부 시뮬레이션 엔진입니다. 이제 직접 실험해 보세요!", tk, 9000, "5");
+    await say("정리하면, 월드 모델은 AI가 현실 세계의 물리 법칙과 인과관계를 학습해, 행동하기 전에 머릿속으로 미래를 미리 그려보는 내부 시뮬레이션 엔진입니다. 이제 직접 실험해 보세요!", tk, 0, "5");
     chapterElapsed = CHAPTERS[5].est;
     await wait(kioskRun ? 10000 : 45000, tk);
     close();
