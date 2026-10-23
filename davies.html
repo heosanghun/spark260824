@@ -4396,6 +4396,46 @@
           });
           return out;
         })();
+        const carZones = `
+          <g transform="translate(10, 8)">
+            <rect class="xv-zone" x="160" y="24" width="48" height="22" rx="3" fill="#00f0ff" stroke="#00f0ff" stroke-width="1.3"/>
+            <text class="xv-txt" x="184" y="38" text-anchor="middle" style="fill:#e2e8f0;font-weight:700;font-size:10px">전면부</text>
+            <rect class="xv-zone" x="90" y="16" width="65" height="30" rx="3" fill="#10b981" stroke="#10b981" stroke-width="1.3"/>
+            <text class="xv-txt" x="122" y="34" text-anchor="middle" style="fill:#e2e8f0;font-weight:700;font-size:10px">캐빈/콕핏</text>
+            <rect class="xv-zone" x="32" y="22" width="54" height="24" rx="3" fill="#f43f5e" stroke="#f43f5e" stroke-width="1.3"/>
+            <text class="xv-txt" x="59" y="37" text-anchor="middle" style="fill:#e2e8f0;font-weight:700;font-size:10px">V10 엔진</text>
+            <rect class="xv-zone" x="44" y="48" width="36" height="10" rx="2" fill="#eab308" stroke="#eab308" stroke-width="1.2"/>
+            <rect class="xv-zone" x="156" y="48" width="36" height="10" rx="2" fill="#a855f7" stroke="#a855f7" stroke-width="1.2"/>
+            <text class="xv-txt" x="118" y="56" text-anchor="middle" style="fill:#94a3b8;font-size:8.5px">좌/우 휠 어셈블리</text>
+            <rect class="xv-zone" x="10" y="62" width="206" height="8" rx="2" fill="#fb923c" stroke="#fb923c" stroke-width="1.2"/>
+            <text class="xv-txt" x="113" y="69" text-anchor="middle" style="fill:#e2e8f0;font-size:7.5px;font-weight:700">전시 단상 OBB</text>
+          </g>
+        `;
+        const carWireVisual = `
+          <g transform="translate(10, 10)">
+            <rect class="xv-wire-box xv-acc" x="35" y="16" width="150" height="34" rx="3" fill="none" stroke="#38bdf8" stroke-width="1.8"/>
+            <line class="xv-wire-box xv-acc" x1="10" y1="58" x2="210" y2="58" stroke="#64748b" stroke-width="1.8"/>
+            <text x="110" y="12" text-anchor="middle" class="xv-txt" style="fill:#38bdf8;font-size:9.5px">아우디 R8 OBB 상자 (0.62 × 0.38 × 1.35m)</text>
+            <text x="110" y="68" text-anchor="middle" class="xv-txt" style="fill:#94a3b8;font-size:9px">전시 단상 충돌 표면 (3.78 × 2.28m)</text>
+          </g>
+        `;
+        const carTossVisual = `
+          <line x1="12" y1="64" x2="228" y2="64" class="xv-dim" stroke-width="1.5"/>
+          <path class="xv-fric xv-acc" d="M70 68l-5 6M84 68l-5 6M98 68l-5 6M112 68l-5 6M126 68l-5 6M140 68l-5 6M154 68l-5 6M168 68l-5 6" stroke-width="1.3"/>
+          <g class="xv-toss-l"><rect x="36" y="32" width="60" height="28" rx="4" fill="rgba(2,132,199,.35)" stroke="#38bdf8" stroke-width="1.5"/></g>
+          <path class="xv-toss-arc xv-acc" d="M96 46Q140 28 175 46" fill="none" stroke-width="1.5"/><path class="xv-acc" d="M168 43l7 3-5 5" fill="none" stroke-width="1.5"/>
+          <text x="120" y="22" text-anchor="middle" class="xv-txt">2.5m/s 투척 → 마찰 제동</text>
+          <text x="120" y="80" text-anchor="middle" class="xv-txt">단상 마찰(0.6)이 브레이크 역할</text>
+        `;
+        const palletTossVisual = `
+          <line x1="12" y1="66" x2="228" y2="66" class="xv-dim" stroke-width="1.5"/>
+          <path class="xv-fric xv-acc" d="M70 70l-5 6M84 70l-5 6M98 70l-5 6M112 70l-5 6M126 70l-5 6M140 70l-5 6M154 70l-5 6M168 70l-5 6" stroke-width="1.3"/>
+          <g class="xv-toss-l"><rect x="26" y="40" width="30" height="26" rx="3" fill="rgba(2,132,199,.35)" stroke="#38bdf8" stroke-width="1.5"/></g>
+          <g class="xv-toss-r"><rect x="186" y="42" width="26" height="24" rx="3" fill="rgba(234,88,12,.35)" stroke="#fb923c" stroke-width="1.5"/></g>
+          <path class="xv-toss-arc xv-acc" d="M60 42Q86 18 110 36" fill="none" stroke-width="1.5"/><path class="xv-acc" d="M104 37l6-1-1-6" fill="none" stroke-width="1.5"/>
+          <path class="xv-toss-arc xv-acc" d="M182 44Q156 20 132 38" fill="none" stroke-width="1.5"/><path class="xv-acc" d="M138 39l-6-1 1-6" fill="none" stroke-width="1.5"/>
+          <text x="120" y="82" text-anchor="middle" class="xv-txt">바닥 마찰(0.6)이 브레이크 역할</text>
+        `;
         const grid = (() => {
           let out = "";
           for (let j = 0; j < 6; j++) for (let i = 0; i < 10; i++) out += `<circle class="xv-pt" cx="${24 + i * 19}" cy="${10 + j * 12}" r="3"/>`;
@@ -4405,57 +4445,97 @@
 
         const EXP = {
           toss: {
-            title: "투척 테스트", sub: "팔레트를 옆으로 휙 던져봐요",
+            title: "투척 테스트",
+            get sub() { return physicsSubject === "car" ? "1.6톤 아우디 R8의 단상 위 제동 마찰을 측정해요" : "팔레트를 옆으로 휙 던져봐요"; },
             icon: ico('<path d="M3.5 14.5h5v5h-5z"/><path d="M7 11.5C9 6 15 4.5 20 9.5"/><path d="M20 5.8v3.7h-3.7"/>'),
-            what: "<b>무엇을 하나요?</b> 두 팔레트를 서로를 향해 <b>초속 2.5m</b>로 던지고, 바닥 마찰 때문에 얼마나 미끄러지다 멈추는지 측정해요.",
-            steps: ["던지기", "미끄러짐", "멈춤"],
-            visual: `<svg viewBox="0 0 240 84" aria-hidden="true">
-              <line x1="12" y1="66" x2="228" y2="66" class="xv-dim" stroke-width="1.5"/>
-              <path class="xv-fric xv-acc" d="M70 70l-5 6M84 70l-5 6M98 70l-5 6M112 70l-5 6M126 70l-5 6M140 70l-5 6M154 70l-5 6M168 70l-5 6" stroke-width="1.3"/>
-              <g class="xv-toss-l"><rect x="26" y="40" width="30" height="26" rx="3" fill="rgba(2,132,199,.35)" stroke="#38bdf8" stroke-width="1.5"/></g>
-              <g class="xv-toss-r"><rect x="186" y="42" width="26" height="24" rx="3" fill="rgba(234,88,12,.35)" stroke="#fb923c" stroke-width="1.5"/></g>
-              <path class="xv-toss-arc xv-acc" d="M60 42Q86 18 110 36" fill="none" stroke-width="1.5"/><path class="xv-acc" d="M104 37l6-1-1-6" fill="none" stroke-width="1.5"/>
-              <path class="xv-toss-arc xv-acc" d="M182 44Q156 20 132 38" fill="none" stroke-width="1.5"/><path class="xv-acc" d="M138 39l-6-1 1-6" fill="none" stroke-width="1.5"/>
-              <text x="120" y="82" text-anchor="middle" class="xv-txt">바닥 마찰(0.6)이 브레이크 역할</text>
-            </svg>`,
+            get what() {
+              return physicsSubject === "car"
+                ? "<b>무엇을 하나요?</b> 1.6톤 아우디 R8을 <b>초속 2.5m</b>로 밀어, 단상 표면 마찰에 의해 얼마나 미끄러진 후 정지하는지 측정해요."
+                : "<b>무엇을 하나요?</b> 두 팔레트를 서로를 향해 <b>초속 2.5m</b>로 던지고, 바닥 마찰 때문에 얼마나 미끄러지다 멈추는지 측정해요.";
+            },
+            get steps() { return physicsSubject === "car" ? ["가속 투척", "단상 슬라이드", "완전 정지"] : ["던지기", "미끄러짐", "멈춤"]; },
+            get visual() { return `<svg viewBox="0 0 240 84" aria-hidden="true">${physicsSubject === "car" ? carTossVisual : palletTossVisual}</svg>`; },
             stats: () => stat("is-accent", "v", TOSS_V.toFixed(1), "m/s", "던지는 속도", `≈ 시속 ${Math.round(TOSS_V * 3.6)}km`) +
               stat("", "dist", "0.00", "m", "미끄러진 거리", `이론값 ≈ ${TOSS_SLIDE.toFixed(2)}m`) +
               stat("is-warn", "time", "0.0", "초", "멈출 때까지"),
-            tip: "바닥에 상자를 밀면 점점 느려지다 멈추죠? 바닥의 <strong>마찰</strong>이 브레이크 역할을 해요. 로봇이 짐을 놓쳤을 때 <strong>얼마나 미끄러질지</strong> 미리 계산해 안전 구역을 정해요.",
+            get tip() {
+              return physicsSubject === "car"
+                ? "고속 주행 차량이 급제동할 때 노면 <strong>마찰 계수(0.6)</strong>에 의해 정지하는 원리와 같아요. 물리 엔진이 <strong>1.6톤 차체의 관성과 마찰력</strong>을 실시간 계산해요."
+                : "바닥에 상자를 밀면 점점 느려지다 멈추죠? 바닥의 <strong>마찰</strong>이 브레이크 역할을 해요. 로봇이 짐을 놓쳤을 때 <strong>얼마나 미끄러질지</strong> 미리 계산해 안전 구역을 정해요.";
+            },
             cta: { idle: "실험 시작", running: "진행 중...", done: "↻ 다시 던지기" },
             btn: () => btnToss,
           },
           wire: {
-            title: "충돌 경계 보기", sub: "컴퓨터가 보는 '투명 상자'를 보여줘요",
+            title: "충돌 경계 보기",
+            get sub() { return physicsSubject === "car" ? "아우디 R8 차체와 단상의 투명 충돌 박스를 보여줘요" : "컴퓨터가 보는 '투명 상자'를 보여줘요"; },
             icon: ico('<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9" stroke-dasharray="2 2"/>'),
-            what: "<b>무엇을 하나요?</b> 화려한 3D 장면 뒤에 숨어 있는, 물체끼리 <b>부딪힘을 계산하는 상자 선</b>을 켜고 끌 수 있어요.",
-            steps: ["3D 모습", "투명 상자", "충돌 계산"],
-            visual: `<svg viewBox="0 0 240 84" aria-hidden="true">
-              <g class="xv-wire-cloud">${cloud}</g>
-              <rect class="xv-wire-box xv-acc" x="49" y="23" width="56" height="44" rx="2" fill="none" stroke-width="1.6"/>
-              <rect class="xv-wire-box xv-acc" x="137" y="27" width="50" height="40" rx="2" fill="none" stroke-width="1.6"/>
-              <line class="xv-wire-box xv-acc" x1="14" y1="70" x2="226" y2="70" stroke-width="1.6"/>
-              <text x="120" y="14" text-anchor="middle" class="xv-txt">점 50만 개 → 계산용 상자 3개</text>
-            </svg>`,
-            stats: () => stat("is-accent", "n", "3", "개", "충돌 상자", "바닥 1 + 팔레트 2") +
-              stat("", "pts", "50만", "개", "보이는 3D 점", "그리기 전용") +
-              stat("is-warn", "hz", "60", "회/초", "충돌 계산"),
-            tip: "게임 캐릭터가 벽을 뚫고 지나가지 않는 이유예요! 점 50만 개를 일일이 계산하긴 어려워서, 컴퓨터는 <strong>단순한 투명 상자</strong>로 부딪힘을 빠르게 계산해요.",
-            note: "지금 화면의 <b>파란·주황 선</b>이 컴퓨터가 실제로 계산하는 충돌 상자예요.",
+            get what() {
+              return physicsSubject === "car"
+                ? "<b>무엇을 하나요?</b> 50만 개 스플랫 뒤에 숨겨진, 아우디 R8의 <b>차체 OBB 충돌 상자</b>와 <b>단상 충돌 표면</b>을 시각화해요."
+                : "<b>무엇을 하나요?</b> 화려한 3D 장면 뒤에 숨어 있는, 물체끼리 <b>부딪힘을 계산하는 상자 선</b>을 켜고 끌 수 있어요.";
+            },
+            get steps() { return physicsSubject === "car" ? ["스플랫 렌더", "차체 OBB 상자", "단상 접촉 계산"] : ["3D 모습", "투명 상자", "충돌 계산"]; },
+            get visual() {
+              if (physicsSubject === "car") {
+                return `<svg viewBox="0 0 240 84" aria-hidden="true">${carWireVisual}</svg>`;
+              }
+              return `<svg viewBox="0 0 240 84" aria-hidden="true">
+                <g class="xv-wire-cloud">${cloud}</g>
+                <rect class="xv-wire-box xv-acc" x="49" y="23" width="56" height="44" rx="2" fill="none" stroke-width="1.6"/>
+                <rect class="xv-wire-box xv-acc" x="137" y="27" width="50" height="40" rx="2" fill="none" stroke-width="1.6"/>
+                <line class="xv-wire-box xv-acc" x1="14" y1="70" x2="226" y2="70" stroke-width="1.6"/>
+                <text x="120" y="14" text-anchor="middle" class="xv-txt">점 50만 개 → 계산용 상자 3개</text>
+              </svg>`;
+            },
+            stats: () => (physicsSubject === "car")
+              ? stat("is-accent", "n", "2", "개", "충돌 상자", "아우디 R8 + 단상") +
+                stat("", "pts", "50만", "개", "보이는 3D 점", "그리기 전용") +
+                stat("is-warn", "hz", "60", "회/초", "충돌 계산")
+              : stat("is-accent", "n", "3", "개", "충돌 상자", "바닥 1 + 팔레트 2") +
+                stat("", "pts", "50만", "개", "보이는 3D 점", "그리기 전용") +
+                stat("is-warn", "hz", "60", "회/초", "충돌 계산"),
+            get tip() {
+              return physicsSubject === "car"
+                ? "복잡한 자동차 3D 형상을 있는 그대로 충돌 계산하면 너무 무거워요. 컴퓨터는 <strong>정밀한 OBB(Oriented Bounding Box) 상자</strong>로 부딪힘을 초당 60회 실시간 처리해요."
+                : "게임 캐릭터가 벽을 뚫고 지나가지 않는 이유예요! 점 50만 개를 일일이 계산하긴 어려워서, 컴퓨터는 <strong>단순한 투명 상자</strong>로 부딪힘을 빠르게 계산해요.";
+            },
+            get note() {
+              return (physicsSubject === "car")
+                ? "지금 화면의 <b>파란 선</b>이 아우디 R8 차체와 단상의 OBB 충돌 상자예요."
+                : "지금 화면의 <b>파란·주황 선</b>이 컴퓨터가 실제로 계산하는 충돌 상자예요.";
+            },
             cta: { on: "충돌 경계 끄기", off: "충돌 경계 켜기" },
             btn: () => btnWire,
           },
           partition: {
-            title: "공간 분할", sub: "창고를 7개 구역으로 나눠 정리해요",
+            title: "공간 분할",
+            get sub() { return physicsSubject === "car" ? "아우디 R8을 6개 주요 부품 구역으로 나눠요" : "창고를 7개 구역으로 나눠 정리해요"; },
             icon: ico('<rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M12 3.5v17M3.5 12h17"/>'),
-            what: "<b>무엇을 하나요?</b> 선반 6칸과 바닥을 <b>색깔별 구역 상자</b>로 나눠, 물건이 어느 구역에 있는지 한눈에 보여줘요.",
-            steps: ["공간 스캔", "7구역 나눔", "위치 관리"],
-            visual: `<svg viewBox="0 0 240 84" aria-hidden="true">${zones}</svg>`,
-            stats: () => stat("is-accent", "z", "7", "개", "구역", "선반 6칸 + 바닥 1") +
-              stat("", "scope", "1/7", "", "찾을 때 살펴볼 범위", "해당 구역만 확인") +
-              stat("is-warn", "ov", "0", "곳", "구역끼리 겹침"),
-            tip: "큰 창고를 <strong>서랍장처럼 칸칸이</strong> 나누면 '왼쪽 2층'처럼 금방 찾을 수 있죠. 로봇도 구역을 나눠 두면 전체를 뒤지지 않고 <strong>해당 칸만</strong> 확인해요.",
-            note: "화면 속 <b>색깔 상자 7개</b>가 각각 하나의 구역이에요. 색깔이 위 그림과 같아요.",
+            get what() {
+              return physicsSubject === "car"
+                ? "<b>무엇을 하나요?</b> 전면 범퍼, 캐빈, 후면 V10 엔진룸, 좌/우 휠, 단상을 <b>색깔별 구역 상자</b>로 분할하여 인덱싱해요."
+                : "<b>무엇을 하나요?</b> 선반 6칸과 바닥을 <b>색깔별 구역 상자</b>로 나눠, 물건이 어느 구역에 있는지 한눈에 보여줘요.";
+            },
+            get steps() { return physicsSubject === "car" ? ["스튜디오 스캔", "차체 6구역 분할", "파트별 관리"] : ["공간 스캔", "7구역 나눔", "위치 관리"]; },
+            get visual() { return `<svg viewBox="0 0 240 84" aria-hidden="true">${physicsSubject === "car" ? carZones : zones}</svg>`; },
+            stats: () => (physicsSubject === "car")
+              ? stat("is-accent", "z", "6", "개", "구역", "차체 5부위 + 단상 1") +
+                stat("", "scope", "1/6", "", "분할 정밀도", "주요 파트별 분할") +
+                stat("is-warn", "ov", "0", "곳", "구역끼리 겹침")
+              : stat("is-accent", "z", "7", "개", "구역", "선반 6칸 + 바닥 1") +
+                stat("", "scope", "1/7", "", "찾을 때 살펴볼 범위", "해당 구역만 확인") +
+                stat("is-warn", "ov", "0", "곳", "구역끼리 겹침"),
+            get tip() {
+              return physicsSubject === "car"
+                ? "차량을 부품별 <strong>공간 바운딩 박스</strong>로 분할하면 자율주행 센서나 로봇 암이 '엔진룸'이나 '앞 범퍼' 위치를 즉시 특정할 수 있어요."
+                : "큰 창고를 <strong>서랍장처럼 칸칸이</strong> 나누면 '왼쪽 2층'처럼 금방 찾을 수 있죠. 로봇도 구역을 나눠 두면 전체를 뒤지지 않고 <strong>해당 칸만</strong> 확인해요.";
+            },
+            get note() {
+              return (physicsSubject === "car")
+                ? "화면 속 <b>색깔 상자 6개</b>가 차량 주요 파트(전면부, 캐빈, 후면 엔진룸, 휠) 및 단상 구역이에요."
+                : "화면 속 <b>색깔 상자 7개</b>가 각각 하나의 구역이에요. 색깔이 위 그림과 같아요.";
+            },
             cta: { on: "공간 분할 끄기", off: "공간 분할 켜기" },
             btn: () => btnPartition,
           },
@@ -4588,7 +4668,12 @@
           focus("toss");
           setPhase("running", "running", "진행 중");
           setStep(1);
-          toss = { steps: 0, x0L: initL1.x, x0R: initR1.x, calm: 0, hit: false, minGap: Infinity };
+          if (physicsSubject === "car" && carBody) {
+            const tc = carBody.translation();
+            toss = { steps: 0, x0: tc.x, z0: tc.z, calm: 0, hit: false, minGap: 0, isCar: true };
+          } else {
+            toss = { steps: 0, x0L: initL1.x, x0R: initR1.x, calm: 0, hit: false, minGap: Infinity, isCar: false };
+          }
         }
 
         function finishToss(dist, secs, gap) {
@@ -4599,14 +4684,39 @@
           set("dist", dist.toFixed(2));
           set("time", secs.toFixed(1));
           const note = card.querySelector(".exp-card__note");
-          note.innerHTML = t && t.hit
-            ? "<b>쾅!</b> 두 팔레트가 서로 부딪혔어요. 충돌 후 튕겨 나가는 힘까지 계산했어요."
-            : `마찰이 브레이크가 되어 <b>${secs.toFixed(1)}초 만에 ${dist.toFixed(2)}m</b> 미끄러지고 멈췄어요. 서로 부딪히기 전에 멈췄네요 (남은 간격 ${Math.max(0, gap).toFixed(2)}m).`;
+          if (t && t.isCar) {
+            note.innerHTML = `단상 표면 마찰(0.6)이 작용하여 <b>${secs.toFixed(1)}초 만에 ${dist.toFixed(2)}m</b> 미끄러진 후 안정적으로 정지했습니다.`;
+          } else {
+            note.innerHTML = t && t.hit
+              ? "<b>쾅!</b> 두 팔레트가 서로 부딪혔어요. 충돌 후 튕겨 나가는 힘까지 계산했어요."
+              : `마찰이 브레이크가 되어 <b>${secs.toFixed(1)}초 만에 ${dist.toFixed(2)}m</b> 미끄러지고 멈췄어요. 서로 부딪히기 전에 멈췄네요 (남은 간격 ${Math.max(0, gap).toFixed(2)}m).`;
+          }
           autoHide();
         }
 
         function tick() {
-          if (!toss || cur !== "toss" || !bodyL1 || !bodyR1) return;
+          if (!toss || cur !== "toss") return;
+          if (toss.isCar) {
+            if (!carBody) return;
+            toss.steps++;
+            const el = toss.steps * physicsWorld.timestep;
+            const tc = carBody.translation();
+            const vc = carBody.linvel();
+            const dist = Math.hypot(tc.x - toss.x0, tc.z - toss.z0);
+            const sp = Math.hypot(vc.x, vc.y, vc.z);
+            set("dist", dist.toFixed(2));
+            set("time", el.toFixed(1));
+            if (el > 0.15) setStep(2);
+            if (el > 0.35 && sp < 0.05) {
+              if (!toss.calm) toss.calm = el;
+              if (el - toss.calm > 0.2) finishToss(dist, toss.calm, 0);
+            } else {
+              toss.calm = 0;
+            }
+            if (toss && el > 6) finishToss(dist, el, 0);
+            return;
+          }
+          if (!bodyL1 || !bodyR1) return;
           // Simulated time (one physics step per frame), so the result matches the physics, not the frame rate.
           toss.steps++;
           const el = toss.steps * physicsWorld.timestep;
@@ -4733,29 +4843,55 @@
       btnToss.addEventListener("click", () => {
         clearTimeout(dropWakeTimer);
         dropCard.close();
-        showToast("[TOSS TEST] 2.5m/s 투척 — 바닥 마찰로 미끄러지는 거리 측정");
-        telemetryStatus.textContent = "2.5M/S TOSS COLLISION RUNNING";
+        const isCar = physicsSubject === "car";
+        showToast(isCar ? "[TOSS TEST] 2.5m/s 투척 — 단상 위 제동 마찰 거리 측정" : "[TOSS TEST] 2.5m/s 투척 — 바닥 마찰로 미끄러지는 거리 측정");
+        telemetryStatus.textContent = isCar ? "2.5M/S CAR SLIDE BRAKING RUNNING" : "2.5M/S TOSS COLLISION RUNNING";
         telemetryStatus.style.color = "#ea580c";
         collisionCount++;
         telemetryCollisions.textContent = String(collisionCount);
-        createRigidBodies(0.0, { x: TOSS_V, y: 0.5, z: 0.0 }, { x: -TOSS_V, y: 0.5, z: 0.0 });
+        if (isCar) {
+          createRigidBodies(0.0, { x: 2.2, y: 0.12, z: 0.0 });
+        } else {
+          createRigidBodies(0.0, { x: TOSS_V, y: 0.5, z: 0.0 }, { x: -TOSS_V, y: 0.5, z: 0.0 });
+        }
         expCard.onToss();
       });
 
       btnWire.addEventListener("click", () => {
-        floorWire.visible = !floorWire.visible;
-        wireL1.visible = floorWire.visible;
-        wireR1.visible = floorWire.visible;
-        btnWire.setAttribute("aria-pressed", String(floorWire.visible));
-        showToast(floorWire.visible ? "[WIREFRAME] 와이어프레임 표시 활성화" : "[WIREFRAME] 와이어프레임 숨김");
-        expCard.onToggle("wire", floorWire.visible);
+        const isCar = physicsSubject === "car";
+        const currentVis = isCar ? (carShowcase?.getWireVisible?.() ?? false) : floorWire.visible;
+        const nextVis = !currentVis;
+        btnWire.setAttribute("aria-pressed", String(nextVis));
+        if (isCar) {
+          carShowcase?.setWireVisible?.(nextVis);
+          floorWire.visible = false;
+          wireL1.visible = false;
+          wireR1.visible = false;
+        } else {
+          floorWire.visible = nextVis;
+          wireL1.visible = nextVis;
+          wireR1.visible = nextVis;
+          carShowcase?.setWireVisible?.(false);
+        }
+        showToast(nextVis ? "[WIREFRAME] 와이어프레임 표시 활성화" : "[WIREFRAME] 와이어프레임 숨김");
+        expCard.onToggle("wire", nextVis);
       });
 
       btnPartition.addEventListener("click", () => {
-        partitionGroup.visible = !partitionGroup.visible;
-        btnPartition.setAttribute("aria-pressed", String(partitionGroup.visible));
-        showToast(partitionGroup.visible ? "[PARTITION] 7부품 공간 분할(Spatial Partitioning) 표시" : "[PARTITION] 7부품 공간 분할 숨김");
-        expCard.onToggle("partition", partitionGroup.visible);
+        const isCar = physicsSubject === "car";
+        const currentVis = isCar ? (carShowcase?.getPartitionVisible?.() ?? false) : partitionGroup.visible;
+        const nextVis = !currentVis;
+        btnPartition.setAttribute("aria-pressed", String(nextVis));
+        if (isCar) {
+          carShowcase?.setPartitionVisible?.(nextVis);
+          partitionGroup.visible = false;
+        } else {
+          partitionGroup.visible = nextVis;
+          carShowcase?.setPartitionVisible?.(false);
+        }
+        showToast(nextVis ? (isCar ? "[PARTITION] 차량 6부위 공간 분할 표시" : "[PARTITION] 7부품 공간 분할(Spatial Partitioning) 표시")
+                          : (isCar ? "[PARTITION] 차량 공간 분할 숨김" : "[PARTITION] 7부품 공간 분할 숨김"));
+        expCard.onToggle("partition", nextVis);
       });
 
       btnPicking.addEventListener("click", () => {
@@ -5103,8 +5239,8 @@
         },
         {
           key: "car", name: "자동차 쇼룸 스튜디오", short: "자동차 쇼룸",
-          desc: "아우디 R8을 단상 위 1m에서 떨어뜨려 보고, AI가 만든 3D 쇼룸을 자유롭게 둘러보세요. (드래그로 회전 · 휠로 확대)",
-          tags: ["500K 스플랫", "Audi R8", "1m 낙하 실험"], lab: "car",
+          desc: "아우디 R8 1m 낙하, 2.5m/s 투척 제동, 차체 충돌 경계 및 6부위 공간 분할을 직접 조작해보세요.",
+          tags: ["500K 스플랫", "Audi R8", "물리 실험 가능"], lab: "car",
           thumb: "assets/p3/marble/thumbs/car_studio.webp",
           url: "assets/p3/marble/car_studio_v2_clean_500k.spz", asset: "Marble car_studio_v2_clean_500k.spz",
           scale: 2.2508733, posY: 1.6300833, physics: false,
@@ -5141,18 +5277,18 @@
           : t.desc;
         if (themeEls.tags) themeEls.tags.innerHTML = (isAI ? ["World Labs API", "텍스트 → 3D"] : t.tags)
           .map((x) => `<span>${x}</span>`).join("");
+        const carLab = !isAI && (t.lab === "car" || t.key === "car");
         if (themeEls.badge) {
-          const phys = isAI || t.physics || t.lab === "car";
-          themeEls.badge.textContent = isAI ? "AI 생성" : (t.lab === "car" ? "낙하 실험 가능" : (phys ? "물리 실험 가능" : "감상 모드"));
+          const phys = isAI || t.physics || carLab;
+          themeEls.badge.textContent = isAI ? "AI 생성" : (carLab ? "차량 물리 실험" : (phys ? "물리 실험 가능" : "감상 모드"));
           themeEls.badge.classList.toggle("is-view", !phys);
         }
         if (themeEls.idx) themeEls.idx.textContent = isAI ? "AI" : String(themeIdx + 1);
         if (themeEls.total) themeEls.total.textContent = String(THEMES.length);
         if (themeEls.dots) themeEls.dots.innerHTML = THEMES.map((_, i) => `<i class="${i === themeIdx ? "is-on" : ""}"></i>`).join("");
         if (themeEls.pillName) themeEls.pillName.textContent = isAI ? "AI 월드" : t.short;
-        const carLab = !isAI && t.lab === "car";
         LOCKED_IN_VIEW.forEach((b) => {
-          const locked = !isAI && !t.physics && !(carLab && b === btnDrop); // car showroom: drop test works on the car
+          const locked = !isAI && !t.physics && !carLab;
           b.classList.toggle("is-locked", locked);
           if (locked) b.dataset.lockTip = "1"; else delete b.dataset.lockTip;
         });
@@ -5184,6 +5320,99 @@
         const lights = [key, cyan, blue];
         lights.forEach((l) => { l.visible = false; scene.add(l); });
         let loading = null;
+
+        // 1. Car Wireframe (OBB around Audi R8)
+        const cwGeom = new THREE.EdgesGeometry(new THREE.BoxGeometry(CAR_HALF.x * 2, CAR_HALF.y * 2, CAR_HALF.z * 2));
+        const carWire = new THREE.LineSegments(
+          cwGeom,
+          new THREE.LineBasicMaterial({ color: 0x38bdf8, linewidth: 2 })
+        );
+        carWire.visible = false;
+        group.add(carWire);
+
+        // 2. Pedestal Table Wireframe
+        const twGeom = new THREE.EdgesGeometry(new THREE.BoxGeometry(1.89 * 2, 0.025 * 2, 1.14 * 2));
+        const carTableWire = new THREE.LineSegments(
+          twGeom,
+          new THREE.LineBasicMaterial({ color: 0x38bdf8, linewidth: 1.5, transparent: true, opacity: 0.75 })
+        );
+        carTableWire.position.set(0.02, CAR_TABLE_TOP - 0.025, -1.810);
+        carTableWire.visible = false;
+        scene.add(carTableWire);
+
+        // 3. Car 6-Part Spatial Partitioning
+        const carPartitionGroup = new THREE.Group();
+        carPartitionGroup.visible = false;
+
+        const carParts = [
+          { name: "전면부/범퍼", color: "#00f0ff", min: [-0.31, -0.19, 0.22], max: [0.31, 0.10, 0.675] },
+          { name: "캐빈/콕핏", color: "#10b981", min: [-0.30, -0.05, -0.22], max: [0.30, 0.19, 0.22] },
+          { name: "후면 V10 엔진", color: "#f43f5e", min: [-0.31, -0.19, -0.675], max: [0.31, 0.12, -0.22] },
+          { name: "우측 휠 어셈블리", color: "#eab308", min: [-0.33, -0.19, -0.55], max: [-0.23, 0.0, 0.55] },
+          { name: "좌측 휠 어셈블리", color: "#a855f7", min: [0.23, -0.19, -0.55], max: [0.33, 0.0, 0.55] }
+        ];
+        carParts.forEach((part) => {
+          const sx = part.max[0] - part.min[0];
+          const sy = part.max[1] - part.min[1];
+          const sz = part.max[2] - part.min[2];
+          const geom = new THREE.BoxGeometry(sx, sy, sz);
+          const edges = new THREE.EdgesGeometry(geom);
+          const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({
+            color: new THREE.Color(part.color),
+            transparent: true,
+            opacity: 0.9,
+            linewidth: 2
+          }));
+          line.position.set(
+            (part.min[0] + part.max[0]) / 2,
+            (part.min[1] + part.max[1]) / 2,
+            (part.min[2] + part.max[2]) / 2
+          );
+          const fillMesh = new THREE.Mesh(geom, new THREE.MeshBasicMaterial({
+            color: new THREE.Color(part.color),
+            transparent: true,
+            opacity: 0.18,
+            side: THREE.DoubleSide
+          }));
+          line.add(fillMesh);
+          carPartitionGroup.add(line);
+        });
+        group.add(carPartitionGroup);
+
+        // Pedestal table partition box in world coordinates
+        const standGeom = new THREE.BoxGeometry(1.89 * 2, 0.05, 1.14 * 2);
+        const standEdges = new THREE.EdgesGeometry(standGeom);
+        const standLine = new THREE.LineSegments(standEdges, new THREE.LineBasicMaterial({
+          color: new THREE.Color("#fb923c"),
+          transparent: true,
+          opacity: 0.9,
+          linewidth: 2
+        }));
+        standLine.position.set(0.02, CAR_TABLE_TOP - 0.025, -1.810);
+        const standFill = new THREE.Mesh(standGeom, new THREE.MeshBasicMaterial({
+          color: new THREE.Color("#fb923c"),
+          transparent: true,
+          opacity: 0.15,
+          side: THREE.DoubleSide
+        }));
+        standLine.add(standFill);
+        standLine.visible = false;
+        scene.add(standLine);
+
+        function setWireVisible(vis) {
+          carWire.visible = vis;
+          carTableWire.visible = vis;
+        }
+        function getWireVisible() {
+          return carWire.visible;
+        }
+        function setPartitionVisible(vis) {
+          carPartitionGroup.visible = vis;
+          standLine.visible = vis;
+        }
+        function getPartitionVisible() {
+          return carPartitionGroup.visible;
+        }
 
         function materials(fbx) {
           const M = {
@@ -5248,9 +5477,13 @@
         function show(on) {
           group.visible = on;
           lights.forEach((l) => { l.visible = on; });
+          if (!on) {
+            setWireVisible(false);
+            setPartitionVisible(false);
+          }
           if (on) load();
         }
-        return { show, load, group };
+        return { show, load, group, setWireVisible, getWireVisible, setPartitionVisible, getPartitionVisible };
       })();
 
       function loadTheme(i, dir = 0) {
@@ -5266,6 +5499,7 @@
           expCard.abort();
           pickingGroup.clear();
           partitionGroup.visible = false;
+          carShowcase.setPartitionVisible(false);
           btnPartition.setAttribute("aria-pressed", "false");
 
           themeIdx = idx;
@@ -5302,8 +5536,13 @@
           meshL1.visible = meshR1.visible = t.physics;
           physicsSubject = t.lab === "car" ? "car" : "pallet";
           carShowcase.show(t.key === "car");
-          floorWire.visible = t.physics && wireOn();
+          const isCar = t.lab === "car" || t.key === "car";
+          const wOn = wireOn();
+          floorWire.visible = !isCar && t.physics && wOn;
           floorWire.position.set(0.0, -0.025, 0.0);
+          wireL1.visible = !isCar && t.physics && wOn;
+          wireR1.visible = !isCar && t.physics && wOn;
+          if (isCar) carShowcase.setWireVisible(wOn);
           createRigidBodies(0);
           camera.position.set(...t.cam);
           controls.target.set(...t.target);
@@ -5364,6 +5603,8 @@
       document.getElementById("labDock")?.addEventListener("click", (e) => {
         const btn = e.target.closest?.(".lab-dock__btn");
         if (!btn || !btn.classList.contains("is-locked")) return;
+        const curT = THEMES[themeIdx];
+        if (curT?.lab === "car" || curT?.key === "car") return;
         e.stopImmediatePropagation();
         e.preventDefault();
         showToast("[THEME] 물리 실험은 물류 창고에서 진행돼요 — 이동합니다...");
