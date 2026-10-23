@@ -54,56 +54,39 @@
     switch (actionName) {
       case "trigger_physics": {
         const mode = params.action || "drop";
-        const labSec = document.querySelector("#spatialLabSection");
-        if (labSec) labSec.scrollIntoView({ behavior: "smooth" });
-
-        setTimeout(() => {
-          if (mode === "drop") {
-            const btn = document.getElementById("btnDropTest");
-            if (btn) btn.click();
-            desc = "1m 상자 낙하 시뮬레이션 실행";
-          } else if (mode === "toss") {
-            const btn = document.getElementById("btnTossTest");
-            if (btn) btn.click();
-            desc = "2.5m/s 상자 투척 시뮬레이션 실행";
-          } else if (mode === "reset") {
-            const btn = document.getElementById("btnResetPhysics");
-            if (btn) btn.click();
-            desc = "물리 시뮬레이션 및 상자 위치 초기화";
-          }
-        }, 300);
+        if (mode === "drop") {
+          const btn = document.getElementById("btnDropTest");
+          if (btn) btn.click();
+          desc = "1m 상자 낙하 시뮬레이션 실행";
+        } else if (mode === "toss") {
+          const btn = document.getElementById("btnTossTest");
+          if (btn) btn.click();
+          desc = "2.5m/s 상자 투척 시뮬레이션 실행";
+        } else if (mode === "reset") {
+          const btn = document.getElementById("btnResetPhysics");
+          if (btn) btn.click();
+          desc = "물리 시뮬레이션 및 상자 위치 초기화";
+        }
         break;
       }
 
       case "toggle_wireframe": {
-        const labSec = document.querySelector("#spatialLabSection");
-        if (labSec) labSec.scrollIntoView({ behavior: "smooth" });
-        setTimeout(() => {
-          const btn = document.getElementById("btnToggleWire");
-          if (btn) btn.click();
-        }, 300);
+        const btn = document.getElementById("btnToggleWire");
+        if (btn) btn.click();
         desc = "와이어프레임 렌더링 토글";
         break;
       }
 
       case "toggle_partition": {
-        const labSec = document.querySelector("#spatialLabSection");
-        if (labSec) labSec.scrollIntoView({ behavior: "smooth" });
-        setTimeout(() => {
-          const btn = document.getElementById("btnTogglePartition");
-          if (btn) btn.click();
-        }, 300);
+        const btn = document.getElementById("btnTogglePartition");
+        if (btn) btn.click();
         desc = "7부품 공간 분할(OBB) 바운딩 박스 토글";
         break;
       }
 
       case "run_picking_benchmark": {
-        const labSec = document.querySelector("#spatialLabSection");
-        if (labSec) labSec.scrollIntoView({ behavior: "smooth" });
-        setTimeout(() => {
-          const btn = document.getElementById("btnRunPicking");
-          if (btn) btn.click();
-        }, 300);
+        const btn = document.getElementById("btnRunPicking");
+        if (btn) btn.click();
         desc = "60점 레이캐스팅 정확도 평가 가동";
         break;
       }
@@ -157,11 +140,9 @@
 
         const input = document.getElementById("inputWorldPrompt");
         const btn = document.getElementById("btnGenerateWorld");
-        const labSec = document.querySelector("#spatialLabSection");
-        if (labSec) labSec.scrollIntoView({ behavior: "smooth" });
         if (input) input.value = prompt;
         if (btn) {
-          setTimeout(() => btn.click(), 400);
+          setTimeout(() => btn.click(), 50);
         }
         desc = `AI 3D 공간 생성 가동: "${prompt.slice(0, 30)}..."`;
         break;
@@ -221,8 +202,6 @@
       case "switch_theme": {
         const want = params.theme || "next";
         const lab = window.spatialLab;
-        const labSec = document.querySelector("#spatialLabSection");
-        if (labSec) labSec.scrollIntoView({ behavior: "smooth" });
         if (lab) {
           if (want === "warehouse") lab.loadTheme(0, -1);
           else if (want === "car") lab.loadTheme(1, 1);
@@ -1040,9 +1019,7 @@
         }
         let desc;
         if (q.action === "focus_world_prompt") {
-          const sec = document.querySelector("#spatialLabSection");
-          if (sec) sec.scrollIntoView({ behavior: "smooth" });
-          setTimeout(() => document.getElementById("inputWorldPrompt")?.focus({ preventScroll: true }), 600);
+          document.getElementById("inputWorldPrompt")?.focus({ preventScroll: true });
           desc = "AI 3D 공간 만들기 입력창 열기";
           updateActionBadge(desc);
         } else {
