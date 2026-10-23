@@ -29,11 +29,11 @@
 
   const CHAPTERS = [
     { label: "질문", est: 6000 },
-    { label: "비유", est: 14000 },
-    { label: "AI의 상상", est: 12000 },
+    { label: "비유", est: 16000 },
+    { label: "AI의 상상", est: 16000 },
     { label: "현실", est: 8000 },
-    { label: "비교", est: 9000 },
-    { label: "정리", est: 13000 }
+    { label: "비교", est: 10000 },
+    { label: "정리", est: 15000 }
   ];
 
   // ------------------------------------------------------------------ state
@@ -80,8 +80,32 @@
     }));
   }
 
-  // ------------------------------------------------------------------ narration (browser TTS)
+  // ------------------------------------------------------------------ narration (Recorded Studio Audio with browser TTS fallback)
+  const AUDIO_MAP = {
+    "0": "davies-assets/audio/tour/tour_01.wav",
+    "1a": "davies-assets/audio/tour/tour_02.wav",
+    "1b": "davies-assets/audio/tour/tour_03.wav",
+    "2a": "davies-assets/audio/tour/tour_04.wav",
+    "2b": "davies-assets/audio/tour/tour_05.wav",
+    "3": "davies-assets/audio/tour/tour_06.wav",
+    "4": "davies-assets/audio/tour/tour_07.wav",
+    "5": "davies-assets/audio/tour/tour_08.wav"
+  };
+
+  let currentAudio = null;
   let voice = null;
+
+  function preloadTourAudio() {
+    try {
+      Object.values(AUDIO_MAP).forEach((src) => {
+        const a = new Audio();
+        a.preload = "auto";
+        a.src = src;
+      });
+    } catch (_) {}
+  }
+  preloadTourAudio();
+
   function pickVoice() {
     const synth = window.speechSynthesis;
     if (!synth) return null;
@@ -96,10 +120,45 @@
     voice = pickVoice();
     window.speechSynthesis.addEventListener?.("voiceschanged", () => { voice = pickVoice(); });
   }
+
   function stopSpeech() {
+    if (currentAudio) {
+      try {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+      } catch (_) {}
+      currentAudio = null;
+    }
     try { window.speechSynthesis?.cancel(); } catch (_) { /* ignore */ }
   }
-  function speak(text) {
+
+  function playRecordedAudio(src) {
+    if (muted || !src) return null;
+    stopSpeech();
+    return new Promise((resolve) => {
+      const audio = new Audio(src);
+      currentAudio = audio;
+      let finished = false;
+      const cleanup = (val) => {
+        if (!finished) {
+          finished = true;
+          if (currentAudio === audio) currentAudio = null;
+          resolve(val);
+        }
+      };
+      audio.onended = () => cleanup(true);
+      audio.onerror = (e) => {
+        console.warn("[WorldModelTour] Audio load failed, fallback to TTS:", e);
+        cleanup(false);
+      };
+      audio.play().catch((err) => {
+        console.warn("[WorldModelTour] Audio play failed, fallback to TTS:", err);
+        cleanup(false);
+      });
+    });
+  }
+
+  function speakFallback(text) {
     const synth = window.speechSynthesis;
     if (muted || !synth || typeof SpeechSynthesisUtterance === "undefined") return null;
     stopSpeech();
@@ -120,15 +179,29 @@
       next();
     });
   }
-  function say(text, tk, minMs = 0) { return quiet(sayInner(text, tk, minMs)); }
-  async function sayInner(text, tk, minMs) {
+
+  function say(text, tk, minMs = 0, audioKey = null) { return quiet(sayInner(text, tk, minMs, audioKey)); }
+  async function sayInner(text, tk, minMs, audioKey) {
     setSub(text);
-    const est = Math.max(minMs, text.length * 85 + 700);
-    const spoken = speak(text);
-    if (spoken) {
-      await Promise.all([wait(minMs, tk), until(Promise.race([spoken, new Promise((r) => setTimeout(r, est * 2.2))]), tk)]);
+    const audioSrc = audioKey && AUDIO_MAP[audioKey] ? AUDIO_MAP[audioKey] : null;
+    let played = false;
+    if (audioSrc && !muted) {
+      const audioP = playRecordedAudio(audioSrc);
+      if (audioP) {
+        const res = await until(audioP, tk);
+        if (res === true) played = true;
+      }
+    }
+    if (!played) {
+      const est = Math.max(minMs, text.length * 85 + 700);
+      const spoken = speakFallback(text);
+      if (spoken) {
+        await Promise.all([wait(minMs, tk), until(Promise.race([spoken, new Promise((r) => setTimeout(r, est * 2.2))]), tk)]);
+      } else {
+        await wait(est, tk);
+      }
     } else {
-      await wait(est, tk);
+      if (minMs > 0) await wait(minMs, tk);
     }
   }
 
@@ -299,7 +372,7 @@
       <p class="wmt-lead">아직 일어나지 않은 일을, AI는 어떻게 미리 알 수 있을까요?</p>`, "wmt-card--q");
     const out = el.card.querySelector("#wmtType");
     const q = "AI는 어떻게 미래를 알 수 있을까요?";
-    const talk = say("AI는 어떻게, 아직 일어나지 않은 미래를 알 수 있을까요?", tk, 4200);
+    const talk = say("AI는 어떻게, 아직 일어나지 않은 미래를 알 수 있을까요?", tk, 4200, "0");
     for (let i = 1; i <= q.length; i++) {
       out.textContent = q.slice(0, i);
       await wait(55, tk);
@@ -318,9 +391,9 @@
       ${GLASS_SVG}
       <ol class="wmt-steps"><li>① 손을 놓으면</li><li>② 아래로 떨어지고</li><li>③ 바닥에 부딪혀 깨진다</li></ol>
       <p class="wmt-reveal">이 <b>‘머릿속 물리 엔진’</b>을 AI에게 심어준 것 = <b class="wmt-hl">월드 모델</b></p>`, "wmt-card--glass");
-    await say("손에 든 유리잔을 놓으면 깨진다는 것, 우리는 직접 깨뜨려 보지 않아도 압니다.", tk, 5200);
+    await say("손에 든 유리잔을 놓으면 깨진다는 것, 우리는 직접 깨뜨려 보지 않아도 압니다.", tk, 5200, "1a");
     el.card.classList.add("is-reveal");
-    await say("머릿속에 세상이 돌아가는 규칙이 있기 때문이죠. 월드 모델은 바로 이 머릿속 물리 엔진을 AI에게 심어준 것입니다.", tk, 6500);
+    await say("머릿속에 세상이 돌아가는 규칙이 있기 때문이죠. 월드 모델은 바로 이 머릿속 물리 엔진을 AI에게 심어준 것입니다.", tk, 6500, "1b");
     await wait(400, tk);
   };
 
@@ -348,14 +421,14 @@
     predicted = lab.prediction;
     measured = null;
     setTag("ai", "AI의 상상", "아직 아무것도 떨어뜨리지 않았어요");
-    const talk = say("직접 볼까요? 먼저 AI가 상상합니다. 1미터 위에서 상자를 놓으면, 언제, 얼마나 빠르게 떨어질까?", tk, 4500);
+    const talk = say("직접 볼까요? 먼저 AI가 상상합니다. 1미터 위에서 상자를 놓으면, 언제, 얼마나 빠르게 떨어질까?", tk, 4500, "2a");
     await wait(1600, tk);
     setTag("ai", "AI의 상상 · 슬로모션 ×3", "물리 법칙으로 미래를 계산하는 중…");
     const res = await until(lab.ghostDrop({ slow: 3 }), tk);
     if (res) predicted = res;
     await talk;
     setTag("ai", "AI의 예측", `${predicted.t.toFixed(2)}초 뒤 착지 · 초속 ${predicted.v.toFixed(1)} m`);
-    await say(`AI의 예측: ${predicted.t.toFixed(2)}초 뒤 바닥에 닿고, 속도는 초속 ${predicted.v.toFixed(1)}미터.`, tk, 3000);
+    await say("AI의 예측: 0.45초 뒤 바닥에 닿고, 속도는 초속 4.4미터.", tk, 3000, "2b");
   };
 
   // 4 — Reality (real Rapier drop)
@@ -364,7 +437,7 @@
     if (mode === "full" && !(await enterLab(tk))) return jump(5);
     predicted = predicted || lab.prediction;
     setTag("real", "현실 · 실제 물리 엔진", "AI의 상상(하늘색 윤곽)과 비교해 보세요");
-    const talk = say("이제 현실에서 진짜로 떨어뜨려 봅니다.", tk, 2200);
+    const talk = say("이제 현실에서 진짜로 떨어뜨려 봅니다.", tk, 2200, "3");
     await wait(900, tk);
     measured = await until(lab.realDrop(), tk);
     await talk;
@@ -410,7 +483,7 @@
       if (k < 1 && accEl.isConnected) requestAnimationFrame(count);
     };
     requestAnimationFrame(count);
-    await say("결과를 비교해 볼까요? AI의 상상과 현실이 거의 똑같습니다. 직접 부딪혀 보지 않고도, 결과를 미리 알 수 있는 거죠.", tk, 6500);
+    await say("결과를 비교해 볼까요? AI의 상상과 현실이 거의 똑같습니다. 직접 부딪혀 보지 않고도, 결과를 미리 알 수 있는 거죠.", tk, 6500, "4");
   };
 
   // 6 — Summary
@@ -431,7 +504,7 @@
         <button type="button" class="wmt-act wmt-act--primary" data-act="try">직접 실험해 보기${svg("arrow")}</button>
       </div>
       <p class="wmt-hint">더 궁금하면 오른쪽 아래 <b>NOVA</b>에게 “월드 모델이 뭐야?”라고 물어보세요</p>`, "wmt-card--sum");
-    await say("정리하면, 월드 모델은 AI가 현실 세계의 물리 법칙과 인과관계를 학습해, 행동하기 전에 머릿속으로 미래를 미리 그려보는 내부 시뮬레이션 엔진입니다. 이제 직접 실험해 보세요!", tk, 9000);
+    await say("정리하면, 월드 모델은 AI가 현실 세계의 물리 법칙과 인과관계를 학습해, 행동하기 전에 머릿속으로 미래를 미리 그려보는 내부 시뮬레이션 엔진입니다. 이제 직접 실험해 보세요!", tk, 9000, "5");
     chapterElapsed = CHAPTERS[5].est;
     await wait(kioskRun ? 10000 : 45000, tk);
     close();
@@ -504,6 +577,12 @@
   }
   function togglePause() {
     paused = !paused;
+    if (currentAudio) {
+      try {
+        if (paused) currentAudio.pause();
+        else if (!muted) currentAudio.play().catch(() => {});
+      } catch (_) {}
+    }
     try { paused ? window.speechSynthesis?.pause() : window.speechSynthesis?.resume(); } catch (_) { /* ignore */ }
     syncPause();
   }
