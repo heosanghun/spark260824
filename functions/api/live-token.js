@@ -4,7 +4,8 @@
 // Docs: https://ai.google.dev/gemini-api/docs/live-api/ephemeral-tokens
 
 const MODEL = "models/gemini-3.8-live";
-const TOKEN_URL = "https://generativelanguage.googleapis.com/v1beta/auth_tokens";
+const TOKEN_URL =
+  "https://generativelanguage.googleapis.com/v1beta/auth_tokens";
 const ALLOWED_ORIGINS = new Set([
   "https://simsreality.app",
   "https://www.simsreality.app",
@@ -18,8 +19,11 @@ function isAllowedOrigin(origin) {
   try {
     const u = new URL(origin);
     // Cloudflare preview deployments and local development
-    return u.hostname.endsWith(".world-labs-260907.pages.dev") ||
-      u.hostname === "localhost" || u.hostname === "127.0.0.1";
+    return (
+      u.hostname.endsWith(".world-labs-260907.pages.dev") ||
+      u.hostname === "localhost" ||
+      u.hostname === "127.0.0.1"
+    );
   } catch {
     return false;
   }
@@ -31,14 +35,17 @@ const json = (body, status, origin) =>
     headers: {
       "Content-Type": "application/json; charset=utf-8",
       "Cache-Control": "no-store",
-      ...(origin ? { "Access-Control-Allow-Origin": origin, Vary: "Origin" } : {}),
+      ...(origin
+        ? { "Access-Control-Allow-Origin": origin, Vary: "Origin" }
+        : {}),
     },
   });
 
 export async function onRequestPost({ request, env }) {
   const origin = request.headers.get("Origin") || "";
   if (!isAllowedOrigin(origin)) return json({ error: "forbidden_origin" }, 403);
-  if (!env.GEMINI_API_KEY) return json({ error: "not_configured" }, 503, origin);
+  if (!env.GEMINI_API_KEY)
+    return json({ error: "not_configured" }, 503, origin);
 
   const now = Date.now();
   const body = {
@@ -55,7 +62,10 @@ export async function onRequestPost({ request, env }) {
   try {
     resp = await fetch(TOKEN_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": env.GEMINI_API_KEY,
+      },
       body: JSON.stringify(body),
     });
   } catch (err) {
@@ -70,7 +80,11 @@ export async function onRequestPost({ request, env }) {
 
   const data = await resp.json();
   if (!data.name) return json({ error: "no_token" }, 502, origin);
-  return json({ token: data.name, model: MODEL, expireTime: body.expireTime }, 200, origin);
+  return json(
+    { token: data.name, model: MODEL, expireTime: body.expireTime },
+    200,
+    origin,
+  );
 }
 
 export async function onRequestOptions({ request }) {
