@@ -44,8 +44,8 @@ const json = (body, status, origin) =>
 export async function onRequestPost({ request, env }) {
   const origin = request.headers.get("Origin") || "";
   if (!isAllowedOrigin(origin)) return json({ error: "forbidden_origin" }, 403);
-  if (!env.GEMINI_API_KEY)
-    return json({ error: "not_configured" }, 503, origin);
+  const apiKey = env.GEMINI_API_KEY || env.Gemini || env.gemini || env.GEMINI;
+  if (!apiKey) return json({ error: "not_configured" }, 503, origin);
 
   const now = Date.now();
   const body = {
@@ -64,7 +64,7 @@ export async function onRequestPost({ request, env }) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-goog-api-key": env.GEMINI_API_KEY,
+        "x-goog-api-key": apiKey,
       },
       body: JSON.stringify(body),
     });

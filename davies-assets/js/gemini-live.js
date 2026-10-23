@@ -136,6 +136,57 @@
   // ---------- session ----------
   let S = null; // active session state
 
+  async function obtainToken() {
+    try {
+      const r = await fetch(TOKEN_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.token) return j;
+      console.warn("[Nova Live] /api/live-token returned:", r.status, j);
+    } catch (e) {
+      console.warn("[Nova Live] /api/live-token fetch error:", e);
+    }
+
+    // Client-side fallback if server endpoint is pending redeploy or running offline
+    const fallbackKey =
+      typeof localStorage !== "undefined"
+        ? localStorage.getItem("GEMINI_API_KEY")
+        : null;
+    if (fallbackKey) {
+      try {
+        const resp = await fetch(
+          "https://generativelanguage.googleapis.com/v1beta/auth_tokens",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": fallbackKey,
+            },
+            body: JSON.stringify({
+              uses: 1,
+              expireTime: new Date(Date.now() + 6 * 60 * 1000).toISOString(),
+              bidiGenerateContentSetup: { model: DEFAULT_MODEL },
+            }),
+          }
+        );
+        const data = await resp.json().catch(() => ({}));
+        if (data.name) {
+          console.log("[Nova Live] Ephemeral token minted via Gemini API key");
+          return { token: data.name, model: DEFAULT_MODEL };
+        }
+      } catch (err) {
+        console.warn("[Nova Live] Fallback token mint failed:", err);
+      }
+    }
+
+    const err = new Error("token_unavailable");
+    err.code = "TOKEN";
+    throw err;
+  }
+
   /**
    * @param {object} opts
    *   systemInstruction: string, tools: FunctionDeclaration[], voice: string,
@@ -164,12 +215,7 @@
       const micP = navigator.mediaDevices.getUserMedia({
         audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       });
-      const tokenP = fetch(TOKEN_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
-        .then(async (r) => {
-          const j = await r.json().catch(() => ({}));
-          if (!r.ok || !j.token) { const e = new Error(j.error || `token_http_${r.status}`); e.code = "TOKEN"; throw e; }
-          return j;
-        });
+      const tokenP = obtainToken();
       const [stream, tok] = await Promise.all([micP, tokenP]);
       if (S !== s) { stream.getTracks().forEach((t) => t.stop()); return; }
       s.stream = stream;
@@ -292,10 +338,8 @@
     } catch (err) {
       // Token may have expired: fetch a fresh one and try again.
       try {
-        const r = await fetch(TOKEN_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
-        const j = await r.json();
-        if (!j.token) throw new Error("no_token");
-        s.token = j.token;
+        const tok = await obtainToken();
+        s.token = tok.token;
         await connect(s, true);
       } catch (e2) {
         stop(`disconnected:${why}`);
