@@ -205,10 +205,13 @@
         if (lab) {
           if (want === "warehouse") lab.loadTheme(0, -1);
           else if (want === "car") lab.loadTheme(1, 1);
+          else if (want === "sketch") lab.loadTheme(2, 1);
           else lab.stepTheme(want === "prev" ? -1 : 1);
         }
         desc = want === "car" ? "자동차 쇼룸 스튜디오 테마로 전환"
-          : want === "warehouse" ? "스마트 물류 창고 테마로 전환" : "다음 전시 테마로 전환";
+          : want === "warehouse" ? "스마트 물류 창고 테마로 전환"
+          : want === "sketch" ? "도면/스케치 AI 3D 스튜디오 테마로 전환"
+          : "다음 전시 테마로 전환";
         break;
       }
 
@@ -264,6 +267,10 @@
     if (t.includes("피킹") || t.includes("레이캐스팅") || t.includes("정확도") || t.includes("오딧") || t.includes("검사") || t.includes("60점")) {
       executeAction("run_picking_benchmark");
       return "60점 레이캐스팅 정확도 평가 벤치마크를 가동했습니다.";
+    }
+    if (t.includes("도면") || t.includes("스케치") || t.includes("설계도") || t.includes("평면도") || t.includes("블루프린트") || t.includes("sketch")) {
+      executeAction("switch_theme", { theme: "sketch" });
+      return "도면 및 스케치 AI 3D 파이프라인 스튜디오로 전환했습니다. 손그림이나 CAD 도면, 사진을 올려보세요!";
     }
     if (t.includes("쇼룸") || t.includes("스튜디오") || (t.includes("자동차") && (t.includes("테마") || t.includes("보여")))) {
       executeAction("switch_theme", { theme: "car" });

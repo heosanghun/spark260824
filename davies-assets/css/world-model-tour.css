@@ -303,3 +303,95 @@
 .wmt-hand-photo { transform-box: fill-box; transform-origin: center; animation: wmt-hold 3.2s ease-in-out infinite; }
 @keyframes wmt-hold { 50% { transform: translateY(-3px); } }
 .wmt-real .wmt-svg-cap, .wmt-real .wmt-svg-note { paint-order: stroke; stroke: rgba(0, 0, 0, 0.75); stroke-width: 3px; }
+
+/* ---------- New Sketch-to-3D & Full Pipeline Tour Cards ---------- */
+.wmt-workflow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin: 22px 0 16px;
+}
+.wmt-wf-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  border-radius: 14px;
+  transition: all 0.25s ease;
+}
+.wmt-wf-item.is-active {
+  background: rgba(0, 240, 255, 0.12);
+  border-color: #00f0ff;
+  box-shadow: 0 0 18px rgba(0, 240, 255, 0.25);
+  transform: translateY(-2px);
+}
+.wmt-wf-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(0, 240, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #00f0ff;
+}
+.wmt-wf-icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; }
+.wmt-wf-title { font-size: 13px; font-weight: 700; color: #fff; margin: 0; }
+.wmt-wf-desc { font-size: 11px; color: var(--wmt-mut); margin: 0; line-height: 1.35; text-align: center; }
+
+/* Sketch-to-3D Blueprint Preview in Tour */
+.wmt-blueprint-preview {
+  position: relative;
+  width: 100%;
+  max-width: 580px;
+  height: 220px;
+  margin: 16px auto;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1.5px solid rgba(0, 240, 255, 0.4);
+  background: radial-gradient(circle, #0c1a30, #050a14);
+}
+.wmt-bp-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.wmt-bp-scanner {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.wmt-bp-beam {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #00f0ff 30%, #fff 50%, #00f0ff 70%, transparent);
+  box-shadow: 0 0 20px #00f0ff, 0 0 35px #00f0ff;
+  animation: radarScan 2.4s infinite ease-in-out;
+}
+.wmt-bp-badge {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(4, 9, 18, 0.95);
+  border: 1px solid #00f0ff;
+  color: #00f0ff;
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 14px;
+  border-radius: 20px;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+}
+
+@media (max-width: 760px) {
+  .wmt-workflow { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .wmt-blueprint-preview { height: 160px; }
+}
+

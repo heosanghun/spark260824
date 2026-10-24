@@ -20,8 +20,8 @@
     <link rel="stylesheet" href="davies-assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="davies-assets/css/swiper-bundle.min.css">
     <link rel="stylesheet" href="davies-assets/css/animate.css">
-    <link rel="stylesheet" href="davies-assets/css/nova-assistant.css?v=20261022">
-    <link rel="stylesheet" href="davies-assets/css/world-model-tour.css?v=20261022">
+    <link rel="stylesheet" href="davies-assets/css/world-model-tour.css?v=20261024_v2">
+    <link rel="stylesheet" href="davies-assets/css/sketch-to-3d.css?v=20261024">
     <link rel="stylesheet" href="davies-assets/css/odometer.min.css">
     <link rel="stylesheet" href="davies-assets/css/slick.css">
     <link rel="stylesheet" href="davies-assets/css/slick.theme.css">
@@ -1154,6 +1154,7 @@
                                 <ul class="nav-menu-main">
                                     <li class="menu-item"><a href="#workScroll" class="item-link link text-caption"><span>01 /</span>WORKS</a></li>
                                     <li class="menu-item"><a href="#spatialLabSection" class="item-link link text-caption"><span style="color:#38bdf8;">02 /</span>3D WAREHOUSE LAB</a></li>
+                                    <li class="menu-item"><a href="javascript:void(0)" onclick="window.spatialLab?.loadTheme(2, 1); document.querySelector('#spatialLabSection')?.scrollIntoView({behavior:'smooth'});" class="item-link link text-caption"><span style="color:#00f0ff; text-shadow: 0 0 10px rgba(0,240,255,0.6);">NEW /</span>SKETCH-TO-3D</a></li>
                                     <li class="menu-item"><a href="#whitepaperSection" class="item-link link text-caption"><span>03 /</span>WHITEPAPERS</a></li>
                                     <li class="menu-item"><a href="#serviceScroll" class="item-link link text-caption"><span>04 /</span>SERVICES</a></li>
                                     <li class="menu-item"><a href="#aboutScroll" class="item-link link text-caption"><span>05 /</span>ABOUT</a></li>
@@ -1513,6 +1514,9 @@
                             </div>
                         </div>
                         <div class="d-flex align-items-center gap-2">
+                            <button type="button" class="spatial-btn-pill" onclick="window.spatialLab?.loadTheme(2, 1)" style="height: 30px; padding: 0 14px; font-size: 11px; font-weight: 700; color: #00f0ff; border-color: rgba(0,240,255,0.45); background: rgba(0,240,255,0.12); box-shadow: 0 0 15px rgba(0,240,255,0.25);" title="모바일 손그림 스케치나 CAD 도면으로 3D 생성하기">
+                                📐 도면/스케치로 3D 만들기
+                            </button>
                             <span id="apiCreditsBadge" class="badge" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: #e2e8f0; font-size: 11px; font-family: monospace; padding: 6px 12px; border-radius: 999px;">
                                 CREDITS: 62,500
                             </span>
@@ -1596,6 +1600,8 @@
 
                 <!-- 3D Viewport Container -->
                 <div class="spatial-viewport-card glow-border" style="position: relative; border-radius: 24px; overflow: hidden; background: #07090e; box-shadow: 0 25px 70px rgba(0, 0, 0, 0.8), 0 0 35px rgba(56, 189, 248, 0.15);">
+                    <!-- Sketch-to-3D Pipeline Studio Overlay Container -->
+                    <div id="sketchStudioContainer"></div>
                     
                     <!-- Top-Left Overlay (toast + 1m drop test explainer card) -->
                     <div class="spatial-overlay-left" style="position: absolute; top: 18px; left: 18px; z-index: 20; display: flex; flex-direction: column; gap: 8px; pointer-events: none;">
@@ -5245,6 +5251,15 @@
           url: "assets/p3/marble/car_studio_v2_clean_500k.spz", asset: "Marble car_studio_v2_clean_500k.spz",
           scale: 2.2508733, posY: 1.6300833, physics: false,
           cam: [1.0, 2.5, 1.2], target: [0, 0.725, -1.5]
+        },
+        {
+          key: "sketch", name: "도면/스케치 AI 3D 스튜디오", short: "도면 스케치 3D",
+          desc: "스마트폰 손그림이나 CAD 도면, 사진을 올리면, Gemini가 공간 구조를 분석해 World Labs 3D 공간을 자동 생성합니다.",
+          tags: ["Gemini 2.5 Flash", "Multimodal", "Sketch-to-3D"], lab: "sketch",
+          thumb: "davies-assets/images/blueprints/thumb_sketch_studio.svg",
+          url: "assets/p3/marble/run01_500k.spz", asset: "Sketch Studio",
+          scale: s, posY: h, physics: true,
+          cam: [0, 2.5, 6.0], target: [0, 0.4, 0]
         }
       ];
       let themeIdx = 0;            // -1 = AI generated world
@@ -5278,10 +5293,12 @@
         if (themeEls.tags) themeEls.tags.innerHTML = (isAI ? ["World Labs API", "텍스트 → 3D"] : t.tags)
           .map((x) => `<span>${x}</span>`).join("");
         const carLab = !isAI && (t.lab === "car" || t.key === "car");
+        const sketchLab = !isAI && (t.lab === "sketch" || t.key === "sketch");
+        window.SketchTo3D?.setActive(sketchLab);
         if (themeEls.badge) {
           const phys = isAI || t.physics || carLab;
-          themeEls.badge.textContent = isAI ? "AI 생성" : (carLab ? "차량 물리 실험" : (phys ? "물리 실험 가능" : "감상 모드"));
-          themeEls.badge.classList.toggle("is-view", !phys);
+          themeEls.badge.textContent = isAI ? "AI 생성" : (sketchLab ? "도면/스케치 AI 분석" : (carLab ? "차량 물리 실험" : (phys ? "물리 실험 가능" : "감상 모드")));
+          themeEls.badge.classList.toggle("is-view", !phys && !sketchLab);
         }
         if (themeEls.idx) themeEls.idx.textContent = isAI ? "AI" : String(themeIdx + 1);
         if (themeEls.total) themeEls.total.textContent = String(THEMES.length);
@@ -5575,6 +5592,7 @@
         loadTheme,
         stepTheme,
         get themeIndex() { return themeIdx; },
+        controls,
         // World Model tour hooks
         prediction: ghostFx.predict,
         ghostDrop: (opts) => ghostFx.drop(opts),
@@ -5748,10 +5766,11 @@
         });
       });
     </script>
-    <!-- World Labs Nova AI Voice Assistant -->
+    <!-- World Labs Nova AI Voice Assistant & Sketch-to-3D Pipeline -->
     <script src="davies-assets/js/gemini-live.js?v=20261023"></script>
     <script src="davies-assets/js/voice-assistant.js?v=20261024_fixedview"></script>
-    <script src="davies-assets/js/world-model-tour.js?v=20261023_smooth_flow"></script>
+    <script src="davies-assets/js/sketch-to-3d.js?v=20261024"></script>
+    <script src="davies-assets/js/world-model-tour.js?v=20261024_v2"></script>
     <!-- Fixed header: compact + backdrop once scrolled -->
     <script>
       (function () {

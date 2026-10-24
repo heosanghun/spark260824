@@ -1,0 +1,484 @@
+/* ==========================================================================
+   SKETCH-TO-3D PIPELINE STUDIO: CYBERNETIC BLUEPRINT SCANNER
+   Styles for Theme 3: Gemini Multimodal Vision + World Labs 3D Pipeline
+   ========================================================================== */
+
+.sketch-studio-panel {
+  position: absolute;
+  top: 18px;
+  left: 20px;
+  right: 20px;
+  bottom: 80px;
+  z-index: 25;
+  display: flex;
+  gap: 20px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(12px) scale(0.99);
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sketch-studio-panel.is-active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+/* Left/Main Column: Blueprint Canvas & Uploader */
+.sketch-studio__main {
+  flex: 1 1 60%;
+  display: flex;
+  flex-direction: column;
+  background: rgba(6, 11, 22, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 35px rgba(0, 240, 255, 0.15), inset 0 0 30px rgba(0, 240, 255, 0.03);
+  border-radius: 18px;
+  padding: 22px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Cybernetic Corner Brackets */
+.sketch-studio__main::before,
+.sketch-studio__main::after,
+.sketch-studio__side::before,
+.sketch-studio__side::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: #00f0ff;
+  border-style: solid;
+  pointer-events: none;
+  z-index: 10;
+}
+.sketch-studio__main::before { top: 8px; left: 8px; border-width: 2px 0 0 2px; }
+.sketch-studio__main::after { bottom: 8px; right: 8px; border-width: 0 2px 2px 0; }
+.sketch-studio__side::before { top: 8px; left: 8px; border-width: 2px 0 0 2px; }
+.sketch-studio__side::after { bottom: 8px; right: 8px; border-width: 0 2px 2px 0; }
+
+/* Header Banner */
+.sketch-studio__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.sketch-studio__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sketch-studio__title h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sketch-studio__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #00f0ff;
+  background: rgba(0, 240, 255, 0.12);
+  border: 1px solid rgba(0, 240, 255, 0.4);
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.sketch-studio__badge .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00f0ff;
+  box-shadow: 0 0 8px #00f0ff;
+  animation: pulseDot 1.6s infinite ease-in-out;
+}
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+/* Blueprint Display Area */
+.sketch-viewer {
+  flex: 1;
+  position: relative;
+  background: radial-gradient(circle at center, rgba(14, 27, 49, 0.95), rgba(5, 10, 20, 0.98));
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 260px;
+}
+
+.sketch-viewer__canvas {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+  user-select: none;
+}
+
+/* Hologram Scanning Overlay */
+.sketch-scanner-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: none;
+}
+.sketch-scanner-overlay.is-scanning {
+  display: block;
+}
+.sketch-scanner__beam {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, #00f0ff 25%, #fff 50%, #00f0ff 75%, transparent);
+  box-shadow: 0 0 20px #00f0ff, 0 0 40px #00f0ff;
+  animation: radarScan 2.2s infinite ease-in-out;
+}
+.sketch-scanner__grid {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(0, 240, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+  animation: gridPulse 3s infinite alternate;
+}
+.sketch-scanner__radar {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 180px;
+  height: 180px;
+  margin: -90px 0 0 -90px;
+  border-radius: 50%;
+  border: 1px dashed rgba(0, 240, 255, 0.5);
+  animation: rotateRadar 6s linear infinite;
+}
+.sketch-scanner__radar::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100px;
+  height: 100px;
+  margin: -50px 0 0 -50px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 240, 255, 0.3);
+}
+.sketch-scanner__label {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(3, 8, 16, 0.92);
+  border: 1px solid #00f0ff;
+  color: #00f0ff;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+@keyframes radarScan {
+  0% { top: 0%; opacity: 0.8; }
+  50% { top: 98%; opacity: 1; }
+  100% { top: 0%; opacity: 0.8; }
+}
+@keyframes rotateRadar {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes gridPulse {
+  from { opacity: 0.3; }
+  to { opacity: 0.8; }
+}
+
+/* Sample Blueprint Selector */
+.sketch-samples {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.sketch-samples__title {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.sketch-sample-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.sketch-sample-btn:hover {
+  background: rgba(0, 240, 255, 0.15);
+  border-color: rgba(0, 240, 255, 0.5);
+  color: #fff;
+  transform: translateY(-1px);
+}
+.sketch-sample-btn.is-active {
+  background: rgba(0, 240, 255, 0.22);
+  border-color: #00f0ff;
+  color: #00f0ff;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
+}
+
+/* File Upload Dropzone */
+.sketch-dropzone {
+  margin-top: 12px;
+  border: 1.5px dashed rgba(0, 240, 255, 0.35);
+  background: rgba(6, 14, 28, 0.6);
+  border-radius: 12px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.sketch-dropzone:hover,
+.sketch-dropzone.dragover {
+  border-color: #00f0ff;
+  background: rgba(0, 240, 255, 0.1);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+}
+.sketch-dropzone__info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sketch-dropzone__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(0, 240, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #00f0ff;
+}
+.sketch-dropzone__text {
+  font-size: 12px;
+  color: #94a3b8;
+}
+.sketch-dropzone__text strong {
+  color: #e2e8f0;
+}
+.sketch-dropzone__btn {
+  background: #00f0ff;
+  color: #040914;
+  border: none;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.sketch-dropzone__btn:hover {
+  background: #38bdf8;
+  transform: scale(1.03);
+}
+
+/* Right Column: Gemini Multimodal Analysis & Action */
+.sketch-studio__side {
+  flex: 1 1 40%;
+  display: flex;
+  flex-direction: column;
+  background: rgba(6, 11, 22, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 35px rgba(0, 240, 255, 0.15);
+  border-radius: 18px;
+  padding: 22px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 240, 255, 0.3) transparent;
+  position: relative;
+}
+
+.sketch-analysis-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sketch-analysis__header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 10px;
+}
+.sketch-analysis__tagline {
+  font-size: 10px;
+  color: #38bdf8;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+.sketch-analysis__title {
+  margin: 4px 0 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+}
+.sketch-analysis__scale {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 2px;
+  font-family: monospace;
+}
+
+/* Structured Breakdown */
+.sketch-analysis__section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sketch-analysis__label {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.sketch-analysis__bullets {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.55;
+}
+.sketch-analysis__bullets li {
+  margin-bottom: 4px;
+}
+
+.sketch-analysis__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sketch-analysis__chip {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  color: #38bdf8;
+}
+
+/* Prompt Comparison Box */
+.sketch-prompt-box {
+  background: rgba(3, 8, 16, 0.7);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  border-radius: 12px;
+  padding: 12px 14px;
+  position: relative;
+}
+.sketch-prompt-box__label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #00f0ff;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+.sketch-prompt-box__text {
+  font-size: 12px;
+  color: #e2e8f0;
+  line-height: 1.6;
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+/* CTA Generate Button */
+.sketch-btn-generate {
+  width: 100%;
+  height: 48px;
+  background: linear-gradient(135deg, #00f0ff 0%, #0284c7 100%);
+  color: #030812;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.4);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-top: auto;
+}
+.sketch-btn-generate:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 35px rgba(0, 240, 255, 0.7);
+  color: #000;
+}
+.sketch-btn-generate:active {
+  transform: translateY(0);
+}
+.sketch-btn-generate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991px) {
+  .sketch-studio-panel {
+    flex-direction: column;
+    overflow-y: auto;
+    bottom: 20px;
+    right: 10px;
+    left: 10px;
+  }
+  .sketch-studio__main,
+  .sketch-studio__side {
+    flex: auto;
+    width: 100%;
+  }
+}

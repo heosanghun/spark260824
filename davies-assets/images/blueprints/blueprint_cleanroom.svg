@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <defs>
+    <linearGradient id="crBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#05141e"/>
+      <stop offset="100%" stop-color="#02080d"/>
+    </linearGradient>
+    <pattern id="crGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#0e2a38" stroke-width="0.7" opacity="0.6"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="500" fill="url(#crBg)"/>
+  <rect width="800" height="500" fill="url(#crGrid)"/>
+
+  <!-- Cleanroom ISO Class 1 Perimeter -->
+  <rect x="40" y="40" width="720" height="420" fill="none" stroke="#10b981" stroke-width="2.5" opacity="0.85"/>
+
+  <!-- Title Block -->
+  <g transform="translate(560, 400)">
+    <rect width="190" height="52" fill="#04181f" stroke="#10b981" stroke-width="1.2" opacity="0.9"/>
+    <text x="12" y="20" fill="#10b981" font-family="monospace" font-size="11" font-weight="bold">FAB ARCH-DWG: CR-101</text>
+    <text x="12" y="34" fill="#6ee7b7" font-family="sans-serif" font-size="9">HIGH-TECH WAFER CLEANROOM</text>
+    <text x="12" y="46" fill="#94a3b8" font-family="sans-serif" font-size="8">ISO CLASS 1 | FOUP OHT GRID</text>
+  </g>
+
+  <!-- Air Shower Airlocks (Entry) -->
+  <g fill="rgba(16, 185, 129, 0.2)" stroke="#10b981" stroke-width="1.5">
+    <rect x="40" y="180" width="70" height="100" rx="3"/>
+    <text x="75" y="225" fill="#10b981" font-family="monospace" font-size="9" text-anchor="middle">AIR SHOWER</text>
+    <text x="75" y="240" fill="#a7f3d0" font-family="sans-serif" font-size="8" text-anchor="middle">AIRLOCK ENTRY</text>
+  </g>
+
+  <!-- Photolithography Yellow Bay -->
+  <g fill="rgba(234, 179, 8, 0.12)" stroke="#eab308" stroke-width="1.5">
+    <rect x="150" y="70" width="260" height="160" rx="4"/>
+    <text x="280" y="105" fill="#eab308" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">EUV LITHOGRAPHY BAY</text>
+    <text x="280" y="125" fill="#fef08a" font-family="sans-serif" font-size="9" text-anchor="middle">YELLOW FILTERED LIGHTING</text>
+    <!-- Stepper machines -->
+    <rect x="180" y="145" width="80" height="60" fill="rgba(234,179,8,0.2)" stroke="#eab308" stroke-width="1.2"/>
+    <rect x="300" y="145" width="80" height="60" fill="rgba(234,179,8,0.2)" stroke="#eab308" stroke-width="1.2"/>
+  </g>
+
+  <!-- Wafer Etching & Deposition Bay -->
+  <g fill="rgba(56, 189, 248, 0.12)" stroke="#38bdf8" stroke-width="1.5">
+    <rect x="450" y="70" width="280" height="160" rx="4"/>
+    <text x="590" y="105" fill="#38bdf8" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">PLASMA ETCH &amp; CVD BAY</text>
+    <text x="590" y="125" fill="#bae6fd" font-family="sans-serif" font-size="9" text-anchor="middle">ROBOTIC CLUSTER TOOLS</text>
+    <circle cx="520" cy="175" r="30" fill="none" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="4,3"/>
+    <circle cx="640" cy="175" r="30" fill="none" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="4,3"/>
+  </g>
+
+  <!-- Overhead Hoist Transport (OHT) Track Network -->
+  <g stroke="#a855f7" stroke-width="2" stroke-dasharray="6,4">
+    <path d="M 120 260 L 720 260" fill="none"/>
+    <path d="M 280 230 L 280 370" fill="none"/>
+    <path d="M 580 230 L 580 370" fill="none"/>
+    <path d="M 120 370 L 720 370" fill="none"/>
+  </g>
+  <rect x="320" y="250" width="160" height="20" fill="#a855f7" fill-opacity="0.2" stroke="#a855f7" stroke-width="1" rx="4"/>
+  <text x="400" y="264" fill="#d8b4fe" font-family="sans-serif" font-size="9" font-weight="bold" text-anchor="middle">CEILING OHT MONORAIL</text>
+
+  <!-- Automated FOUP Stocker Bay -->
+  <g fill="rgba(16, 185, 129, 0.12)" stroke="#10b981" stroke-width="1.5">
+    <rect x="150" y="290" width="180" height="130" rx="4"/>
+    <text x="240" y="325" fill="#10b981" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">FOUP BUFFER STOCKER</text>
+    <rect x="170" y="345" width="140" height="55" fill="none" stroke="#10b981" stroke-width="1" stroke-dasharray="3,3"/>
+  </g>
+
+  <!-- Metrology & Inspection Area -->
+  <g fill="rgba(244, 63, 94, 0.12)" stroke="#f43f5e" stroke-width="1.5">
+    <rect x="420" y="290" width="220" height="130" rx="4"/>
+    <text x="530" y="325" fill="#f43f5e" font-family="monospace" font-size="10" font-weight="bold" text-anchor="middle">SEM METROLOGY &amp; DEFECT QC</text>
+    <rect x="450" y="345" width="70" height="55" fill="rgba(244,63,94,0.2)" stroke="#f43f5e" stroke-width="1"/>
+    <rect x="545" y="345" width="70" height="55" fill="rgba(244,63,94,0.2)" stroke="#f43f5e" stroke-width="1"/>
+  </g>
+</svg>
