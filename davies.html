@@ -20,8 +20,8 @@
     <link rel="stylesheet" href="davies-assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="davies-assets/css/swiper-bundle.min.css">
     <link rel="stylesheet" href="davies-assets/css/animate.css">
-    <link rel="stylesheet" href="davies-assets/css/world-model-tour.css?v=20261024_v2">
-    <link rel="stylesheet" href="davies-assets/css/sketch-to-3d.css?v=20261024">
+    <link rel="stylesheet" href="davies-assets/css/world-model-tour.css?v=20261024_kore">
+    <link rel="stylesheet" href="davies-assets/css/sketch-to-3d.css?v=20261024_ux">
     <link rel="stylesheet" href="davies-assets/css/odometer.min.css">
     <link rel="stylesheet" href="davies-assets/css/slick.css">
     <link rel="stylesheet" href="davies-assets/css/slick.theme.css">
@@ -1154,7 +1154,7 @@
                                 <ul class="nav-menu-main">
                                     <li class="menu-item"><a href="#workScroll" class="item-link link text-caption"><span>01 /</span>WORKS</a></li>
                                     <li class="menu-item"><a href="#spatialLabSection" class="item-link link text-caption"><span style="color:#38bdf8;">02 /</span>3D WAREHOUSE LAB</a></li>
-                                    <li class="menu-item"><a href="javascript:void(0)" onclick="window.spatialLab?.loadTheme(2, 1); document.querySelector('#spatialLabSection')?.scrollIntoView({behavior:'smooth'});" class="item-link link text-caption"><span style="color:#00f0ff; text-shadow: 0 0 10px rgba(0,240,255,0.6);">NEW /</span>SKETCH-TO-3D</a></li>
+                                    <li class="menu-item"><a href="javascript:void(0)" onclick="if(window.SketchTo3D?.openModal){window.SketchTo3D.openModal();}else{window.spatialLab?.loadTheme(2, 1); document.querySelector('#spatialLabSection')?.scrollIntoView({behavior:'smooth'});}" class="item-link link text-caption"><span style="color:#00f0ff; text-shadow: 0 0 10px rgba(0,240,255,0.6);">NEW /</span>SKETCH-TO-3D</a></li>
                                     <li class="menu-item"><a href="#whitepaperSection" class="item-link link text-caption"><span>03 /</span>WHITEPAPERS</a></li>
                                     <li class="menu-item"><a href="#serviceScroll" class="item-link link text-caption"><span>04 /</span>SERVICES</a></li>
                                     <li class="menu-item"><a href="#aboutScroll" class="item-link link text-caption"><span>05 /</span>ABOUT</a></li>
@@ -1228,6 +1228,12 @@
                                         <button type="button" class="wmt-cta" data-wm-tour aria-label="월드 모델 60초 만에 이해하기 (자동 설명 재생)">
                                             <span class="wmt-cta__play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></svg></span>
                                             <span class="wmt-cta__txt"><b>월드 모델, 60초 만에 이해하기</b><small>클릭 한 번 · 자동 설명</small></span>
+                                        </button>
+                                        <button type="button" class="wmt-cta wmt-cta--sketch" onclick="window.SketchTo3D?.openModal?.()" aria-label="도면/스케치로 3D 만들기">
+                                            <span class="wmt-cta__play" aria-hidden="true">
+                                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                                            </span>
+                                            <span class="wmt-cta__txt"><b>도면/스케치로 3D 만들기</b><small>손그림 · CAD · 사진 업로드</small></span>
                                         </button>
                                         <a href="#spatialLabSection" class="tf-btn style-fill-white animate-btn animate-dark">
                                             <span class="text-caption fw-medium">LAUNCH 3D WAREHOUSE</span>
@@ -5769,8 +5775,8 @@
     <!-- World Labs Nova AI Voice Assistant & Sketch-to-3D Pipeline -->
     <script src="davies-assets/js/gemini-live.js?v=20261023"></script>
     <script src="davies-assets/js/voice-assistant.js?v=20261024_fixedview"></script>
-    <script src="davies-assets/js/sketch-to-3d.js?v=20261024"></script>
-    <script src="davies-assets/js/world-model-tour.js?v=20261024_v2"></script>
+    <script src="davies-assets/js/sketch-to-3d.js?v=20261024_kore_ux"></script>
+    <script src="davies-assets/js/world-model-tour.js?v=20261024_kore"></script>
     <!-- Fixed header: compact + backdrop once scrolled -->
     <script>
       (function () {

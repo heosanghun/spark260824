@@ -81,12 +81,12 @@
 
   // ------------------------------------------------------------------ narration
   const AUDIO_MAP = {
-    "0": "davies-assets/audio/tour/tour_01.mp3",
-    "1": "davies-assets/audio/tour/tour_02.mp3",
-    "2": "davies-assets/audio/tour/tour_03.mp3",
-    "3": "davies-assets/audio/tour/tour_04.mp3",
-    "4": "davies-assets/audio/tour/tour_05.mp3",
-    "5": "davies-assets/audio/tour/tour_06.mp3"
+    "0": "davies-assets/audio/tour/tour_01.wav?v=20261024_kore",
+    "1": "davies-assets/audio/tour/tour_02.wav?v=20261024_kore",
+    "2": "davies-assets/audio/tour/tour_03.wav?v=20261024_kore",
+    "3": "davies-assets/audio/tour/tour_04.wav?v=20261024_kore",
+    "4": "davies-assets/audio/tour/tour_05.wav?v=20261024_kore",
+    "5": "davies-assets/audio/tour/tour_06.wav?v=20261024_kore"
   };
 
   let currentAudio = null;
@@ -130,10 +130,10 @@
   }
 
   function playRecordedAudio(src) {
-    if (muted || !src) return null;
+    if (muted || !src) return Promise.resolve(false);
     stopSpeech();
     return new Promise((resolve) => {
-      const audio = new Audio(src);
+      const audio = new Audio();
       currentAudio = audio;
       let finished = false;
       const cleanup = (val) => {
@@ -144,20 +144,18 @@
         }
       };
       audio.onended = () => cleanup(true);
-      audio.onerror = () => {
-        // Fallback to .wav version if .mp3 failed
-        if (src.endsWith(".mp3")) {
-          const wavSrc = src.replace(/\.mp3$/, ".wav");
-          const a2 = new Audio(wavSrc);
-          currentAudio = a2;
-          a2.onended = () => cleanup(true);
-          a2.onerror = () => cleanup(false);
-          a2.play().catch(() => cleanup(false));
-          return;
-        }
+      audio.onerror = (e) => {
+        console.warn("[WorldModelTour] Audio load error:", src, e);
         cleanup(false);
       };
-      audio.play().catch(() => cleanup(false));
+      audio.src = src;
+      const p = audio.play();
+      if (p && typeof p.then === "function") {
+        p.catch((err) => {
+          console.warn("[WorldModelTour] Play interrupted/blocked:", err);
+          cleanup(false);
+        });
+      }
     });
   }
 
@@ -268,7 +266,11 @@
       else if (act === "replay") jump(0);
       else if (act === "openSketch") {
         close();
-        window.spatialLab?.loadTheme?.(2, 1);
+        if (window.SketchTo3D?.openModal) {
+          window.SketchTo3D.openModal();
+        } else {
+          window.spatialLab?.loadTheme?.(2, 1);
+        }
       } else if (act === "tryPhysics") {
         close();
         window.spatialLab?.loadTheme?.(0, -1);
