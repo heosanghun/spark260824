@@ -1,8 +1,8 @@
 /* =====================================================================
  * World Model 60s Tour — one-click auto explainer for exhibition visitors
- *  1 시작(질문) → 2 도면/스케치 AI 분석 → 3 50만 스플랫 3D 생성
- *  → 4 실감 물리 실험(낙하/투척) → 5 공간 지능(분할/정밀선택) → 6 직접 체험
- * Drives the real 3D lab via window.spatialLab and window.SketchTo3D.
+ *  1 질문 → 2 유리잔 비유 → 3 AI의 상상(고스트 낙하) → 4 현실(실제 물리 낙하)
+ *  → 5 비교 → 6 정리
+ * Drives the real 3D lab via window.spatialLab (davies.html).
  * Public API: window.WorldModelTour = { play, close, isPlaying }
  * ===================================================================== */
 (() => {
@@ -10,6 +10,7 @@
 
   const ABORT = { abort: true };
   const KIOSK = new URLSearchParams(location.search).get("kiosk") === "1";
+  const KIOSK_IDLE_MS = 60000;
 
   const ICON = {
     play: '<path d="M8 5.5v13l10.5-6.5z"/>',
@@ -20,20 +21,19 @@
     close: '<path d="M6 6l12 12M18 6L6 18"/>',
     replay: '<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4.5v4h4"/>',
     arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
-    upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>',
-    cube: '<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
-    spark: '<path d="M12 3.5v4M12 16.5v4M3.5 12h4M16.5 12h4"/><circle cx="12" cy="12" r="3"/>',
-    mic: '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/>'
+    cause: '<circle cx="5.5" cy="12" r="2.5"/><circle cx="18.5" cy="12" r="2.5"/><path d="M8 12h8M13.5 9.5 16 12l-2.5 2.5"/>',
+    shield: '<path d="M12 3.5 19 6v5.5c0 4.3-3 7.6-7 9-4-1.4-7-4.7-7-9V6z"/><path d="m8.8 12 2.2 2.2 4.2-4.4"/>',
+    spark: '<path d="M12 3.5v4M12 16.5v4M3.5 12h4M16.5 12h4"/><circle cx="12" cy="12" r="3"/>'
   };
   const svg = (k) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICON[k]}</svg>`;
 
   const CHAPTERS = [
-    { label: "시작", est: 6500 },
-    { label: "도면 분석", est: 11000 },
-    { label: "3D 생성", est: 10000 },
-    { label: "물리 실험", est: 12500 },
-    { label: "공간 지능", est: 11500 },
-    { label: "직접 체험", est: 10000 }
+    { label: "질문", est: 5200 },
+    { label: "비유", est: 16500 },
+    { label: "AI의 상상", est: 15000 },
+    { label: "현실", est: 5500 },
+    { label: "비교", est: 10000 },
+    { label: "정리", est: 15000 }
   ];
 
   // ------------------------------------------------------------------ state
@@ -45,14 +45,17 @@
   let muted = false;
   let chapter = 0;
   let chapterElapsed = 0;
-  let mode = "full"; // full | lab | labcard
+  let mode = "full";       // full | lab | labcard
   let loopId = 0;
   let lastFocus = null;
   let kioskRun = false;
+  let predicted = null;
+  let measured = null;
 
-  try { muted = localStorage.getItem("wmt-muted") === "1"; } catch (_) {}
+  try { muted = localStorage.getItem("wmt-muted") === "1"; } catch (_) { /* ignore */ }
 
   // ------------------------------------------------------------------ timing helpers
+  // Every helper promise gets a noop catch so aborted scenes never surface as "unhandled rejection".
   const quiet = (p) => { p.catch(() => {}); return p; };
   function wait(ms, tk) {
     return quiet(new Promise((res, rej) => {
@@ -68,25 +71,25 @@
       requestAnimationFrame(step);
     }));
   }
-
+  // Await an external promise but bail out if the show was skipped/closed.
   function until(p, tk) {
     return quiet(new Promise((res, rej) => {
       const iv = setInterval(() => { if (tk !== token) { clearInterval(iv); rej(ABORT); } }, 80);
-      Promise.resolve(p).then(
-        (v) => { clearInterval(iv); tk === token ? res(v) : rej(ABORT); },
-        () => { clearInterval(iv); tk === token ? res(null) : rej(ABORT); }
-      );
+      Promise.resolve(p).then((v) => { clearInterval(iv); tk === token ? res(v) : rej(ABORT); },
+                              () => { clearInterval(iv); tk === token ? res(null) : rej(ABORT); });
     }));
   }
 
-  // ------------------------------------------------------------------ narration
+  // ------------------------------------------------------------------ narration (Recorded Studio Audio with browser TTS fallback)
   const AUDIO_MAP = {
-    "0": "davies-assets/audio/tour/tour_01.wav?v=20261024_kore",
-    "1": "davies-assets/audio/tour/tour_02.wav?v=20261024_kore",
-    "2": "davies-assets/audio/tour/tour_03.wav?v=20261024_kore",
-    "3": "davies-assets/audio/tour/tour_04.wav?v=20261024_kore",
-    "4": "davies-assets/audio/tour/tour_05.wav?v=20261024_kore",
-    "5": "davies-assets/audio/tour/tour_06.wav?v=20261024_kore"
+    "0": "davies-assets/audio/world_model/wm_01.wav?v=20261026",
+    "1a": "davies-assets/audio/world_model/wm_02.wav?v=20261026",
+    "1b": "davies-assets/audio/world_model/wm_03.wav?v=20261026",
+    "2a": "davies-assets/audio/world_model/wm_04.wav?v=20261026",
+    "2b": "davies-assets/audio/world_model/wm_05.wav?v=20261026",
+    "3": "davies-assets/audio/world_model/wm_06.wav?v=20261026",
+    "4": "davies-assets/audio/world_model/wm_07.wav?v=20261026",
+    "5": "davies-assets/audio/world_model/wm_08.wav?v=20261026"
   };
 
   let currentAudio = null;
@@ -126,14 +129,14 @@
       } catch (_) {}
       currentAudio = null;
     }
-    try { window.speechSynthesis?.cancel(); } catch (_) {}
+    try { window.speechSynthesis?.cancel(); } catch (_) { /* ignore */ }
   }
 
   function playRecordedAudio(src) {
-    if (muted || !src) return Promise.resolve(false);
+    if (muted || !src) return null;
     stopSpeech();
     return new Promise((resolve) => {
-      const audio = new Audio();
+      const audio = new Audio(src);
       currentAudio = audio;
       let finished = false;
       const cleanup = (val) => {
@@ -145,197 +148,152 @@
       };
       audio.onended = () => cleanup(true);
       audio.onerror = (e) => {
-        console.warn("[WorldModelTour] Audio load error:", src, e);
+        console.warn("[WorldModelTour] Audio load failed, fallback to TTS:", e);
         cleanup(false);
       };
-      audio.src = src;
-      const p = audio.play();
-      if (p && typeof p.then === "function") {
-        p.catch((err) => {
-          console.warn("[WorldModelTour] Play interrupted/blocked:", err);
-          cleanup(false);
-        });
-      }
+      audio.play().catch((err) => {
+        console.warn("[WorldModelTour] Audio play failed, fallback to TTS:", err);
+        cleanup(false);
+      });
     });
   }
 
-  function say(text, tk, minMs = 0, audioKey = null) {
-    setSub(text);
-    if (muted) return wait(Math.max(minMs, 2200), tk);
-
-    const audioSrc = audioKey != null ? AUDIO_MAP[audioKey] : null;
-
-    if (audioSrc) {
-      const audioPromise = playRecordedAudio(audioSrc).then((played) => {
-        if (played) return true;
-        return fallbackSpeech(text, tk);
-      });
-      const timerPromise = wait(minMs, tk);
-      return quiet(Promise.all([audioPromise, timerPromise]).then(() => {}));
-    }
-    return fallbackSpeech(text, tk);
-  }
-
-  function fallbackSpeech(text, tk) {
+  function speakFallback(text) {
     const synth = window.speechSynthesis;
-    if (!synth) return wait(2500, tk);
-    synth.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "ko-KR";
-    u.rate = 1.05;
-    u.pitch = 1.05;
-    if (voice) u.voice = voice;
-    return quiet(new Promise((res) => {
-      let done = false;
-      const finish = () => { if (!done) { done = true; res(); } };
-      u.onend = finish;
-      u.onerror = finish;
-      synth.speak(u);
-      setTimeout(finish, 12000);
-    }));
+    if (muted || !synth || typeof SpeechSynthesisUtterance === "undefined") return null;
+    stopSpeech();
+    const parts = text.split(/(?<=[.?!])\s+/).filter(Boolean);
+    return new Promise((resolve) => {
+      let i = 0;
+      const next = () => {
+        if (i >= parts.length) return resolve();
+        const u = new SpeechSynthesisUtterance(parts[i++]);
+        u.lang = "ko-KR";
+        if (voice) u.voice = voice;
+        u.rate = 1.05;
+        u.pitch = 1.08;
+        u.onend = next;
+        u.onerror = () => resolve();
+        synth.speak(u);
+      };
+      next();
+    });
   }
 
-  // ------------------------------------------------------------------ UI Builder
+  function say(text, tk, minMs = 0, audioKey = null) { return quiet(sayInner(text, tk, minMs, audioKey)); }
+  async function sayInner(text, tk, minMs, audioKey) {
+    setSub(text);
+    const audioSrc = audioKey && AUDIO_MAP[audioKey] ? AUDIO_MAP[audioKey] : null;
+    let played = false;
+    if (audioSrc && !muted) {
+      const audioP = playRecordedAudio(audioSrc);
+      if (audioP) {
+        const [res] = await Promise.all([until(audioP, tk), wait(minMs, tk)]);
+        if (res === true) played = true;
+      }
+    }
+    if (!played) {
+      const est = Math.max(minMs, text.length * 85 + 700);
+      const spoken = speakFallback(text);
+      if (spoken) {
+        await Promise.all([wait(minMs, tk), until(Promise.race([spoken, new Promise((r) => setTimeout(r, est * 2.2))]), tk)]);
+      } else {
+        await wait(est, tk);
+      }
+    }
+  }
+
+  // ------------------------------------------------------------------ DOM
   function build() {
     if (root) return;
     root = document.createElement("div");
     root.className = "wmt";
+    root.id = "wmTour";
     root.hidden = true;
     root.setAttribute("role", "dialog");
-    root.setAttribute("aria-label", "World Labs 3D 공간 지능 60초 가이드 투어");
-
+    root.setAttribute("aria-modal", "true");
+    root.setAttribute("aria-label", "월드 모델 60초 설명");
     root.innerHTML = `
-      <div class="wmt-veil" data-act="veil"></div>
+      <div class="wmt-veil"></div>
       <div class="wmt-hole"></div>
-
-      <div class="wmt-tag" aria-live="polite">
-        <i></i>
-        <div>
-          <div class="wmt-tag__t"></div>
-          <div class="wmt-tag__s"></div>
-        </div>
-      </div>
-
-      <div class="wmt-card" role="region" aria-live="polite"></div>
-
-      <div class="wmt-sub" aria-live="polite"><p class="is-empty"></p></div>
-
-      <nav class="wmt-bar" aria-label="투어 제어">
-        <div class="wmt-bar__brand">
-          <span class="wmt-dot"></span>
-          <span>SIMS<em>REALITY</em></span>
-        </div>
-        <ol class="wmt-chapters">
-          ${CHAPTERS.map((c, i) => `
-            <li><button type="button" data-step="${i}"><b>${i + 1} ${c.label}</b><span class="wmt-seg"><i></i></span></button></li>
-          `).join("")}
-        </ol>
+      <div class="wmt-tag" id="wmtTag"><i></i><span class="wmt-tag__t"></span><span class="wmt-tag__s"></span></div>
+      <div class="wmt-card" id="wmtCard"></div>
+      <div class="wmt-sub" aria-live="polite"><p id="wmtSub"></p></div>
+      <div class="wmt-bar">
+        <div class="wmt-bar__brand"><span class="wmt-dot"></span>WORLD MODEL <em>60s</em></div>
+        <ol class="wmt-chapters">${CHAPTERS.map((c, i) => `<li><button type="button" data-ch="${i}"><span class="wmt-seg"><i></i></span><b>${c.label}</b></button></li>`).join("")}</ol>
         <div class="wmt-ctrls">
-          <button type="button" class="wmt-btn" data-act="toggleSound" title="소리 켜기/끄기">${svg(muted ? "mute" : "sound")}</button>
-          <button type="button" class="wmt-btn" data-act="togglePause" title="일시정지">${svg("pause")}</button>
-          <button type="button" class="wmt-btn" data-act="next" title="다음 단계">${svg("next")}</button>
-          <button type="button" class="wmt-btn wmt-btn--close" data-act="close" title="닫기">${svg("close")}</button>
+          <button type="button" class="wmt-btn" data-act="pause" aria-label="일시정지">${svg("pause")}</button>
+          <button type="button" class="wmt-btn" data-act="next" aria-label="다음 장면">${svg("next")}</button>
+          <button type="button" class="wmt-btn" data-act="mute" aria-label="음성 끄기">${svg(muted ? "mute" : "sound")}</button>
+          <button type="button" class="wmt-btn wmt-btn--close" data-act="close" aria-label="닫기">${svg("close")}</button>
         </div>
-      </nav>
-    `;
-
+      </div>`;
     document.body.appendChild(root);
-
-    el.veil = root.querySelector(".wmt-veil");
     el.hole = root.querySelector(".wmt-hole");
-    el.tag = root.querySelector(".wmt-tag");
+    el.tag = root.querySelector("#wmtTag");
     el.tagT = root.querySelector(".wmt-tag__t");
     el.tagS = root.querySelector(".wmt-tag__s");
-    el.card = root.querySelector(".wmt-card");
-    el.subP = root.querySelector(".wmt-sub p");
-    el.bar = root.querySelector(".wmt-bar");
+    el.card = root.querySelector("#wmtCard");
+    el.sub = root.querySelector("#wmtSub");
     el.segs = Array.from(root.querySelectorAll(".wmt-chapters li"));
-    el.btnSound = root.querySelector('[data-act="toggleSound"]');
-    el.btnPause = root.querySelector('[data-act="togglePause"]');
+    el.pause = root.querySelector('[data-act="pause"]');
+    el.mute = root.querySelector('[data-act="mute"]');
 
     root.addEventListener("click", (e) => {
-      const b = e.target.closest("button, [data-act]");
+      const b = e.target.closest("button");
       if (!b) return;
-      const step = b.dataset.step;
-      if (step != null) { jump(Number(step)); return; }
-      const act = b.dataset.act;
-      if (act === "close") close();
-      else if (act === "next") jump(chapter + 1);
-      else if (act === "togglePause") togglePause();
-      else if (act === "toggleSound") toggleSound();
-      else if (act === "replay") jump(0);
-      else if (act === "openSketch") {
-        close();
-        if (window.SketchTo3D?.openModal) {
-          window.SketchTo3D.openModal();
-        } else {
-          window.spatialLab?.loadTheme?.(2, 1);
-        }
-      } else if (act === "tryPhysics") {
-        close();
-        window.spatialLab?.loadTheme?.(0, -1);
-      } else if (act === "openNova") {
-        close();
-        document.getElementById("voiceAssistantFab")?.click();
+      if (b.dataset.ch) return jump(Number(b.dataset.ch));
+      switch (b.dataset.act) {
+        case "pause": return togglePause();
+        case "next": return jump(chapter + 1);
+        case "mute": return toggleMute();
+        case "close": return close();
+        case "replay": return play();
+        case "try": return tryIt();
       }
     });
-
-    document.addEventListener("keydown", (e) => {
-      if (!running) return;
-      if (e.key === "Escape") close();
-      else if (e.key === " " && !e.target.closest("input, textarea, button")) {
-        e.preventDefault();
-        togglePause();
-      } else if (e.key === "ArrowRight") jump(chapter + 1);
-      else if (e.key === "ArrowLeft") jump(chapter - 1);
-    });
+    // Keep the spotlight stable: the page must not scroll under the show.
+    root.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
+    root.addEventListener("touchmove", (e) => { if (!e.target.closest(".wmt-card")) e.preventDefault(); }, { passive: false });
   }
 
+  function setSub(text) {
+    el.sub.classList.remove("is-in");
+    void el.sub.offsetWidth;
+    el.sub.textContent = text;
+    el.sub.classList.toggle("is-empty", !text);
+    if (text) el.sub.classList.add("is-in");
+  }
   function setMode(m) {
     mode = m;
     root.dataset.mode = m;
   }
-
-  function setTag(kind, t, s) {
-    if (!t) { el.tag.classList.remove("is-in"); return; }
-    el.tag.dataset.kind = kind || "ai";
-    el.tagT.textContent = t;
-    el.tagS.textContent = s || "";
+  function setCard(html, cls = "") {
+    el.card.className = `wmt-card ${cls}`;
+    el.card.innerHTML = html;
+    void el.card.offsetWidth;
+    el.card.classList.add("is-in");
+  }
+  function hideCard() { el.card.classList.remove("is-in"); }
+  function setTag(kind, title, sub = "") {
+    if (!kind) { el.tag.classList.remove("is-in"); return; }
+    el.tag.dataset.kind = kind;
+    el.tagT.textContent = title;
+    el.tagS.textContent = sub;
     el.tag.classList.add("is-in");
   }
-
-  function setSub(text) {
-    if (!text) {
-      el.subP.classList.remove("is-in");
-      el.subP.classList.add("is-empty");
-      el.subP.textContent = "";
-      return;
-    }
-    el.subP.textContent = text;
-    el.subP.classList.remove("is-empty");
-    void el.subP.offsetWidth;
-    el.subP.classList.add("is-in");
-  }
-
-  function setCard(html, extraClass = "") {
-    el.card.className = `wmt-card is-in ${extraClass}`;
-    el.card.innerHTML = html;
-  }
-
-  function hideCard() {
-    el.card.classList.remove("is-in");
-  }
-
   function renderBar() {
     el.segs.forEach((li, i) => {
-      li.classList.toggle("is-active", i === chapter);
       li.classList.toggle("is-done", i < chapter);
-      const bar = li.querySelector(".wmt-seg i");
-      if (i < chapter) bar.style.transform = "scaleX(1)";
-      else if (i > chapter) bar.style.transform = "scaleX(0)";
+      li.classList.toggle("is-active", i === chapter);
+      const fill = li.querySelector(".wmt-seg i");
+      if (i < chapter) fill.style.transform = "scaleX(1)";
+      else if (i > chapter) fill.style.transform = "scaleX(0)";
     });
   }
 
+  // Frame loop: spotlight follows the 3D stage, chapter progress advances.
   function frame(now) {
     if (!running) return;
     loopId = requestAnimationFrame(frame);
@@ -354,184 +312,207 @@
       el.hole.style.transform = `translate(${r.left - pad}px, ${top}px)`;
       el.hole.style.width = `${r.width + pad * 2}px`;
       el.hole.style.height = `${Math.max(0, bottom - top)}px`;
+      // Anchor the label inside the 3D viewport (not over the left rail tabs)
       const vp = stage.querySelector(".spatial-viewport-card");
       const vr = vp && vp.offsetParent ? vp.getBoundingClientRect() : r;
       el.tag.style.transform = `translate(${Math.max(12, vr.left + 20)}px, ${Math.max(12, Math.max(vr.top, top) + 20)}px)`;
     }
   }
 
-  async function enterLab(tk, theme = 0) {
-    const lab = window.spatialLab;
-    const stage = document.getElementById("labStage");
-    if (!lab || !stage) return false;
-    hideCard();
-    setSub("");
-    stage.scrollIntoView({ behavior: "smooth", block: "center" });
-    await wait(300, tk);
-    setMode("lab");
-    if (lab.themeIndex !== theme) {
-      await until(Promise.race([lab.loadTheme(theme, 1), new Promise((r) => setTimeout(r, 4000))]), tk);
-    }
-    return true;
-  }
+  // ------------------------------------------------------------------ scenes
+  const GLASS_SVG = `
+    <svg class="wmt-glass" viewBox="0 0 560 300" aria-hidden="true">
+      <defs>
+        <radialGradient id="wmtHandFade" cx="50%" cy="50%" r="50%">
+          <stop offset="74%" stop-color="#fff"/>
+          <stop offset="100%" stop-color="#000"/>
+        </radialGradient>
+        <mask id="wmtHandMask"><rect x="4" y="34" width="256" height="240" fill="url(#wmtHandFade)"/></mask>
+      </defs>
+      <g class="wmt-real">
+        <image class="wmt-hand-photo" href="davies-assets/images/world-model/hand-glass.webp?v=2" x="4" y="34" width="256" height="240"
+               preserveAspectRatio="xMidYMid slice" mask="url(#wmtHandMask)"/>
+        <text x="120" y="22" text-anchor="middle" class="wmt-svg-cap">지금 내 손</text>
+        <text x="120" y="290" text-anchor="middle" class="wmt-svg-note">아직 놓지 않았어요</text>
+      </g>
+      <g class="wmt-think">
+        <circle cx="222" cy="104" r="4"/><circle cx="240" cy="82" r="6"/><circle cx="262" cy="60" r="8"/>
+        <rect class="wmt-bubble" x="286" y="16" width="258" height="262" rx="30"/>
+        <text x="415" y="44" text-anchor="middle" class="wmt-svg-cap wmt-svg-cap--c">머릿속 시뮬레이션</text>
+        <path class="wmt-traj" d="M415 92v136"/>
+        <g class="wmt-fall">
+          <path class="wmt-glass__cup" d="M397 64h36l-5 58h-26z"/>
+          <path class="wmt-glass__water" d="M400 90h30l-3 30h-24z"/>
+        </g>
+        <path class="wmt-floor" d="M316 240h198"/>
+        <g class="wmt-shards">
+          <path style="--dx:-46px;--dy:-30px;--r:-80deg" d="M410 236l7-12 5 11z"/>
+          <path style="--dx:40px;--dy:-38px;--r:90deg" d="M418 236l6-10 6 10z"/>
+          <path style="--dx:-26px;--dy:-52px;--r:140deg" d="M412 236l3-9 5 8z"/>
+          <path style="--dx:58px;--dy:-14px;--r:-120deg" d="M420 238l9-6 1 8z"/>
+          <path style="--dx:-62px;--dy:-8px;--r:60deg" d="M406 238l-8-6-1 8z"/>
+          <path style="--dx:16px;--dy:-60px;--r:200deg" d="M416 236l2-8 4 7z"/>
+        </g>
+        <text x="468" y="214" class="wmt-bang">쨍!</text>
+      </g>
+    </svg>`;
 
-  // ------------------------------------------------------------------ SCENES (60s Complete Pipeline)
   const S = [];
 
-  // Scene 0: 질문 & 도입 (Question)
+  // 1 — Question
   S[0] = async (tk) => {
     setMode("full");
     setTag(null);
     setSub("");
     setCard(`
-      <p class="wmt-eyebrow"><span class="wmt-dot"></span>SIMSREALITY · 60초 공간 지능 가이드</p>
+      <p class="wmt-eyebrow"><span class="wmt-dot"></span>WORLD MODEL · 60초 투어</p>
       <h2 class="wmt-q"><span id="wmtType"></span><i class="wmt-caret"></i></h2>
-      <div class="wmt-workflow">
-        <div class="wmt-wf-item is-active">
-          <div class="wmt-wf-icon">${svg("upload")}</div>
-          <p class="wmt-wf-title">① 도면/사진</p>
-          <p class="wmt-wf-desc">손그림·CAD·사진 업로드</p>
-        </div>
-        <div class="wmt-wf-item">
-          <div class="wmt-wf-icon">${svg("spark")}</div>
-          <p class="wmt-wf-title">② AI 공간 분석</p>
-          <p class="wmt-wf-desc">Gemini 구조/랙 인지</p>
-        </div>
-        <div class="wmt-wf-item">
-          <div class="wmt-wf-icon">${svg("cube")}</div>
-          <p class="wmt-wf-title">③ 3D 월드 생성</p>
-          <p class="wmt-wf-desc">50만 스플랫 공간</p>
-        </div>
-        <div class="wmt-wf-item">
-          <div class="wmt-wf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3.5h8v6H8z"/><path d="M12 12.5v6m-2.6-2.6L12 18.5l2.6-2.6"/></svg></div>
-          <p class="wmt-wf-title">④ 실감 물리 실험</p>
-          <p class="wmt-wf-desc">1m 낙하·투척·공간분할</p>
-        </div>
-      </div>
-      <p class="wmt-lead">스마트폰 스케치 한 장이 <b>어떻게 실제 물리 법칙이 살아있는 3D 공간</b>이 될까요?</p>
-    `, "wmt-card--q");
-
+      <p class="wmt-lead">아직 일어나지 않은 일을, AI는 어떻게 미리 알 수 있을까요?</p>`, "wmt-card--q");
     const out = el.card.querySelector("#wmtType");
-    const q = "내 도면이 어떻게 살아있는 3D 공간이 될까요?";
-    const talk = say("스마트폰 손그림 스케치, 캐드 도면, 사진 한 장이 어떻게 살아있는 3D 가상 공간이 될까요?", tk, 0, "0");
+    const q = "AI는 어떻게 미래를 알 수 있을까요?";
+    const talk = say("AI는 어떻게, 아직 일어나지 않은 미래를 알 수 있을까요?", tk, 0, "0");
     for (let i = 1; i <= q.length; i++) {
       out.textContent = q.slice(0, i);
       await wait(45, tk);
     }
     await talk;
-    await wait(300, tk);
+    await wait(200, tk);
   };
 
-  // Scene 1: 도면/스케치 AI 분석 (Gemini Multimodal Sketch-to-3D)
+  // 2 — Glass analogy
   S[1] = async (tk) => {
     setMode("full");
     setTag(null);
     setCard(`
-      <p class="wmt-eyebrow"><span class="wmt-dot"></span>STEP 1 · GEMINI MULTIMODAL VISION</p>
-      <h3 class="wmt-h">도면과 스케치에서 <span>기둥, 랙, 통로 폭을 스스로 읽어냅니다</span></h3>
-      <div class="wmt-blueprint-preview">
-        <img src="davies-assets/images/blueprints/blueprint_warehouse.svg" class="wmt-bp-img" alt="도면 샘플">
-        <div class="wmt-bp-scanner">
-          <div class="wmt-bp-beam"></div>
-          <div class="wmt-bp-badge">GEMINI 2.5 SPATIAL SCANNING · 기둥/통로/랙 인식 완료</div>
-        </div>
-      </div>
-      <p class="wmt-lead">모바일로 대충 그린 손그림이나 CAD 도면, 현장 사진을 올리기만 하면 <b>AI가 건축 구조를 정밀 분석</b>합니다.</p>
-    `, "wmt-card--sketch");
-
-    await say("누구나 모바일로 쉽게 그린 평면도나 캐드 도면, 현장 사진을 올리기만 하면, 제미나이 AI가 기둥 간격, 통로 폭, 랙 배치를 스스로 분석합니다.", tk, 0, "1");
-    await wait(400, tk);
+      <p class="wmt-eyebrow"><span class="wmt-dot"></span>쉬운 비유</p>
+      <h3 class="wmt-h">유리잔을 놓으면? <span>깨뜨려 보지 않아도 압니다</span></h3>
+      ${GLASS_SVG}
+      <ol class="wmt-steps"><li>① 손을 놓으면</li><li>② 아래로 떨어지고</li><li>③ 바닥에 부딪혀 깨진다</li></ol>
+      <p class="wmt-reveal">이 <b>‘머릿속 물리 엔진’</b>을 AI에게 심어준 것 = <b class="wmt-hl">월드 모델</b></p>`, "wmt-card--glass");
+    await say("손에 든 유리잔을 놓으면 깨진다는 것, 우리는 직접 깨뜨려 보지 않아도 압니다.", tk, 0, "1a");
+    el.card.classList.add("is-reveal");
+    await wait(180, tk);
+    await say("머릿속에 세상이 돌아가는 규칙이 있기 때문이죠. 월드 모델은 바로 이 머릿속 물리 엔진을 AI에게 심어준 것입니다.", tk, 0, "1b");
+    await wait(250, tk);
   };
 
-  // Scene 2: 50만 스플랫 3D 공간 생성 (World Labs Marble)
-  S[2] = async (tk) => {
-    if (!(await enterLab(tk, 0))) return jump(5);
-    setTag("ai", "World Labs Marble 1.1", "500,000 스플랫 정밀 3D 공간 렌더링 완료");
-    const talk = say("분석된 공간 정보는 월드 랩스 뉴럴 엔진을 통해 500,000개의 초정밀 3D 스플랫 공간으로 즉시 펼쳐집니다.", tk, 0, "2");
-    await wait(800, tk);
-    // Smooth camera orbit
-    const controls = window.spatialLab?.controls;
-    if (controls) {
-      const startAngle = controls.getAzimuthalAngle?.() || 0;
-      for (let i = 0; i < 40; i++) {
-        if (tk !== token) break;
-        controls.rotateLeft?.(0.015);
-        controls.update?.();
-        await wait(50, tk);
-      }
+  async function enterLab(tk) {
+    const lab = window.spatialLab;
+    const stage = document.getElementById("labStage");
+    if (!lab || !stage || !lab.ghostDrop) return false;
+    hideCard();
+    setSub("");
+    stage.scrollIntoView({ behavior: "smooth", block: "center" });
+    await wait(350, tk);
+    setMode("lab");
+    if (lab.themeIndex !== 0) {
+      setTag("ai", "물류 창고로 이동 중…", "");
+      await until(Promise.race([lab.loadTheme(0, -1), new Promise((r) => setTimeout(r, 4000))]), tk);
     }
+    return true;
+  }
+
+  // 3 — AI imagination (ghost prediction)
+  S[2] = async (tk) => {
+    if (!(await enterLab(tk))) return jump(5);
+    const lab = window.spatialLab;
+    lab.resetScene();
+    predicted = lab.prediction;
+    measured = null;
+    setTag("ai", "AI의 상상", "아직 아무것도 떨어뜨리지 않았어요");
+    const talk = say("직접 볼까요? 먼저 AI가 상상합니다. 1미터 위에서 상자를 놓으면, 언제, 얼마나 빠르게 떨어질까?", tk, 0, "2a");
+    await wait(800, tk);
+    setTag("ai", "AI의 상상 · 슬로모션 ×3", "물리 법칙으로 미래를 계산하는 중…");
+    const res = await until(lab.ghostDrop({ slow: 3 }), tk);
+    if (res) predicted = res;
     await talk;
+    await wait(150, tk);
+    setTag("ai", "AI의 예측", `${predicted.t.toFixed(2)}초 뒤 착지 · 초속 ${predicted.v.toFixed(1)} m`);
+    await say("AI의 예측: 0.45초 뒤 바닥에 닿고, 속도는 초속 4.4미터.", tk, 0, "2b");
+    await wait(250, tk);
+  };
+
+  // 4 — Reality (real Rapier drop)
+  S[3] = async (tk) => {
+    const lab = window.spatialLab;
+    if (mode === "full" && !(await enterLab(tk))) return jump(5);
+    predicted = predicted || lab.prediction;
+    setTag("real", "현실 · 실제 물리 엔진", "AI의 상상(하늘색 윤곽)과 비교해 보세요");
+    const talk = say("이제 현실에서 진짜로 떨어뜨려 봅니다.", tk, 0, "3");
+    await wait(350, tk);
+    measured = await until(lab.realDrop(), tk);
+    await talk;
+    if (measured) setTag("real", "현실의 결과", `${measured.t.toFixed(2)}초 · 초속 ${measured.v.toFixed(1)} m`);
+    await wait(250, tk);
+  };
+
+  // 5 — Comparison
+  S[4] = async (tk) => {
+    const lab = window.spatialLab;
+    if (mode === "full" && lab) { await enterLab(tk); }
+    predicted = predicted || lab?.prediction || { t: 0.46, v: 4.5 };
+    const m = measured || predicted;
+    const err = (Math.abs(m.t - predicted.t) / predicted.t + Math.abs(m.v - predicted.v) / predicted.v) / 2;
+    const acc = Math.max(0, Math.min(100, Math.round((1 - err) * 100)));
+    setMode("labcard");
+    setTag(null);
+    setCard(`
+      <p class="wmt-eyebrow"><span class="wmt-dot"></span>상상 vs 현실</p>
+      <div class="wmt-vs">
+        <div class="wmt-vs__col wmt-vs__col--ai">
+          <span class="wmt-vs__k">AI의 상상</span>
+          <b>${predicted.t.toFixed(2)}<small>초</small></b>
+          <b>${predicted.v.toFixed(1)}<small>m/s</small></b>
+        </div>
+        <div class="wmt-vs__mid">
+          <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="wmt-ring-bg" cx="60" cy="60" r="52"/><circle class="wmt-ring" cx="60" cy="60" r="52" style="--p:${acc}"/></svg>
+          <span><b id="wmtAcc">0</b>%</span>
+          <em>일치</em>
+        </div>
+        <div class="wmt-vs__col wmt-vs__col--real">
+          <span class="wmt-vs__k">현실</span>
+          <b>${m.t.toFixed(2)}<small>초</small></b>
+          <b>${m.v.toFixed(1)}<small>m/s</small></b>
+        </div>
+      </div>
+      <p class="wmt-lead">직접 부딪혀 보지 않고도, <b>결과를 미리</b> 알 수 있어요.</p>`, "wmt-card--vs");
+    const accEl = el.card.querySelector("#wmtAcc");
+    const s0 = performance.now();
+    const count = (now) => {
+      const k = Math.min(1, (now - s0) / 1100);
+      accEl.textContent = String(Math.round(acc * (1 - Math.pow(1 - k, 3))));
+      if (k < 1 && accEl.isConnected) requestAnimationFrame(count);
+    };
+    requestAnimationFrame(count);
+    await say("결과를 비교해 볼까요? AI의 상상과 현실이 거의 똑같습니다. 직접 부딪혀 보지 않고도, 결과를 미리 알 수 있는 거죠.", tk, 0, "4");
     await wait(300, tk);
   };
 
-  // Scene 3: 실감 물리 실험 (1m 낙하 & 2.5m/s 투척)
-  S[3] = async (tk) => {
-    const lab = window.spatialLab;
-    if (mode === "full") await enterLab(tk, 0);
-    setTag("real", "1m 낙하 & 2.5m/s 투척 실험", "실제 중력(9.8m/s²)과 바닥 마찰력 시뮬레이션");
-    const talk = say("단순한 관람용 그래픽이 아닙니다. 1미터 자유 낙하와 2.5m/s 투척 실험으로 실제 중력과 충돌, 바닥 마찰력을 가상에서 안전하게 검증합니다.", tk, 0, "3");
-    
-    // Trigger drop
-    const btnDrop = document.getElementById("btnDropTest");
-    if (btnDrop) btnDrop.click();
-    await wait(2200, tk);
-
-    // Trigger toss
-    const btnToss = document.getElementById("btnTossTest");
-    if (btnToss) btnToss.click();
-
-    await talk;
-    await wait(400, tk);
-  };
-
-  // Scene 4: 공간 지능 & 정밀 선택 (7구역 OBB & 60점 레이캐스팅)
-  S[4] = async (tk) => {
-    const lab = window.spatialLab;
-    if (mode === "full") await enterLab(tk, 0);
-    setTag("ai", "공간 지능 & 정밀 선택", "7구역 OBB 바운딩 박스 + 60점 레이캐스팅 평가");
-    
-    // Turn on Partition
-    const btnPart = document.getElementById("btnTogglePartition");
-    if (btnPart) btnPart.click();
-    await wait(1000, tk);
-
-    // Run picking benchmark
-    const btnPick = document.getElementById("btnRunPicking");
-    if (btnPick) btnPick.click();
-
-    await say("7구역 공간 분할과 60점 레이캐스팅 평가로, 로봇과 AI가 사각지대 없이 집어내는 정밀도를 직접 확인해 보세요.", tk, 0, "4");
-    await wait(500, tk);
-  };
-
-  // Scene 5: 정리 및 직접 체험 (Call to Action)
+  // 6 — Summary
   S[5] = async (tk) => {
+    window.spatialLab?.ghostClear?.(900);
     setMode("full");
     setTag(null);
     setCard(`
-      <p class="wmt-eyebrow"><span class="wmt-dot"></span>SIMSREALITY 3D SPATIAL STUDIO</p>
-      <h2 class="wmt-sum"><span class="wmt-hl">누구나 모바일로</span><br>원하는 공간을 3D로 만들고<br><b>실제 물리 법칙으로 체험하세요!</b></h2>
+      <p class="wmt-eyebrow"><span class="wmt-dot"></span>정리하면</p>
+      <h2 class="wmt-sum"><span class="wmt-hl">월드 모델</span>은<br>행동하기 전에 미래를 미리 그려보는<br><b>AI의 머릿속 시뮬레이터</b></h2>
+      <ul class="wmt-keys">
+        <li>${svg("cause")}<b>인과관계 예측</b><span>“이 행동을 하면 다음에 무슨 일이?”를 계산</span></li>
+        <li>${svg("shield")}<b>시행착오 최소화</b><span>로봇·자율주행차가 사고 없이 안전하게 학습</span></li>
+        <li>${svg("spark")}<b>AGI의 필수 조건</b><span>글자를 넘어 실제 물리 세계를 이해하는 열쇠</span></li>
+      </ul>
       <div class="wmt-actions">
-        <button type="button" class="wmt-act wmt-act--primary" data-act="openSketch">
-          ${svg("upload")} 도면 올려서 3D 만들기
-        </button>
-        <button type="button" class="wmt-act" data-act="tryPhysics">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3.5h8v6H8z"/><path d="M12 12.5v6"/></svg>
-          물리 실험 직접 해보기
-        </button>
-        <button type="button" class="wmt-act" data-act="openNova">
-          ${svg("mic")} Nova 음성 대화 시작
-        </button>
+        <button type="button" class="wmt-act" data-act="replay">${svg("replay")}다시 보기</button>
+        <button type="button" class="wmt-act wmt-act--primary" data-act="try">직접 실험해 보기${svg("arrow")}</button>
       </div>
-      <p class="wmt-hint">언제든 오른쪽 아래 <b>마이크 버튼</b>을 누르면 Nova가 음성으로 안내해 드립니다.</p>
-    `, "wmt-card--sum");
-
-    await say("지금 바로 도면이나 사진을 올려 나만의 3D 공간을 만들고, 오른쪽 마이크를 켜서 노바에게 말을 걸어보세요!", tk, 0, "5");
+      <p class="wmt-hint">더 궁금하면 오른쪽 아래 <b>SIMS</b>에게 “월드 모델이 뭐야?”라고 물어보세요</p>`, "wmt-card--sum");
+    await say("정리하면, 월드 모델은 AI가 현실 세계의 물리 법칙과 인과관계를 학습해, 행동하기 전에 머릿속으로 미래를 미리 그려보는 내부 시뮬레이션 엔진입니다. 이제 직접 실험해 보세요!", tk, 0, "5");
     chapterElapsed = CHAPTERS[5].est;
-    await wait(kioskRun ? 8000 : 35000, tk);
+    await wait(kioskRun ? 10000 : 45000, tk);
     close();
   };
 
-  // ------------------------------------------------------------------ controls
+  // ------------------------------------------------------------------ control
   function runFrom(i) {
     const tk = ++token;
     stopSpeech();
@@ -562,81 +543,96 @@
     build();
     kioskRun = !!opts.kiosk;
     if (!running) lastFocus = document.activeElement;
-    try { if (window.NovaLive?.isActive) window.NovaLive.stop(); } catch (_) {}
+    try { if (window.NovaLive?.isActive) window.NovaLive.stop(); } catch (_) { /* ignore */ }
     running = true;
     root.hidden = false;
     document.documentElement.classList.add("wmt-active");
     requestAnimationFrame(() => root.classList.add("is-open"));
+    cancelAnimationFrame(loopId);
+    frame.last = 0;
     loopId = requestAnimationFrame(frame);
-    frame.last = performance.now();
-    runFrom(opts.startAt || 0);
+    setMode("full");
+    runFrom(Math.max(0, opts.startAt || 0));
+    el.pause?.focus?.({ preventScroll: true });
   }
 
   function close() {
     if (!running) return;
     token++;
     running = false;
-    cancelAnimationFrame(loopId);
+    paused = false;
     stopSpeech();
+    cancelAnimationFrame(loopId);
+    window.spatialLab?.ghostClear?.(600);
     root.classList.remove("is-open");
     document.documentElement.classList.remove("wmt-active");
-    setTimeout(() => {
-      if (!running && root) {
-        root.hidden = true;
-        setMode("full");
-        hideCard();
-        setTag(null);
-        setSub("");
-      }
-    }, 450);
-    if (lastFocus && typeof lastFocus.focus === "function") {
-      try { lastFocus.focus(); } catch (_) {}
-      lastFocus = null;
-    }
-  }
-
-  function togglePause() {
-    paused = !paused;
-    syncPause();
-    if (paused) {
-      if (currentAudio) try { currentAudio.pause(); } catch (_) {}
-      try { window.speechSynthesis?.pause(); } catch (_) {}
-    } else {
-      if (currentAudio) try { currentAudio.play(); } catch (_) {}
-      try { window.speechSynthesis?.resume(); } catch (_) {}
-    }
+    setTimeout(() => { if (!running) root.hidden = true; }, 450);
+    lastIdle = Date.now();
+    if (lastFocus && document.contains(lastFocus)) lastFocus.focus?.({ preventScroll: true });
   }
 
   function syncPause() {
-    root?.classList.toggle("is-paused", paused);
-    if (el.btnPause) {
-      el.btnPause.innerHTML = svg(paused ? "play" : "pause");
-      el.btnPause.title = paused ? "재생" : "일시정지";
-    }
+    if (!el.pause) return;
+    el.pause.innerHTML = svg(paused ? "play" : "pause");
+    el.pause.setAttribute("aria-label", paused ? "재생" : "일시정지");
+    root.classList.toggle("is-paused", paused);
   }
-
-  function toggleSound() {
+  function togglePause() {
+    paused = !paused;
+    if (currentAudio) {
+      try {
+        if (paused) currentAudio.pause();
+        else if (!muted) currentAudio.play().catch(() => {});
+      } catch (_) {}
+    }
+    try { paused ? window.speechSynthesis?.pause() : window.speechSynthesis?.resume(); } catch (_) { /* ignore */ }
+    syncPause();
+  }
+  function toggleMute() {
     muted = !muted;
-    try { localStorage.setItem("wmt-muted", muted ? "1" : "0"); } catch (_) {}
-    if (el.btnSound) {
-      el.btnSound.innerHTML = svg(muted ? "mute" : "sound");
-      el.btnSound.title = muted ? "소리 켜기" : "소리 끄기";
-    }
+    try { localStorage.setItem("wmt-muted", muted ? "1" : "0"); } catch (_) { /* ignore */ }
     if (muted) stopSpeech();
+    el.mute.innerHTML = svg(muted ? "mute" : "sound");
+    el.mute.setAttribute("aria-label", muted ? "음성 켜기" : "음성 끄기");
+  }
+  function tryIt() {
+    close();
+    const stage = document.getElementById("labStage");
+    stage?.scrollIntoView({ behavior: "smooth", block: "center" });
+    setTimeout(() => {
+      const b = document.getElementById("btnDropTest");
+      b?.focus({ preventScroll: true });
+      b?.classList.add("wmt-attn");
+      setTimeout(() => b?.classList.remove("wmt-attn"), 2600);
+    }, 600);
   }
 
-  // Public API
-  window.WorldModelTour = {
-    play,
-    close,
-    jump,
-    get isPlaying() { return running; }
-  };
+  document.addEventListener("keydown", (e) => {
+    if (!running) return;
+    if (e.key === "Escape") { e.preventDefault(); close(); }
+    else if (e.key === " " && !e.target.closest?.("button")) { e.preventDefault(); togglePause(); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); e.stopImmediatePropagation(); jump(chapter + 1); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); e.stopImmediatePropagation(); jump(chapter - 1); }
+  }, true);
 
-  // Auto-bind CTA triggers
-  document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll("[data-wm-tour]").forEach((btn) => {
-      btn.addEventListener("click", () => play());
-    });
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest?.("[data-wm-tour]");
+    if (!t) return;
+    e.preventDefault();
+    play();
   });
+
+  // ------------------------------------------------------------------ kiosk: autoplay after idle
+  let lastIdle = Date.now();
+  if (KIOSK) {
+    ["pointerdown", "keydown", "wheel", "touchstart"].forEach((ev) =>
+      window.addEventListener(ev, () => { if (!running) lastIdle = Date.now(); }, { passive: true, capture: true }));
+    setInterval(() => {
+      if (running || document.hidden) return;
+      if (window.NovaLive?.isActive) { lastIdle = Date.now(); return; }
+      if (Date.now() - lastIdle > KIOSK_IDLE_MS) play({ kiosk: true });
+    }, 5000);
+  }
+
+  window.WorldModelTour = { play, close, jump, get isPlaying() { return running; } };
 })();

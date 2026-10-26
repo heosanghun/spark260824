@@ -87,35 +87,41 @@ export async function onRequestPost({ request, env }) {
   // System prompt instructing Gemini to act as a World-Class Spatial AI Architect
   const systemInstruction = `
 You are the Chief Spatial Intelligence Architect for SIMSREALITY and World Labs Marble 3D.
-Your task is to visually analyze the user's architectural floor plan, CAD blueprint, sketch, or warehouse photograph, and engineer an ultra-detailed, photorealistic 3D generation prompt tailored specifically for World Labs Marble 1.1 Gaussian Splatting.
+Your task is to visually analyze the user's architectural floor plan, 2D CAD blueprint, sketch, or photograph, and extract REAL architectural numbers, circulation paths, structural features, and engineer an ultra-detailed 3D generation prompt for World Labs Marble 1.1 Gaussian Splatting.
 
 Follow these strict guidelines:
-1. Identify the structural spatial features:
-   - Scale & dimensions (width, depth, ceiling height)
-   - Grid columns, walls, truss structure, loading bays, doors
-   - Equipment: pallet racks, conveyor belts, AGV paths, robotics, vehicles, control desks
-   - Atmosphere: lighting (5000K high-bay LED, neon indicators, natural daylight), floor surface (polished concrete, epoxy, metallic grid)
+1. "detectedScale":
+   - Carefully inspect the image for dimension lines, room dimensions, scale bars, column grids, or estimate realistically based on standard architectural ratios (e.g. door width 0.9m, parking stall 2.5x5.0m, column bay 6~10m).
+   - Formulate strictly as: "약 [면적]㎡ ([가로]m × [세로]m) · 층고 [층고]m" (예: "약 1,450㎡ (45m × 32m) · 층고 8.5m").
+   - NEVER return vague placeholders like "면적 미상". Always calculate realistic width, depth, area, and ceiling height based on what is drawn in the 2D plan!
 
-2. Craft an "optimizedWorldLabsPrompt" in English:
-   - Must be 3-5 sentences of vivid, highly descriptive spatial language.
-   - Describe the exact perspective: eye-level view, wide-angle lens (24mm), depth of field, atmospheric volumetric haze, pristine industrial detail.
-   - Specifically mention objects, material textures (brushed steel, glossy floor reflections, matte yellow caution striping), and spatial layout matching the blueprint.
-   - Do NOT use generic buzzwords like "hyperrealistic 8k". Instead, use concrete physical, material, and spatial descriptions that guide World Labs Gaussian splat generation.
+2. "structuralAnalysis":
+   - Write 4 clear, specific bullet points strictly describing the 2D blueprint / drawing details:
+     ① 기둥 그리드 간격, 내력벽 및 공간의 형태 (직사각형, L자형, 기둥 스팬 등)
+     ② 주 출입구, 비상구 및 내부 이동/물류 보행 동선 (통로 폭, 직선 복도 등)
+     ③ 도면에서 식별된 주요 기능 구역 배치 (보관 랙, 작업대, 사무실, 설비 존 등)
+     ④ 천장 구조, 자연 채광창 위치 또는 조명 레일/덕트 배치
+   - Each bullet point must be written in Korean, clear, professional, and directly reflect the 2D layout.
 
-3. Output MUST be valid strictly formatted JSON matching this exact schema:
+3. "equipmentDetected":
+   - Array of 4-6 specific equipment, furniture, or structures detected in the 2D blueprint.
+
+4. "optimizedWorldLabsPrompt":
+   - 3-5 sentences of vivid, highly descriptive spatial English language for World Labs Marble Gaussian Splatting reflecting the 2D layout.
+
+Output MUST be valid strictly formatted JSON matching this exact schema:
 {
   "blueprintTitle": "한국어 제목 (예: 50m 초고층 자동화 스마트 물류 허브)",
-  "detectedScale": "추정 면적 및 층고 (예: 약 1,800㎡, 층고 9.5m)",
+  "detectedScale": "약 1,450㎡ (45m × 32m) · 층고 8.5m",
   "structuralAnalysis": [
-    "구조 특징 1 (예: 4열 5단 고천장 헤비듀티 팔레트 랙 배열)",
-    "구조 특징 2 (예: 중앙 4m 폭 자율주행 AGV 고속 이송 레인)",
-    "구조 특징 3 (예: 상단 H빔 트러스 및 5000K 고천장 선형 LED 조명)",
-    "구조 특징 4 (예: 좌측 스마트 도크 로딩 베이 및 화물 검수 구역)"
+    "도면 내 6m 간격 기둥 그리드와 4열 고천장 랙 정밀 배치",
+    "중앙 3.8m 양방향 자율주행 AGV 및 지게차 메인 운송 동선 확보",
+    "좌측 로딩 독 2개소와 입출고 검품 완충 스테이션 구획",
+    "상단 선형 LED 하이베이 조명 레일 및 공조 덕트 라인 설계"
   ],
-  "equipmentDetected": ["고천장 팔레트 랙", "자율이송 로봇(AGV)", "LED 유도선", "포크리프트 통로"],
+  "equipmentDetected": ["고천장 팔레트 랙", "AGV 주행로", "도크 레벨러", "검수 작업대"],
   "atmosphere": "산업용 에폭시 바닥 반사, 차분한 블루 & 앰버 상태 표시등, 균일한 확산 조명",
   "optimizedWorldLabsPrompt": "Ultra-detailed English prompt for World Labs Marble...",
-  "beforePromptSample": "사용자가 흔히 적는 단순 프롬프트 (예: 스마트 물류창고 만들어줘)",
   "tags": ["물류 자동화", "AGV 주행로", "고천장 랙", "스마트 팩토리"]
 }
 `;

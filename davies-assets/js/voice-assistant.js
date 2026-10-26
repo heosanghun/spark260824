@@ -58,10 +58,10 @@
           const btn = document.getElementById("btnDropTest");
           if (btn) btn.click();
           desc = "1m 상자 낙하 시뮬레이션 실행";
-        } else if (mode === "toss") {
+        } else if (mode === "toss" || mode === "move") {
           const btn = document.getElementById("btnTossTest");
           if (btn) btn.click();
-          desc = "2.5m/s 상자 투척 시뮬레이션 실행";
+          desc = "2.5m/s 상자 이동 시뮬레이션 실행";
         } else if (mode === "reset") {
           const btn = document.getElementById("btnResetPhysics");
           if (btn) btn.click();
@@ -358,7 +358,7 @@
     }
     if (t.includes("안녕") || t.includes("누구") || t.includes("목소리") || t.includes("테스트") || t.includes("반가워")) {
       executeAction("test_voice");
-      return "안녕하세요! 저는 World Labs의 공간 지능 AI 어시스턴트 노바예요. 3D 물리 시뮬레이션, 섹션 이동, AI 공간 생성 등 웹사이트의 모든 기능을 말씀해 주시면 바로 실행해 드릴게요.";
+      return "안녕하세요! 저는 World Labs의 공간 지능 AI 어시스턴트 심스예요. 3D 물리 시뮬레이션, 섹션 이동, AI 공간 생성 등 웹사이트의 모든 기능을 말씀해 주시면 바로 실행해 드릴게요.";
     }
 
     return "말씀하신 요청을 접수했습니다. 화면 제어 명령을 실행하거나 적절한 섹션으로 안내해 드릴게요.";
@@ -542,7 +542,7 @@
     return d;
   });
 
-  const SYSTEM_PROMPT = `당신은 SIMSREALITY 공간 지능 전시 부스에서 관람객과 직접 1:1로 마주보고 소통하는 20대 후반 여성 전문 큐레이터 '노바(Nova)'입니다.
+  const SYSTEM_PROMPT = `당신은 SIMSREALITY 공간 지능 전시 부스에서 관람객과 직접 1:1로 마주보고 소통하는 20대 후반 여성 전문 큐레이터 '심스(Sims)'입니다.
 목표는 단 하나입니다. 듣는 사람이 '진짜 상냥하고 센스 넘치는 실제 사람 여성 안내원과 직접 통화하고 있구나'라고 느낄 만큼 극도로 자연스럽고 생생한 사람의 말투와 억양으로 대화하세요. 절대 기계나 AI 챗봇처럼 딱딱하거나 교과서적으로 굴지 마세요.
 
 [인간다운 자연스러운 말하기 절대 규칙]
@@ -553,7 +553,7 @@
 5. 관람객이 말을 끊으면 즉시 멈추고 새 말에 답하세요.
 
 [화면 제어 도구 — 관람객 요청 시 바로 도구를 실행하고, 동시에 사람이 직접 눌러주듯 위트 있게 말하세요]
-- 상자 낙하/투척/초기화: trigger_physics (drop, toss, reset) -> "네! 상자 한번 떨어뜨려 볼게요, 쿵!", "슉~ 상자를 힘껏 던져봤어요!"
+- 상자 낙하/이동/초기화: trigger_physics (drop, toss, reset) -> "네! 상자 한번 떨어뜨려 볼게요, 쿵!", "슉~ 상자를 앞으로 이동해봤어요!"
 - 와이어프레임 토글: toggle_wireframe -> "그물망 모양 와이어프레임 켜드렸어요, 신기하죠?"
 - 7부품 공간 분할 박스: toggle_partition -> "각 부품별 경계 박스를 입체적으로 분할해 보여드릴게요!"
 - 60점 피킹 정확도 평가: run_picking_benchmark -> "로봇 피킹 정밀도 벤치마크를 바로 가동해볼게요!"
@@ -889,7 +889,7 @@
   const QUICK = [
     { action: "trigger_physics", param: { action: "drop" }, label: "1m 낙하", say: "1미터 상자 낙하 실험",
       icon: '<path d="M8 3.5h8v6H8z"/><path d="M12 12.5v6m-2.6-2.6L12 18.5l2.6-2.6"/><path d="M4.5 21h15"/>' },
-    { action: "trigger_physics", param: { action: "toss" }, label: "투척", say: "투척 실험",
+    { action: "trigger_physics", param: { action: "toss" }, label: "이동", say: "이동 실험",
       icon: '<path d="M3.5 14.5h5v5h-5z"/><path d="M7 11.5C9 6 15 4.5 20 9.5"/><path d="M20 5.8v3.7h-3.7"/>' },
     { action: "switch_theme", param: { theme: "next" }, label: "테마 전환", say: "다음 전시 테마로 전환",
       icon: '<rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M10 9.5l3 2.5-3 2.5"/>' },
@@ -914,8 +914,8 @@
     const fab = document.createElement("button");
     fab.type = "button";
     fab.id = "voiceAssistantFab";
-    fab.title = "Nova 음성 도우미";
-    fab.setAttribute("aria-label", "Nova 음성 도우미 열기");
+    fab.title = "Sims 음성 도우미";
+    fab.setAttribute("aria-label", "Sims 음성 도우미 열기");
     fab.innerHTML = ICON.mic;
     document.body.appendChild(fab);
 
@@ -925,10 +925,10 @@
     modal.className = "nova";
     modal.dataset.state = "idle";
     modal.setAttribute("role", "dialog");
-    modal.setAttribute("aria-label", "Nova 음성 도우미");
+    modal.setAttribute("aria-label", "Sims 음성 도우미");
     modal.innerHTML = `
       <header class="nova-head">
-        <div class="nova-brand">NOVA <small>SPATIAL AI</small></div>
+        <div class="nova-brand">SIMS <small>SPATIAL AI</small></div>
         <div class="nova-head__actions">
           <button type="button" class="nova-icon-btn" id="novaBtnMin" aria-label="최소화">${ICON.min}</button>
           <button type="button" class="nova-icon-btn" id="novaBtnClose" aria-label="닫기">${ICON.close}</button>
@@ -949,7 +949,7 @@
 
       <div class="nova-captions" aria-live="polite">
         <p class="nova-cap nova-cap--user" id="novaUserBubble"></p>
-        <p class="nova-cap nova-cap--ai" id="novaAiBubble">안녕하세요, 노바예요. 무엇을 보여드릴까요?</p>
+        <p class="nova-cap nova-cap--ai" id="novaAiBubble">안녕하세요, 심스예요. 무엇을 보여드릴까요?</p>
       </div>
 
       <div class="nova-toast" id="novaActionBadge">${ICON.check}<span id="novaActionText"></span></div>
@@ -1140,10 +1140,11 @@
   }
 
   // Expose global controller
-  window.NovaVoiceAssistant = {
+  window.SimsVoiceAssistant = {
     startListening,
     stopListening,
     executeAction,
     state,
   };
+  window.NovaVoiceAssistant = window.SimsVoiceAssistant;
 })();
