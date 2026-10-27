@@ -364,6 +364,41 @@
   font-family: monospace;
 }
 
+/* Uploaded drawing shown inside the report */
+.sketch-analysis__source {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 10px 0 4px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  background: rgba(0, 240, 255, 0.05);
+}
+.sketch-analysis__source[hidden] { display: none; }
+.sketch-analysis__source img {
+  width: 96px;
+  height: 72px;
+  flex: none;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #fff;
+}
+.sketch-analysis__source-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sketch-analysis__source-label { font-size: 10px; letter-spacing: 1px; color: #00f0ff; font-weight: 700; }
+.sketch-analysis__source-meta b { font-size: 12.5px; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sketch-analysis__source-state { font-size: 11px; color: #94a3b8; }
+.sketch-analysis__source-state[data-state="scanning"] { color: #fbbf24; }
+.sketch-analysis__source-state[data-state="done"] { color: #34d399; }
+.sketch-analysis__source-state[data-state="error"] { color: #f87171; }
+.sketch-analysis-card.is-loading .sketch-analysis__section,
+.sketch-analysis-card.is-loading .sketch-prompt-box,
+.sketch-analysis-card.is-loading .sketch-analysis__title,
+.sketch-analysis-card.is-loading .sketch-analysis__scale {
+  opacity: 0.35;
+  transition: opacity 0.3s ease;
+}
+
 /* Structured Breakdown */
 .sketch-analysis__section {
   display: flex;

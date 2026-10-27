@@ -1,7 +1,7 @@
 /* =====================================================================
  * Sketch-to-3D Pipeline Studio: Gemini Multimodal Vision + World Labs 3D
  * Enables mobile hand-drawn sketches, CAD blueprints, and photos to be
- * analyzed by Gemini 2.5 Flash and converted into photorealistic 3D worlds.
+ * analyzed by Gemini 3.8 Flash and converted into photorealistic 3D worlds.
  * ===================================================================== */
 (() => {
   "use strict";
@@ -57,6 +57,18 @@
   let modalEl = null;
   let toastEl = null;
 
+  function sourceBlockHTML(p) {
+    return `
+            <div class="sketch-analysis__source" id="${p}_analysisSource" hidden>
+              <img id="${p}_analysisSourceImg" alt="분석 대상 2D 도면">
+              <div class="sketch-analysis__source-meta">
+                <span class="sketch-analysis__source-label">분석 대상 도면</span>
+                <b id="${p}_analysisSourceName"></b>
+                <span class="sketch-analysis__source-state" id="${p}_analysisSourceState"></span>
+              </div>
+            </div>`;
+  }
+
   function createStudioContentHTML(idPrefix) {
     const s = SAMPLES[activeSample];
     return `
@@ -95,7 +107,7 @@
               <div class="sketch-scanner__beam"></div>
               <div class="sketch-scanner__label">
                 <span class="spinner-grow spinner-grow-sm" role="status" style="width: 10px; height: 10px;"></span>
-                GEMINI 2.5 SPATIAL SCANNING IN PROGRESS...
+                GEMINI 3.8 SPATIAL SCANNING IN PROGRESS...
               </div>
             </div>
           </div>
@@ -141,6 +153,7 @@
               <h4 class="sketch-analysis__title" id="${idPrefix}_analysisTitle">${s.title}</h4>
               <div class="sketch-analysis__scale" id="${idPrefix}_analysisScale">${s.scale}</div>
             </div>
+            ${sourceBlockHTML(idPrefix)}
 
             <!-- Structural Bullets -->
             <div class="sketch-analysis__section">
@@ -222,7 +235,7 @@
             <h2>도면/스케치 AI 3D 스튜디오</h2>
             <span class="sketch-studio__badge">
               <span class="dot"></span>
-              Gemini 2.5 Flash
+              Gemini 3.8 Flash
             </span>
           </div>
           <button type="button" class="sketch-modal__close" id="modal_closeBtn" aria-label="닫기">✕</button>
@@ -268,7 +281,7 @@
               </h3>
               <span class="sketch-studio__badge">
                 <span class="dot"></span>
-                Gemini 2.5 Flash
+                Gemini 3.8 Flash
               </span>
             </div>
             <div style="font-size: 11px; color: #94a3b8; font-family: monospace;">
@@ -283,7 +296,7 @@
               <div class="sketch-scanner__beam"></div>
               <div class="sketch-scanner__label">
                 <span class="spinner-grow spinner-grow-sm" role="status" style="width: 10px; height: 10px;"></span>
-                GEMINI 2.5 SPATIAL SCANNING IN PROGRESS...
+                GEMINI 3.8 SPATIAL SCANNING IN PROGRESS...
               </div>
             </div>
           </div>
@@ -321,6 +334,7 @@
               <h4 class="sketch-analysis__title" id="panel_analysisTitle">${SAMPLES[activeSample].title}</h4>
               <div class="sketch-analysis__scale" id="panel_analysisScale">${SAMPLES[activeSample].scale}</div>
             </div>
+            ${sourceBlockHTML("panel")}
             <div class="sketch-analysis__section">
               <div class="sketch-analysis__label">공간 구조 및 동선 분석</div>
               <ul class="sketch-analysis__bullets" id="panel_analysisBullets">
@@ -366,7 +380,9 @@
     const cameraInput = document.getElementById(`${prefix}_cameraInput`);
     btnCamera?.addEventListener("click", () => cameraInput?.click());
     cameraInput?.addEventListener("change", () => {
-      if (cameraInput.files?.[0]) handleFileUpload(cameraInput.files[0]);
+      const f = cameraInput.files?.[0];
+      cameraInput.value = "";
+      if (f) handleFileUpload(f);
     });
 
     // Upload button & File input
@@ -374,12 +390,17 @@
     const fileInput = document.getElementById(`${prefix}_fileInput`);
     btnUpload?.addEventListener("click", () => fileInput?.click());
     fileInput?.addEventListener("change", () => {
-      if (fileInput.files?.[0]) handleFileUpload(fileInput.files[0]);
+      const f = fileInput.files?.[0];
+      fileInput.value = "";
+      if (f) handleFileUpload(f);
     });
 
     // Dropzone
     const dropzone = document.getElementById(`${prefix}_dropzone`);
-    dropzone?.addEventListener("click", () => fileInput?.click());
+    dropzone?.addEventListener("click", (e) => {
+      if (e.target === fileInput) return;
+      fileInput?.click();
+    });
     dropzone?.addEventListener("dragover", (e) => {
       e.preventDefault();
       dropzone.classList.add("dragover");
@@ -443,6 +464,8 @@
       if (bullets) bullets.innerHTML = sample.analysis.map((x) => `<li>${x}</li>`).join("");
       if (tags) tags.innerHTML = sample.equipment.map((t) => `<span class="sketch-analysis__chip">${t}</span>`).join("");
       if (prompt) prompt.textContent = sample.prompt;
+      const src = document.getElementById(`${p}_analysisSource`);
+      if (src) src.hidden = true;
 
       const overlay = document.getElementById(`${p}_scannerOverlay`);
       if (overlay) {
@@ -452,122 +475,181 @@
     });
   }
 
+  const esc = (s) =>
+    String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+
+  const readAsDataURL = (blob) =>
+    new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = () => reject(r.error);
+      r.readAsDataURL(blob);
+    });
+
+  const loadImage = (src) =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("image_decode_failed"));
+      img.src = src;
+    });
+
+  // Normalise any raster/SVG drawing to a ≤2000px JPEG on white so Gemini always
+  // receives a supported, reasonably sized image (phone photos can be 10MB+).
+  async function normaliseImage(dataUrl) {
+    const img = await loadImage(dataUrl);
+    const w0 = img.naturalWidth || 1600;
+    const h0 = img.naturalHeight || 1200;
+    const k = Math.min(1, 2000 / Math.max(w0, h0));
+    const w = Math.max(1, Math.round(w0 * k));
+    const h = Math.max(1, Math.round(h0 * k));
+    const c = document.createElement("canvas");
+    c.width = w;
+    c.height = h;
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(img, 0, 0, w, h);
+    return { dataUrl: c.toDataURL("image/jpeg", 0.9), width: w0, height: h0 };
+  }
+
+  function pdfPlaceholder(name) {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520"><rect width="800" height="520" fill="#0b1220"/><rect x="300" y="110" width="200" height="250" rx="14" fill="#111c30" stroke="#00f0ff" stroke-width="4"/><text x="400" y="255" fill="#00f0ff" font-family="sans-serif" font-size="56" font-weight="700" text-anchor="middle">PDF</text><text x="400" y="420" fill="#e2e8f0" font-family="sans-serif" font-size="26" text-anchor="middle">${esc(name).slice(0, 48)}</text></svg>`;
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  }
+
+  function setSource(name, previewSrc, state) {
+    ["modal", "panel"].forEach((p) => {
+      const box = document.getElementById(`${p}_analysisSource`);
+      if (!box) return;
+      box.hidden = false;
+      if (previewSrc) document.getElementById(`${p}_analysisSourceImg`).src = previewSrc;
+      if (name != null) document.getElementById(`${p}_analysisSourceName`).textContent = name;
+      const st = document.getElementById(`${p}_analysisSourceState`);
+      st.textContent = state.text;
+      st.dataset.state = state.kind;
+    });
+  }
+
   async function handleFileUpload(file) {
     if (!file) return;
+    const name = file.name || "업로드 도면";
+    const ext = (name.split(".").pop() || "").toLowerCase();
 
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const base64Data = e.target.result;
-      currentImageBase64 = base64Data;
+    if (ext === "dwg" || ext === "dxf") {
+      showToast("DWG/DXF 원본은 브라우저에서 읽을 수 없어요. CAD에서 PDF 또는 PNG로 내보낸 뒤 올려주세요.");
+      return;
+    }
+
+    try {
+      const raw = await readAsDataURL(file);
+      const isPdf = file.type === "application/pdf" || ext === "pdf";
+      let payload, mime, preview;
+
+      if (isPdf) {
+        payload = raw;
+        mime = "application/pdf";
+        preview = pdfPlaceholder(name);
+      } else {
+        const norm = await normaliseImage(raw);
+        payload = norm.dataUrl;
+        mime = "image/jpeg";
+        preview = norm.dataUrl;
+      }
+      currentImageBase64 = payload;
 
       ["modal", "panel"].forEach((p) => {
         const img = document.getElementById(`${p}_canvasImg`);
-        if (img) img.src = base64Data;
+        if (img) img.src = preview;
         document.querySelectorAll(`#${p}_samples .sketch-sample-btn`).forEach((b) => b.classList.remove("is-active"));
       });
+      setSource(name, preview, { kind: "scanning", text: "Gemini가 도면을 읽는 중… (약 10~20초)" });
 
-      await analyzeWithGemini(base64Data, file.type || "image/jpeg");
-    };
-    reader.readAsDataURL(file);
+      await analyzeWithGemini(payload, mime, name);
+    } catch (err) {
+      console.warn("[Sketch-to-3D] upload failed:", err);
+      showToast("이 파일은 열 수 없어요. JPG · PNG · WEBP · PDF 도면을 올려주세요.");
+    }
   }
 
-  async function analyzeWithGemini(base64, mimeType) {
+  function renderResult(r, bulletsFallback) {
+    ["modal", "panel"].forEach((p) => {
+      const title = document.getElementById(`${p}_analysisTitle`);
+      const scale = document.getElementById(`${p}_analysisScale`);
+      const bullets = document.getElementById(`${p}_analysisBullets`);
+      const tags = document.getElementById(`${p}_analysisTags`);
+      const prompt = document.getElementById(`${p}_analysisPrompt`);
+      if (title) title.textContent = r.blueprintTitle || "첨부 도면 분석 결과";
+      if (scale) scale.textContent = r.detectedScale || "";
+      const list = Array.isArray(r.structuralAnalysis) && r.structuralAnalysis.length ? r.structuralAnalysis : bulletsFallback;
+      if (bullets && list) bullets.innerHTML = list.map((x) => `<li>${esc(x)}</li>`).join("");
+      const eq = Array.isArray(r.equipmentDetected) ? r.equipmentDetected : Array.isArray(r.tags) ? r.tags : [];
+      if (tags) tags.innerHTML = eq.map((t) => `<span class="sketch-analysis__chip">${esc(t)}</span>`).join("");
+      if (prompt) prompt.textContent = r.optimizedWorldLabsPrompt || "";
+    });
+    // Bring the report into view (mobile stacks it below the preview)
+    const card = document.getElementById("modal_analysisCard");
+    if (modalEl?.classList.contains("is-open") && card) card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  async function analyzeWithGemini(base64, mimeType, sourceName = null) {
     isScanning = true;
     ["modal", "panel"].forEach((p) => {
       document.getElementById(`${p}_scannerOverlay`)?.classList.add("is-scanning");
+      document.getElementById(`${p}_analysisCard`)?.classList.add("is-loading");
       const btn = document.getElementById(`${p}_btnLaunch`);
       if (btn) btn.disabled = true;
     });
 
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 75000);
     try {
       const res = await fetch("/api/sketch-to-prompt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          imageBase64: base64,
-          mimeType: mimeType
-        })
+        body: JSON.stringify({ imageBase64: base64, mimeType }),
+        signal: ctrl.signal,
       });
-
-      if (!res.ok) {
-        throw new Error(`API responded with ${res.status}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success || !data.result) {
+        throw new Error(data.detail || data.error || `HTTP ${res.status}`);
       }
 
-      const data = await res.json();
-      if (!data.success || !data.result) {
-        throw new Error(data.error || "분석 결과를 받아올 수 없습니다.");
-      }
-
-      const r = data.result;
-      ["modal", "panel"].forEach((p) => {
-        const title = document.getElementById(`${p}_analysisTitle`);
-        const scale = document.getElementById(`${p}_analysisScale`);
-        const bullets = document.getElementById(`${p}_analysisBullets`);
-        const tags = document.getElementById(`${p}_analysisTags`);
-        const prompt = document.getElementById(`${p}_analysisPrompt`);
-
-        if (title) title.textContent = r.blueprintTitle || "첨부 도면 정밀 분석 완료";
-        if (scale) scale.textContent = r.detectedScale || "약 1,450㎡ (45m × 32m) · 층고 8.5m";
-        if (bullets && Array.isArray(r.structuralAnalysis)) {
-          bullets.innerHTML = r.structuralAnalysis.map((x) => `<li>${x}</li>`).join("");
-        }
-        if (tags && Array.isArray(r.equipmentDetected)) {
-          tags.innerHTML = r.equipmentDetected.map((t) => `<span class="sketch-analysis__chip">${t}</span>`).join("");
-        }
-        if (prompt) prompt.textContent = r.optimizedWorldLabsPrompt || "";
-      });
-
-      showToast("✅ Gemini 2.5 공간 분석 완료! 2D 도면 수치 및 구조가 반영되었습니다.");
+      renderResult(data.result);
+      setSource(sourceName, null, { kind: "done", text: `✓ Gemini 실시간 분석 완료 · ${data.model || "Gemini"}` });
+      showToast("✅ Gemini가 첨부 도면을 분석했어요. 면적·층고·동선이 오른쪽에 반영되었습니다.");
     } catch (err) {
-      console.warn("[Sketch-to-3D] Online API error, using smart architectural inference:", err);
-      // Smart architectural fallback calculating realistic scale from image
-      let estW = 42, estD = 30, estH = 8.5;
+      console.warn("[Sketch-to-3D] Gemini analysis failed, using offline estimate:", err);
+      let estW = 42, estD = 30;
       try {
-        const testImg = new Image();
-        testImg.src = base64;
-        if (testImg.naturalWidth && testImg.naturalHeight) {
-          const ratio = testImg.naturalWidth / testImg.naturalHeight;
+        const im = await loadImage(base64);
+        if (im.naturalWidth && im.naturalHeight) {
+          const ratio = im.naturalWidth / im.naturalHeight;
           estW = Math.round(Math.max(24, Math.min(80, 36 * Math.sqrt(ratio))));
           estD = Math.round(Math.max(18, Math.min(60, 36 / Math.sqrt(ratio))));
         }
       } catch (_) {}
-      const estArea = (estW * estD).toLocaleString();
-      const dynamicScale = `약 ${estArea}㎡ (${estW}m × ${estD}m) · 층고 ${estH}m`;
-
-      ["modal", "panel"].forEach((p) => {
-        const title = document.getElementById(`${p}_analysisTitle`);
-        const scale = document.getElementById(`${p}_analysisScale`);
-        const bullets = document.getElementById(`${p}_analysisBullets`);
-        const tags = document.getElementById(`${p}_analysisTags`);
-        const prompt = document.getElementById(`${p}_analysisPrompt`);
-
-        if (title) title.textContent = "첨부 도면 실측 및 동선 정밀 분석 완료";
-        if (scale) scale.textContent = dynamicScale;
-        if (bullets) {
-          bullets.innerHTML = `
-            <li>도면 내 ${Math.round(estW / 6)}열 기둥 그리드 스팬 및 외벽 하중 구조 감지</li>
-            <li>중앙 3.8m 폭 양방향 자율주행 AGV 및 지게차 메인 운송 레인 확보</li>
-            <li>식별된 도면 내 보관 랙 존 및 입출고 검품 완충 스테이션 구획 반영</li>
-            <li>천장 트러스 구조 및 5000K 고천장 선형 LED 조명 레일 설계 연동</li>
-          `;
-        }
-        if (tags) {
-          tags.innerHTML = `
-            <span class="sketch-analysis__chip">산업용 랙</span>
-            <span class="sketch-analysis__chip">AGV 주행로</span>
-            <span class="sketch-analysis__chip">LED 조명 레일</span>
-            <span class="sketch-analysis__chip">로딩 베이</span>
-          `;
-        }
-        if (prompt) {
-          prompt.textContent = `A photorealistic automated smart industrial facility directly generated from the user's architectural floor plan of ${dynamicScale}, featuring precise structural column spacing, organized multi-tier storage racks, clean polished concrete flooring with safety warning boundaries, illuminated by 5000K overhead high-bay industrial LED lights.`;
-        }
+      const dynamicScale = `약 ${(estW * estD).toLocaleString()}㎡ (${estW}m × ${estD}m) · 층고 8.5m (추정)`;
+      renderResult({
+        blueprintTitle: "오프라인 추정 결과 (AI 연결 실패)",
+        detectedScale: dynamicScale,
+        structuralAnalysis: [
+          `도면 비율 기준 약 ${estW}m × ${estD}m 직사각형 평면으로 추정`,
+          "표준 물류 동선 기준 중앙 3.8m 양방향 통로 가정",
+          "보관 랙 존과 입출고 구역을 표준 배치로 가정",
+          "정확한 분석을 위해 잠시 후 다시 업로드해 주세요",
+        ],
+        equipmentDetected: ["추정값", "재시도 권장"],
+        optimizedWorldLabsPrompt: `A photorealistic smart industrial facility of ${dynamicScale}, with structural columns, multi-tier storage racks, polished concrete floor and 5000K high-bay LED lighting.`,
       });
-      showToast("💡 2D 도면 축척 및 공간 구조 분석 완료 (3D 생성 준비됨)");
+      setSource(sourceName, null, { kind: "error", text: "⚠ AI 연결 실패 — 추정값 표시 중 (다시 올리면 재분석)" });
+      showToast("⚠ Gemini 연결이 원활하지 않아 추정값을 표시했어요. 잠시 후 다시 시도해 주세요.");
     } finally {
+      clearTimeout(timer);
       isScanning = false;
       ["modal", "panel"].forEach((p) => {
         document.getElementById(`${p}_scannerOverlay`)?.classList.remove("is-scanning");
+        document.getElementById(`${p}_analysisCard`)?.classList.remove("is-loading");
         const btn = document.getElementById(`${p}_btnLaunch`);
         if (btn) btn.disabled = false;
       });

@@ -130,68 +130,99 @@ Output MUST be valid strictly formatted JSON matching this exact schema:
     ? `사용자의 추가 요구사항: "${userNotes}"\n\n첨부된 도면/스케치 이미지를 정밀 분석하여 World Labs 3D 생성을 위한 최고 품질의 프롬프트와 분석 결과를 JSON으로 출력해주세요.`
     : "첨부된 도면/스케치 이미지를 정밀 분석하여 World Labs 3D 생성을 위한 최고 품질의 프롬프트와 분석 결과를 JSON으로 출력해주세요.";
 
-  // Gemini 2.5 Flash endpoint
-  const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-
-  try {
-    const geminiPayload = {
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { text: `${systemInstruction}\n\n${userPrompt}` },
-            {
-              inlineData: {
-                mimeType: mimeType,
-                data: imageBase64.replace(/^data:image\/\w+;base64,/, ""),
-              },
-            },
-          ],
-        },
-      ],
-      generationConfig: {
-        responseMimeType: "application/json",
-        temperature: 0.2,
-      },
-    };
-
-    const resp = await fetch(geminiEndpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(geminiPayload),
-    });
-
-    if (!resp.ok) {
-      const errText = await resp.text();
-      console.error("[Gemini Error]", resp.status, errText);
-      return json(
-        { error: `Gemini API returned ${resp.status}`, detail: errText },
-        502,
-        origin,
-      );
-    }
-
-    const data = await resp.json();
-    const candidate = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!candidate) {
-      return json({ error: "Empty response from Gemini" }, 502, origin);
-    }
-
-    let parsedResult;
-    try {
-      parsedResult = JSON.parse(candidate);
-    } catch (parseErr) {
-      // Clean up markdown code blocks if any
-      const cleaned = candidate
-        .replace(/^```json\s*/i, "")
-        .replace(/```\s*$/i, "")
-        .trim();
-      parsedResult = JSON.parse(cleaned);
-    }
-
-    return json({ success: true, result: parsedResult }, 200, origin);
-  } catch (err) {
-    console.error("[Sketch-to-Prompt Exception]", err);
-    return json({ error: err.message || "Internal server error" }, 500, origin);
+  // gemini-2.5-flash was retired (404 for this key) — try current models in order.
+  const MODELS = ["gemini-3.8-flash", "gemini-flash-latest"];
+  const SUPPORTED = /^(image\/(png|jpeg|webp|heic|heif)|application\/pdf)$/i;
+  const prefixMatch = /^data:([^;,]+);base64,/i.exec(imageBase64);
+  const effectiveMime = (
+    prefixMatch?.[1] ||
+    mimeType ||
+    "image/jpeg"
+  ).toLowerCase();
+  if (!SUPPORTED.test(effectiveMime)) {
+    return json(
+      { success: false, error: `unsupported_mime:${effectiveMime}` },
+      200,
+      origin,
+    );
   }
+  const rawData = imageBase64.replace(/^data:[^;,]+;base64,/i, "");
+
+  const geminiPayload = {
+    contents: [
+      {
+        role: "user",
+        parts: [
+          { text: `${systemInstruction}\n\n${userPrompt}` },
+          { inlineData: { mimeType: effectiveMime, data: rawData } },
+        ],
+      },
+    ],
+    generationConfig: {
+      responseMimeType: "application/json",
+      temperature: 0.2,
+    },
+  };
+
+  let lastErr = "";
+  for (const model of MODELS) {
+    try {
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": apiKey,
+          },
+          body: JSON.stringify(geminiPayload),
+        },
+      );
+
+      if (!resp.ok) {
+        lastErr = `${model} ${resp.status}: ${(await resp.text()).slice(0, 300)}`;
+        console.error("[Gemini Error]", lastErr);
+        continue;
+      }
+
+      const data = await resp.json();
+      const parts = data.candidates?.[0]?.content?.parts || [];
+      const candidate = parts
+        .filter((p) => typeof p.text === "string" && !p.thought)
+        .map((p) => p.text)
+        .join("")
+        .trim();
+      if (!candidate) {
+        lastErr = `${model}: empty response`;
+        continue;
+      }
+
+      let parsedResult;
+      try {
+        parsedResult = JSON.parse(candidate);
+      } catch {
+        const cleaned = candidate
+          .replace(/^```(?:json)?\s*/i, "")
+          .replace(/```\s*$/i, "")
+          .trim();
+        const s = cleaned.indexOf("{");
+        const e = cleaned.lastIndexOf("}");
+        parsedResult = JSON.parse(
+          s >= 0 && e > s ? cleaned.slice(s, e + 1) : cleaned,
+        );
+      }
+
+      return json({ success: true, model, result: parsedResult }, 200, origin);
+    } catch (err) {
+      lastErr = `${model}: ${err.message || err}`;
+      console.error("[Sketch-to-Prompt Exception]", lastErr);
+    }
+  }
+
+  // Return 200 with success:false — Cloudflare masks 5xx bodies from Functions.
+  return json(
+    { success: false, error: "gemini_unavailable", detail: lastErr },
+    200,
+    origin,
+  );
 }

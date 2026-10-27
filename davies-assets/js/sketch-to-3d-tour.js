@@ -196,6 +196,7 @@
     if (root) return;
     root = document.createElement("div");
     root.className = "wmt wmt--sketch";
+    root.id = "sketchTour";
     root.hidden = true;
     root.setAttribute("role", "dialog");
     root.setAttribute("aria-label", "도면/스케치 기반 3D 생성 60초 가이드");
@@ -323,6 +324,8 @@
     el.segs.forEach((li, idx) => {
       li.classList.toggle("is-active", idx === chapter);
       li.classList.toggle("is-done", idx < chapter);
+      const fill = li.querySelector(".wmt-seg i");
+      if (fill && idx !== chapter) fill.style.transform = idx < chapter ? "scaleX(1)" : "scaleX(0)";
     });
   }
 
@@ -342,16 +345,42 @@
   function positionHole() {
     const stage = document.getElementById("labStage");
     if (!stage || !el.hole) return;
-    const r = stage.getBoundingClientRect();
+    // Spotlight = 3D stage ∪ any open feature-explanation card / dock attached to it
+    let r = stage.getBoundingClientRect();
+    let L = r.left, T = r.top, R = r.right, B = r.bottom;
+    document.querySelectorAll("#dropExplainCard, .exp-card, .lab-dock").forEach((n) => {
+      if (n.hidden || !n.offsetParent) return;
+      const q = n.getBoundingClientRect();
+      if (q.width < 2 || q.height < 2) return;
+      L = Math.min(L, q.left); T = Math.min(T, q.top); R = Math.max(R, q.right); B = Math.max(B, q.bottom);
+    });
     const pad = 12;
-    const top = Math.max(r.top - pad, 4);
-    const bottom = Math.min(r.bottom + pad, innerHeight - 4);
-    el.hole.style.transform = `translate(${r.left - pad}px, ${top}px)`;
-    el.hole.style.width = `${r.width + pad * 2}px`;
+    const top = Math.max(T - pad, 4);
+    const bottom = Math.min(B + pad, innerHeight - 4);
+    const left = Math.max(L - pad, 4);
+    const right = Math.min(R + pad, innerWidth - 4);
+    el.hole.style.transform = `translate(${left}px, ${top}px)`;
+    el.hole.style.width = `${Math.max(0, right - left)}px`;
     el.hole.style.height = `${Math.max(0, bottom - top)}px`;
     const vp = stage.querySelector(".spatial-viewport-card");
     const vr = vp && vp.offsetParent ? vp.getBoundingClientRect() : r;
-    el.tag.style.transform = `translate(${Math.max(12, vr.left + 20)}px, ${Math.max(12, Math.max(vr.top, top) + 20)}px)`;
+    const tw = el.tag.offsetWidth || 320;
+    const tx = Math.max(12, Math.min(innerWidth - tw - 12, vr.left + vr.width / 2 - tw / 2));
+    el.tag.style.transform = `translate(${tx}px, ${Math.max(12, Math.max(vr.top, top) + 16)}px)`;
+  }
+
+  let loopId = 0;
+  let lastFrame = 0;
+  function frame(now) {
+    if (!running) return;
+    loopId = requestAnimationFrame(frame);
+    const dt = Math.min(100, now - (lastFrame || now));
+    lastFrame = now;
+    if (!paused) chapterElapsed += dt;
+    if (mode === "lab") positionHole();
+    const li = el.segs?.[chapter];
+    const fill = li?.querySelector(".wmt-seg i");
+    if (fill && CHAPTERS[chapter]?.est) fill.style.transform = `scaleX(${Math.min(1, chapterElapsed / CHAPTERS[chapter].est)})`;
   }
 
   // ------------------------------------------------------------------ Scenes (Zero Dead Silence / Fluid Transition)
@@ -554,6 +583,9 @@
     root.hidden = false;
     document.documentElement.classList.add("wmt-active");
     requestAnimationFrame(() => root.classList.add("is-open"));
+    cancelAnimationFrame(loopId);
+    lastFrame = 0;
+    loopId = requestAnimationFrame(frame);
 
     runFrom(Math.max(0, opts.startAt || 0));
   }
@@ -564,7 +596,10 @@
     running = false;
     paused = false;
     stopSpeech();
+    cancelAnimationFrame(loopId);
     if (root) {
+      setMode("full");
+      setTag(null);
       root.classList.remove("is-open");
       document.documentElement.classList.remove("wmt-active");
       setTimeout(() => {

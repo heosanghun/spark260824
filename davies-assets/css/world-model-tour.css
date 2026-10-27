@@ -395,3 +395,13 @@
   .wmt-blueprint-preview { height: 160px; }
 }
 
+
+/* Sketch-to-3D tour: lab scenes keep the 3D stage + feature explanation fully visible.
+   Lighter dim outside the spotlight, and the frame tracks the stage every frame. */
+.wmt--sketch[data-mode="lab"] .wmt-hole {
+  box-shadow: 0 0 0 200vmax rgba(3, 6, 14, 0.42), 0 0 0 2px rgba(0, 240, 255, 0.6), 0 0 50px rgba(0, 240, 255, 0.22);
+  transition: opacity 0.6s ease;
+}
+.wmt--sketch[data-mode="lab"] .wmt-card { opacity: 0 !important; pointer-events: none !important; }
+.wmt--sketch[data-mode="lab"] { pointer-events: none; }
+.wmt--sketch[data-mode="lab"] .wmt-bar { pointer-events: auto; }
