@@ -439,7 +439,7 @@
       <p class="wmt-eyebrow"><span class="wmt-dot" style="background:#00f0ff;"></span>STEP 1 · GEMINI MULTIMODAL VISION</p>
       <h3 class="wmt-h">도면과 스케치에서 <span>기둥, 랙, 통로 폭을 스스로 읽어냅니다</span></h3>
       <div class="wmt-blueprint-preview">
-        <img src="davies-assets/images/blueprints/blueprint_warehouse.svg" class="wmt-bp-img" alt="도면 샘플">
+        <img src="davies-assets/images/blueprints/cad_warehouse.webp" class="wmt-bp-img" alt="도면 샘플">
         <div class="wmt-bp-scanner">
           <div class="wmt-bp-beam"></div>
           <div class="wmt-bp-badge">GEMINI 2.5 SPATIAL SCANNING · 기둥/통로/랙 인식 완료</div>

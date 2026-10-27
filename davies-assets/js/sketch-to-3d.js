@@ -6,48 +6,55 @@
 (() => {
   "use strict";
 
+  const BP = "davies-assets/images/blueprints/";
   const SAMPLES = {
     warehouse: {
-      name: "스마트 메가 물류 허브",
-      img: "davies-assets/images/blueprints/blueprint_warehouse.svg",
-      scale: "약 1,850㎡ (50m × 35m) · 층고 9.5m",
-      title: "50m 초고층 자동화 스마트 물류 허브",
+      name: "스마트 물류 허브",
+      code: "WH-702 · 1:200",
+      img: `${BP}cad_warehouse.webp`,
+      thumb: `${BP}cad_warehouse_thumb.webp`,
+      scale: "약 1,750㎡ (50m × 35m) · 층고 9.5m",
+      title: "WH-702 스마트 물류 허브",
       analysis: [
-        "4열 5단 고천장 헤비듀티 팔레트 랙 정밀 배열",
-        "중앙 4.2m 폭 자율주행 AGV/AMR 고속 직진 레인 확보",
-        "좌측 스마트 도크 1~3호 로딩 베이 및 입출고 검수로",
-        "우측 실시간 비전 AI 바코드/외관 검품 및 분류 스테이션"
+        "10m 간격 A~F축 그리드에 400×400mm 기둥을 둔 50m × 35m 직사각형 구조",
+        "서측 하역 도크 3개소와 중앙 4.2m AGV 전용 통로 중심의 직선형 물류 동선",
+        "4열 대형 팔레트 랙 보관 구역과 북동측 12m × 10m 검수·분류실(QC) 독립 배치",
+        "남측 주 출입구와 동측 비상구 2개소를 잇는 외곽 안전 피난 통로"
       ],
-      equipment: ["고천장 팔레트 랙", "자율이송 로봇(AGV)", "도크 로딩 베이", "비전 검수기"],
-      prompt: "A massive futuristic automated smart warehouse with high-bay pallet racks, wide AGV logistics runways with glowing neon cyan floor guides, autonomous forklift robots stacking standardized euro-pallets, high-contrast overhead linear LED light fixtures casting soft reflections on polished dark epoxy flooring, atmospheric industrial volumetric depth, ultra-detailed spatial geometry."
+      equipment: ["하이베이 팔레트 랙", "4.2m AGV 주행 통로", "로딩 도크 3개소", "검품·분류 스테이션", "도크 레벨러"],
+      prompt: "Ultra-detailed interior of an expansive 50x35m smart logistics hub with 9.5m high ceilings, featuring four long rows of industrial multi-tier pallet racks and a prominent 4.2m wide central AGV lane. On the west wall, three recessed freight loading docks open up to staging zones, while an enclosed 12x10m sorting and inspection office occupies the northeast corner. Polished industrial gray epoxy flooring reflects overhead LED high-bay luminaires, suspended cable trays, and structural steel columns in a clean automated facility."
     },
     cleanroom: {
-      name: "반도체 하이테크 클린룸",
-      img: "davies-assets/images/blueprints/blueprint_cleanroom.svg",
-      scale: "약 960㎡ (40m × 24m) · ISO Class 1",
-      title: "초정밀 반도체 웨이퍼 팹 클린룸",
+      name: "반도체 클린룸",
+      code: "FAB-C1 · 1:150",
+      img: `${BP}cad_cleanroom.webp`,
+      thumb: `${BP}cad_cleanroom_thumb.webp`,
+      scale: "약 960㎡ (40m × 24m) · 층고 5.5m",
+      title: "FAB-C1 ISO Class 1 고청정 클린룸",
       analysis: [
-        "ISO Class 1 규격 천장 전면 HEPA 필터 및 다운플로우 기류",
-        "EUV 리소그래피 전용 옐로우 안전 필터 조명 구역 분할",
-        "천장 궤도형 OHT(Overhead Hoist Transport) 무인 이송 모노레일",
-        "플라즈마 식각 및 CVD 증착 로봇 클러스터 툴 배치"
+        "40m × 24m 직사각형 평면에 A~E축 균일 격자 기둥과 4개 공정 베이 배치",
+        "갱의실(Gowning) → 에어샤워를 거치는 방진 동선과 외곽 순환형 OHT 웨이퍼 반송 레일",
+        "중앙 EUV 노광 · 식각/증착(ETCH/CVD) · 계측(SEM) 베이와 동측 FOUP 스토커 구획",
+        "천장 전면 FFU 격자와 타공 액세스 플로어를 통한 하향 층류 기류 설계"
       ],
-      equipment: ["EUV 스캐너", "천장 OHT 모노레일", "에어샤워 인터록", "FOUP 버퍼 스토커"],
-      prompt: "A state-of-the-art semiconductor cleanroom fabrication facility with overhead ceiling-mounted OHT robotic wafer pod tracks, amber-yellow lit photolithography bays, robotic robotic cluster arms handling silicon wafers, pristine mirror-finish raised floor tiles, ultra-pure stainless steel equipment casings with glowing indicator lights."
+      equipment: ["EUV 노광 장비", "천장 OHT 반송 레일", "FOUP 자동 스토커", "에어샤워 챔버", "SEM 계측 장비"],
+      prompt: "Ultra-clean semiconductor FAB facility based on an ISO Class 1 cleanroom architectural layout. In the center, enclosed bays house advanced EUV lithography, chemical vapor deposition, and metrology systems surrounded by perforated raised flooring. Overhead automated OHT wafer transport tracks loop along the perimeter ceiling, flanked by dual-row automated FOUP stockers. Sterile pure-white and amber cleanroom filtration lighting reflects evenly off polished metallic enclosures and pristine anti-static surfaces."
     },
     showroom: {
-      name: "하이퍼카 쇼룸 & 다이노",
-      img: "davies-assets/images/blueprints/blueprint_showroom.svg",
-      scale: "약 750㎡ (35m × 22m) · 턴테이블 Ø 7.2m",
-      title: "아우디 R8 하이퍼카 전시 & 섀시 랩",
+      name: "하이퍼카 쇼룸",
+      code: "SR-08 · 1:100",
+      img: `${BP}cad_showroom.webp`,
+      thumb: `${BP}cad_showroom_thumb.webp`,
+      scale: "약 770㎡ (35m × 22m) · 층고 6.0m",
+      title: "SR-08 하이퍼카 플래그십 쇼룸",
       analysis: [
-        "직경 7.2m 360도 전동 회전 전시 턴테이블 중앙 배치",
-        "차량 진입용 고광택 미러 에폭시 드라이브인 런웨이",
-        "후면 상시 4륜 다이노 섀시 롤러 파워 테스트 베드",
-        "우측 VIP 맞춤형 비스포크 라운지 및 머티리얼 샘플 월"
+        "8.75m 균등 기둥 스팬(A~D축) 기반의 35m × 22m 직사각형 무주 전시 공간",
+        "서측 드라이브인 차량 진입로와 남측 커튼월 보행자 양개 도어 2개소",
+        "중앙 Ø7.2m 턴테이블, 북동측 다이노 테스트 베이, VIP 라운지 · 리셉션 · 화장실 구획",
+        "남측 전면 글래스 파사드 채광과 고천장 매립형 스포트라이트 조명"
       ],
-      equipment: ["360° 전동 턴테이블", "4륜 다이노 롤러", "차량 진입 런웨이", "VIP 상담 부스"],
-      prompt: "A luxury futuristic supercar design studio and exhibition showroom featuring an Audi R8 supercar elevated on a glowing circular rotating turntable platform, deep black mirror epoxy flooring reflecting dramatic neon magenta and ice-blue overhead halo light rings, dyno roller testing pit in the background, sleek minimalist architectural glass partitions."
+      equipment: ["Ø7.2m 회전 턴테이블", "섀시 다이노 롤러", "VIP 라운지", "곡면 리셉션 데스크", "드라이브인 램프"],
+      prompt: "Ultra-luxury modern hypercar showroom featuring a supercar mounted on an illuminated 7.2m central rotating turntable. Glossy dark floor with sharp reflections under architectural linear ceiling tracks. Visible glass-enclosed dyno test bay and VIP lounge with leather seating along the periphery, bordered by expansive floor-to-ceiling glass walls."
     }
   };
 
@@ -56,6 +63,46 @@
   let isScanning = false;
   let modalEl = null;
   let toastEl = null;
+
+  const ICON = {
+    upload: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
+    camera: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+    layers: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>',
+    copy: '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'
+  };
+
+  // "약 1,750㎡ (50m × 35m) · 층고 9.5m" → KPI tiles
+  function parseScale(text) {
+    const t = String(text || "");
+    const area = /([\d,.]+)\s*㎡/.exec(t)?.[1];
+    const dims = /([\d.]+)\s*m?\s*[×xX]\s*([\d.]+)\s*m/.exec(t);
+    const h = /층고\s*([\d.]+)\s*m/.exec(t)?.[1];
+    const fmt = (n) => String(Number.parseFloat(n)).replace(/\.0$/, "");
+    return {
+      area: area || "—",
+      dims: dims ? `${fmt(dims[1])}×${fmt(dims[2])}` : "—",
+      height: h || "—"
+    };
+  }
+  function kpiHTML(scaleText) {
+    const k = parseScale(scaleText);
+    return `
+      <div class="sk-kpi"><span>면적</span><b>${k.area}<small>㎡</small></b></div>
+      <div class="sk-kpi"><span>가로 × 세로</span><b>${k.dims}<small>m</small></b></div>
+      <div class="sk-kpi"><span>층고</span><b>${k.height}<small>m</small></b></div>`;
+  }
+  function renderKpis(scaleText) {
+    ["modal", "panel"].forEach((p) => {
+      const el = document.getElementById(`${p}_analysisKpis`);
+      if (el) el.innerHTML = kpiHTML(scaleText);
+    });
+  }
+  function setViewerMeta(label, code) {
+    ["modal", "panel"].forEach((p) => {
+      const el = document.getElementById(`${p}_viewerMeta`);
+      if (el) el.innerHTML = `${esc(label)}${code ? ` <em>${esc(code)}</em>` : ""}`;
+    });
+  }
 
   function sourceBlockHTML(p) {
     return `
@@ -69,130 +116,110 @@
             </div>`;
   }
 
-  function createStudioContentHTML(idPrefix) {
+  const stepsHTML = () => `
+    <div class="sk-steps" aria-label="파이프라인 단계">
+      <span class="sk-step is-on"><b>1</b>도면 업로드</span><i class="sk-step-sep"></i>
+      <span class="sk-step is-on"><b>2</b>Gemini 분석</span><i class="sk-step-sep"></i>
+      <span class="sk-step"><b>3</b>3D 월드 생성</span>
+    </div>`;
+
+  function viewerHTML(p) {
     const s = SAMPLES[activeSample];
     return `
-      <!-- Mobile / Top Quick Action Strip -->
+      <div class="sketch-viewer" id="${p}_viewer">
+        <div class="sk-viewer-meta" id="${p}_viewerMeta">${esc(s.name)} <em>${esc(s.code)}</em></div>
+        <img id="${p}_canvasImg" class="sketch-viewer__canvas" src="${s.img}" alt="도면/스케치 프리뷰">
+        <div class="sketch-scanner-overlay" id="${p}_scannerOverlay">
+          <div class="sketch-scanner__grid"></div>
+          <div class="sketch-scanner__radar"></div>
+          <div class="sketch-scanner__beam"></div>
+          <div class="sketch-scanner__label"><span class="spinner-grow" role="status"></span>Gemini가 도면을 읽고 있어요</div>
+        </div>
+      </div>`;
+  }
+
+  function samplesHTML(p) {
+    return `
+      <div class="sketch-samples" id="${p}_samples">
+        <span class="sketch-samples__title">샘플 도면</span>
+        ${Object.entries(SAMPLES).map(([key, s]) => `
+          <button type="button" class="sketch-sample-btn ${activeSample === key ? "is-active" : ""}" data-sample="${key}">
+            <img src="${s.thumb}" alt="" loading="lazy">
+            <span><b>${s.name}</b><small>${s.code}</small></span>
+          </button>`).join("")}
+      </div>`;
+  }
+
+  function dropzoneHTML(p, withInput) {
+    return `
+      <div class="sketch-dropzone" id="${p}_dropzone">
+        <div class="sketch-dropzone__info">
+          <div class="sketch-dropzone__icon">${ICON.upload}</div>
+          <div class="sketch-dropzone__text">
+            <strong>내 도면 · 손그림 · 현장 사진 올리기</strong><br>
+            <span>끌어다 놓거나 클릭 · JPG, PNG, WEBP, PDF</span>
+          </div>
+        </div>
+        <button type="button" class="sketch-dropzone__btn">파일 선택</button>
+        ${withInput ? `<input type="file" id="${p}_fileInput" accept="image/*,.pdf" style="display: none;">` : ""}
+      </div>`;
+  }
+
+  function reportHTML(p) {
+    const s = SAMPLES[activeSample];
+    return `
+      <div class="sketch-analysis-card" id="${p}_analysisCard">
+        <div class="sketch-analysis__header">
+          <div class="sketch-analysis__tagline">Gemini Spatial Report</div>
+          <h4 class="sketch-analysis__title" id="${p}_analysisTitle">${esc(s.title)}</h4>
+          <div class="sketch-analysis__scale" id="${p}_analysisScale">${esc(s.scale)}</div>
+        </div>
+        <div class="sk-kpis" id="${p}_analysisKpis">${kpiHTML(s.scale)}</div>
+        ${sourceBlockHTML(p)}
+        <div class="sketch-analysis__section">
+          <div class="sketch-analysis__label">공간 구조 및 동선 분석</div>
+          <ul class="sketch-analysis__bullets" id="${p}_analysisBullets">
+            ${s.analysis.map((item) => `<li>${esc(item)}</li>`).join("")}
+          </ul>
+        </div>
+        <div class="sketch-analysis__section">
+          <div class="sketch-analysis__label">식별된 설비 및 객체</div>
+          <div class="sketch-analysis__tags" id="${p}_analysisTags">
+            ${s.equipment.map((t) => `<span class="sketch-analysis__chip">${esc(t)}</span>`).join("")}
+          </div>
+        </div>
+        <div class="sketch-prompt-box">
+          <div class="sketch-prompt-box__label">
+            <span>World Labs 3D 프롬프트</span>
+            <button type="button" class="sk-copy" data-copy="${p}_analysisPrompt">${ICON.copy}복사</button>
+          </div>
+          <div class="sketch-prompt-box__text" id="${p}_analysisPrompt">${esc(s.prompt)}</div>
+        </div>
+        <button type="button" class="sketch-btn-generate" id="${p}_btnLaunch">
+          ${ICON.layers}<span>이 도면으로 3D 월드 생성</span><small>MARBLE 1.1</small>
+        </button>
+      </div>`;
+  }
+
+  function createStudioContentHTML(idPrefix) {
+    return `
       <div class="sketch-modal__quick-actions">
-        <button type="button" class="sketch-quick-btn sketch-quick-btn--camera" id="${idPrefix}_btnCamera">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-            <circle cx="12" cy="13" r="4"></circle>
-          </svg>
-          <span>사진 / 손그림 촬영</span>
-        </button>
-        <button type="button" class="sketch-quick-btn sketch-quick-btn--upload" id="${idPrefix}_btnUpload">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="17 8 12 3 7 8"></polyline>
-            <line x1="12" y1="3" x2="12" y2="15"></line>
-          </svg>
-          <span>CAD 도면 / 파일 선택</span>
-        </button>
+        <button type="button" class="sketch-quick-btn sketch-quick-btn--camera" id="${idPrefix}_btnCamera">${ICON.camera}<span>사진 / 손그림 촬영</span></button>
+        <button type="button" class="sketch-quick-btn sketch-quick-btn--upload" id="${idPrefix}_btnUpload">${ICON.upload}<span>CAD 도면 / 파일 선택</span></button>
+        <span class="sk-quick-hint">스마트폰으로 찍은 손그림도 바로 분석됩니다</span>
         <input type="file" id="${idPrefix}_cameraInput" accept="image/*" capture="environment" style="display: none;">
         <input type="file" id="${idPrefix}_fileInput" accept="image/*,.pdf,.dwg,.dxf" style="display: none;">
       </div>
-
       <div class="sketch-modal__body">
-        <!-- Left Column: Blueprint Preview & Samples & Dropzone -->
         <div class="sketch-modal__left">
-          <!-- Interactive Blueprint Display Area -->
-          <div class="sketch-viewer" id="${idPrefix}_viewer">
-            <img id="${idPrefix}_canvasImg" class="sketch-viewer__canvas" src="${s.img}" alt="도면/스케치 프리뷰">
-            
-            <!-- Scanning Hologram Beam -->
-            <div class="sketch-scanner-overlay" id="${idPrefix}_scannerOverlay">
-              <div class="sketch-scanner__grid"></div>
-              <div class="sketch-scanner__radar"></div>
-              <div class="sketch-scanner__beam"></div>
-              <div class="sketch-scanner__label">
-                <span class="spinner-grow spinner-grow-sm" role="status" style="width: 10px; height: 10px;"></span>
-                GEMINI 3.8 SPATIAL SCANNING IN PROGRESS...
-              </div>
-            </div>
-          </div>
-
-          <!-- Sample Blueprints -->
-          <div class="sketch-samples" id="${idPrefix}_samples">
-            <span class="sketch-samples__title">샘플 도면 선택:</span>
-            <button type="button" class="sketch-sample-btn ${activeSample === 'warehouse' ? 'is-active' : ''}" data-sample="warehouse">
-              <i class="icon icon-box"></i> 스마트 물류 허브
-            </button>
-            <button type="button" class="sketch-sample-btn ${activeSample === 'cleanroom' ? 'is-active' : ''}" data-sample="cleanroom">
-              <i class="icon icon-cpu"></i> 반도체 클린룸
-            </button>
-            <button type="button" class="sketch-sample-btn ${activeSample === 'showroom' ? 'is-active' : ''}" data-sample="showroom">
-              <i class="icon icon-car"></i> 하이퍼카 쇼룸
-            </button>
-          </div>
-
-          <!-- Upload Dropzone -->
-          <div class="sketch-dropzone" id="${idPrefix}_dropzone">
-            <div class="sketch-dropzone__info">
-              <div class="sketch-dropzone__icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="17 8 12 3 7 8"></polyline>
-                  <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
-              </div>
-              <div class="sketch-dropzone__text">
-                <strong>모바일 손그림 스케치 / CAD 도면 / 현장 사진 업로드</strong><br>
-                <span>드래그 앤 드롭 또는 클릭하여 업로드 (JPG, PNG, WEBP, PDF)</span>
-              </div>
-            </div>
-            <button type="button" class="sketch-dropzone__btn">파일 선택</button>
-          </div>
+          ${viewerHTML(idPrefix)}
+          ${samplesHTML(idPrefix)}
+          ${dropzoneHTML(idPrefix, false)}
         </div>
-
-        <!-- Right Column: Gemini Multimodal Spatial Inspector -->
         <div class="sketch-modal__right">
-          <div class="sketch-analysis-card" id="${idPrefix}_analysisCard">
-            <div class="sketch-analysis__header">
-              <div class="sketch-analysis__tagline">GEMINI SPATIAL REASONING REPORT</div>
-              <h4 class="sketch-analysis__title" id="${idPrefix}_analysisTitle">${s.title}</h4>
-              <div class="sketch-analysis__scale" id="${idPrefix}_analysisScale">${s.scale}</div>
-            </div>
-            ${sourceBlockHTML(idPrefix)}
-
-            <!-- Structural Bullets -->
-            <div class="sketch-analysis__section">
-              <div class="sketch-analysis__label">공간 구조 및 동선 분석</div>
-              <ul class="sketch-analysis__bullets" id="${idPrefix}_analysisBullets">
-                ${s.analysis.map((item) => `<li>${item}</li>`).join("")}
-              </ul>
-            </div>
-
-            <!-- Detected Equipment -->
-            <div class="sketch-analysis__section">
-              <div class="sketch-analysis__label">식별된 설비 및 객체</div>
-              <div class="sketch-analysis__tags" id="${idPrefix}_analysisTags">
-                ${s.equipment.map((t) => `<span class="sketch-analysis__chip">${t}</span>`).join("")}
-              </div>
-            </div>
-
-            <!-- Optimized Prompt Display -->
-            <div class="sketch-prompt-box">
-              <div class="sketch-prompt-box__label">
-                <span>World Labs 전용 초고도화 프롬프트</span>
-                <span style="color: #64748b;">3D Splatting Ready</span>
-              </div>
-              <div class="sketch-prompt-box__text" id="${idPrefix}_analysisPrompt">${s.prompt}</div>
-            </div>
-
-            <!-- CTA Generate World Labs 3D World -->
-            <button type="button" class="sketch-btn-generate" id="${idPrefix}_btnLaunch">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-                <polyline points="2 17 12 22 22 17"></polyline>
-                <polyline points="2 12 12 17 22 12"></polyline>
-              </svg>
-              <span>이 도면으로 3D 월드 생성 (GENERATE 3D)</span>
-            </button>
-          </div>
+          ${reportHTML(idPrefix)}
         </div>
-      </div>
-    `;
+      </div>`;
   }
 
   function showToast(msg) {
@@ -202,14 +229,15 @@
       document.body.appendChild(toastEl);
     }
     toastEl.innerHTML = `
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00f0ff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
         <polyline points="22 4 12 14.01 9 11.01"></polyline>
       </svg>
       <span>${msg}</span>
     `;
     toastEl.classList.add("is-show");
-    setTimeout(() => toastEl.classList.remove("is-show"), 3200);
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toastEl.classList.remove("is-show"), 3600);
   }
 
   function initModal() {
@@ -225,20 +253,16 @@
       <div class="sketch-modal-dialog">
         <div class="sketch-modal__head">
           <div class="sketch-modal__title-group">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00f0ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="16" y1="13" x2="8" y2="13"></line>
-              <line x1="16" y1="17" x2="8" y2="17"></line>
-              <polyline points="10 9 9 9 8 9"></polyline>
-            </svg>
-            <h2>도면/스케치 AI 3D 스튜디오</h2>
-            <span class="sketch-studio__badge">
-              <span class="dot"></span>
-              Gemini 3.8 Flash
-            </span>
+            <div class="sketch-studio__title">
+              <span class="sk-eyebrow"><i></i>Sketch → 3D Studio</span>
+              <h2>도면/스케치 AI 3D 스튜디오</h2>
+            </div>
           </div>
-          <button type="button" class="sketch-modal__close" id="modal_closeBtn" aria-label="닫기">✕</button>
+          <div class="sk-head-right">
+            ${stepsHTML()}
+            <span class="sketch-studio__badge"><span class="dot"></span>Gemini 3.8 Flash</span>
+            <button type="button" class="sketch-modal__close" id="modal_closeBtn" aria-label="닫기">✕</button>
+          </div>
         </div>
         ${createStudioContentHTML("modal")}
       </div>
@@ -269,96 +293,17 @@
         <div class="sketch-studio__main">
           <header class="sketch-studio__header">
             <div class="sketch-studio__title">
-              <h3>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00f0ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                  <line x1="16" y1="13" x2="8" y2="13"></line>
-                  <line x1="16" y1="17" x2="8" y2="17"></line>
-                  <polyline points="10 9 9 9 8 9"></polyline>
-                </svg>
-                도면/스케치 AI 3D 파이프라인
-              </h3>
-              <span class="sketch-studio__badge">
-                <span class="dot"></span>
-                Gemini 3.8 Flash
-              </span>
+              <span class="sk-eyebrow"><i></i>Sketch → 3D Pipeline <span class="sketch-studio__badge"><span class="dot"></span>Gemini 3.8 Flash</span></span>
+              <h3>도면/스케치 AI 3D 파이프라인</h3>
             </div>
-            <div style="font-size: 11px; color: #94a3b8; font-family: monospace;">
-              World Labs Marble 1.1
-            </div>
+            ${stepsHTML()}
           </header>
-          <div class="sketch-viewer" id="panel_viewer">
-            <img id="panel_canvasImg" class="sketch-viewer__canvas" src="${SAMPLES[activeSample].img}" alt="도면/스케치 프리뷰">
-            <div class="sketch-scanner-overlay" id="panel_scannerOverlay">
-              <div class="sketch-scanner__grid"></div>
-              <div class="sketch-scanner__radar"></div>
-              <div class="sketch-scanner__beam"></div>
-              <div class="sketch-scanner__label">
-                <span class="spinner-grow spinner-grow-sm" role="status" style="width: 10px; height: 10px;"></span>
-                GEMINI 3.8 SPATIAL SCANNING IN PROGRESS...
-              </div>
-            </div>
-          </div>
-          <div class="sketch-samples" id="panel_samples">
-            <span class="sketch-samples__title">샘플 도면 선택:</span>
-            <button type="button" class="sketch-sample-btn is-active" data-sample="warehouse">
-              <i class="icon icon-box"></i> 스마트 물류 허브
-            </button>
-            <button type="button" class="sketch-sample-btn" data-sample="cleanroom">
-              <i class="icon icon-cpu"></i> 반도체 클린룸
-            </button>
-            <button type="button" class="sketch-sample-btn" data-sample="showroom">
-              <i class="icon icon-car"></i> 하이퍼카 쇼룸
-            </button>
-          </div>
-          <div class="sketch-dropzone" id="panel_dropzone">
-            <div class="sketch-dropzone__info">
-              <div class="sketch-dropzone__icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-              </div>
-              <div class="sketch-dropzone__text">
-                <strong>모바일 손그림 스케치 / CAD 도면 / 현장 사진 업로드</strong><br>
-                <span>드래그 앤 드롭 또는 클릭하여 업로드 (JPG, PNG, WEBP, PDF)</span>
-              </div>
-            </div>
-            <button type="button" class="sketch-dropzone__btn">파일 선택</button>
-            <input type="file" id="panel_fileInput" accept="image/*,.pdf" style="display: none;">
-          </div>
+          ${viewerHTML("panel")}
+          ${samplesHTML("panel")}
+          ${dropzoneHTML("panel", true)}
         </div>
-
         <div class="sketch-studio__side">
-          <div class="sketch-analysis-card" id="panel_analysisCard">
-            <div class="sketch-analysis__header">
-              <div class="sketch-analysis__tagline">SPATIAL REASONING REPORT</div>
-              <h4 class="sketch-analysis__title" id="panel_analysisTitle">${SAMPLES[activeSample].title}</h4>
-              <div class="sketch-analysis__scale" id="panel_analysisScale">${SAMPLES[activeSample].scale}</div>
-            </div>
-            ${sourceBlockHTML("panel")}
-            <div class="sketch-analysis__section">
-              <div class="sketch-analysis__label">공간 구조 및 동선 분석</div>
-              <ul class="sketch-analysis__bullets" id="panel_analysisBullets">
-                ${SAMPLES[activeSample].analysis.map((item) => `<li>${item}</li>`).join("")}
-              </ul>
-            </div>
-            <div class="sketch-analysis__section">
-              <div class="sketch-analysis__label">식별된 설비 및 객체</div>
-              <div class="sketch-analysis__tags" id="panel_analysisTags">
-                ${SAMPLES[activeSample].equipment.map((t) => `<span class="sketch-analysis__chip">${t}</span>`).join("")}
-              </div>
-            </div>
-            <div class="sketch-prompt-box">
-              <div class="sketch-prompt-box__label">
-                <span>World Labs 전용 초고도화 프롬프트</span>
-                <span style="color: #64748b;">3D Splatting Ready</span>
-              </div>
-              <div class="sketch-prompt-box__text" id="panel_analysisPrompt">${SAMPLES[activeSample].prompt}</div>
-            </div>
-            <button type="button" class="sketch-btn-generate" id="panel_btnLaunch">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
-              <span>이 도면으로 3D 월드 생성 (GENERATE 3D)</span>
-            </button>
-          </div>
+          ${reportHTML("panel")}
         </div>
       </div>
     `;
@@ -416,6 +361,16 @@
       }
     });
 
+    // Copy prompt
+    document.querySelector(`[data-copy="${prefix}_analysisPrompt"]`)?.addEventListener("click", async (e) => {
+      const btn = e.currentTarget;
+      const text = document.getElementById(`${prefix}_analysisPrompt`)?.textContent?.trim() || "";
+      try { await navigator.clipboard.writeText(text); } catch (_) {}
+      const old = btn.innerHTML;
+      btn.textContent = "복사됨 ✓";
+      setTimeout(() => { btn.innerHTML = old; }, 1400);
+    });
+
     // Launch 3D World Button
     document.getElementById(`${prefix}_btnLaunch`)?.addEventListener("click", () => {
       const promptText = document.getElementById(`${prefix}_analysisPrompt`)?.textContent?.trim();
@@ -470,9 +425,11 @@
       const overlay = document.getElementById(`${p}_scannerOverlay`);
       if (overlay) {
         overlay.classList.add("is-scanning");
-        setTimeout(() => overlay.classList.remove("is-scanning"), 1000);
+        setTimeout(() => overlay.classList.remove("is-scanning"), 900);
       }
     });
+    renderKpis(sample.scale);
+    setViewerMeta(sample.name, sample.code);
   }
 
   const esc = (s) =>
@@ -564,6 +521,7 @@
         document.querySelectorAll(`#${p}_samples .sketch-sample-btn`).forEach((b) => b.classList.remove("is-active"));
       });
       setSource(name, preview, { kind: "scanning", text: "Gemini가 도면을 읽는 중… (약 10~20초)" });
+      setViewerMeta(name, isPdf ? "PDF" : "업로드");
 
       await analyzeWithGemini(payload, mime, name);
     } catch (err) {
@@ -587,6 +545,7 @@
       if (tags) tags.innerHTML = eq.map((t) => `<span class="sketch-analysis__chip">${esc(t)}</span>`).join("");
       if (prompt) prompt.textContent = r.optimizedWorldLabsPrompt || "";
     });
+    renderKpis(r.detectedScale);
     // Bring the report into view (mobile stacks it below the preview)
     const card = document.getElementById("modal_analysisCard");
     if (modalEl?.classList.contains("is-open") && card) card.scrollIntoView({ behavior: "smooth", block: "nearest" });
